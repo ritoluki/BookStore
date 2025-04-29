@@ -1,0 +1,18 @@
+TRẠNG THÁI ĐƠN HÀNG TRONG WEBSACH:
+
+1. trangthai = 0: Chưa xử lý
+   - Hiển thị: "Chưa xử lý"
+   - Màu: Cam (status-no-complete)
+   - Chức năng: Có thể hủy đơn, xem chi tiết
+
+2. trangthai = 1: Đã xử lý
+   - Hiển thị: "Đã xử lý"
+   - Màu: Xanh (status-complete)
+   - Chức năng: Chỉ có thể xem chi tiết, không thể hủy
+
+3. trangthai = 4: Đã hủy
+   - Hiển thị: "Đã hủy"
+   - Màu: Đỏ (status-cancel)
+   - Chức năng: Chỉ có thể xem chi tiết
+
+LƯU Ý: Khi hủy đơn hàng, trạng thái trong database (bảng `order`) sẽ được cập nhật thành 4. 
