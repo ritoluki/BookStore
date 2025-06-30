@@ -2,7 +2,7 @@
 require_once 'config.php';
 
 // Truy vấn dữ liệu từ bảng sản phẩm
-$sql = "SELECT id, status, title, img, category, price, describes FROM products";
+$sql = "SELECT id, status, title, img, category, price, soluong, describes FROM products";
 $result = $conn->query($sql);
 
 $products = array();
@@ -10,6 +10,7 @@ $products = array();
 if ($result->num_rows > 0) {
     // Lưu dữ liệu sản phẩm vào mảng
     while($row = $result->fetch_assoc()) {
+        $row['soluong'] = (int)$row['soluong'];
         $products[] = $row;
     }
 }

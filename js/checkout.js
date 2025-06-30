@@ -77,6 +77,7 @@ function thanhtoanpage(option,product) {
             </div>`
             // Tong tien
             priceFinal.innerText = vnd((product.soluong * product.price) + PHIVANCHUYEN);
+            window.productBuyNow = product; // Lưu sản phẩm mua ngay vào biến toàn cục
             break;
     }
 
@@ -165,12 +166,26 @@ function showProductBuyNow(product) {
     listOrder.innerHTML = listOrderHtml;
 }
 
+// Hàm tự động điền thông tin người nhận nếu đã đăng nhập
+function autofillReceiverInfo() {
+    let currentUser = localStorage.getItem('currentuser') ? JSON.parse(localStorage.getItem('currentuser')) : null;
+    if (currentUser) {
+        const tenInput = document.getElementById('tennguoinhan');
+        const sdtInput = document.getElementById('sdtnhan');
+        const diachiInput = document.getElementById('diachinhan');
+        if (tenInput) tenInput.value = currentUser.fullname || '';
+        if (sdtInput) sdtInput.value = currentUser.phone || '';
+        if (diachiInput) diachiInput.value = currentUser.address || '';
+    }
+}
+
 //Open Page Checkout
 let nutthanhtoan = document.querySelector('.thanh-toan')
 let checkoutpage = document.querySelector('.checkout-page');
 nutthanhtoan.addEventListener('click', () => {
     checkoutpage.classList.add('active');
     thanhtoanpage(1);
+    autofillReceiverInfo(); // Gọi trực tiếp sau khi render form
     closeCart();
     body.style.overflow = "hidden"
 })
@@ -180,24 +195,27 @@ function dathangngay() {
     let productInfo = document.getElementById("product-detail-content");
     let datHangNgayBtn = productInfo.querySelector(".button-dathangngay");
     datHangNgayBtn.onclick = () => {
-       // if(localStorage.getItem('currentuser')) {
-            let productId = datHangNgayBtn.getAttribute("data-product");
-            let soluong = parseInt(productInfo.querySelector(".buttons_added .input-qty").value);
-            let notevalue = productInfo.querySelector("#popup-detail-note").value;
-            let ghichu = notevalue == "" ? "Không có ghi chú" : notevalue;
-            let products = JSON.parse(localStorage.getItem('products'));
-            let a = products.find(item => item.id == productId);
-            a.soluong = parseInt(soluong);
-            a.note = ghichu;
-            checkoutpage.classList.add('active');
-            thanhtoanpage(2,a);
-            closeCart();
-            let modal = document.querySelector('.modal.product-detail');
-            modal.classList.remove('open');
-            body.style.overflow = "hidden"
-        //} else {
-          //  toast({ title: 'Warning', message: 'Chưa đăng nhập tài khoản !', type: 'warning', duration: 3000 });
-       // }
+        let productId = datHangNgayBtn.getAttribute("data-product");
+        let soluong = parseInt(productInfo.querySelector(".buttons_added .input-qty").value);
+        let products = JSON.parse(localStorage.getItem('products'));
+        let infoProduct = products.find(item => item.id == productId);
+        if (soluong > infoProduct.soluong) {
+            toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 2000 });
+            productInfo.querySelector(".buttons_added .input-qty").value = infoProduct.soluong;
+            return;
+        }
+        let notevalue = productInfo.querySelector("#popup-detail-note").value;
+        let ghichu = notevalue == "" ? "Không có ghi chú" : notevalue;
+        let a = products.find(item => item.id == productId);
+        a.soluong = parseInt(soluong);
+        a.note = ghichu;
+        checkoutpage.classList.add('active');
+        thanhtoanpage(2,a);
+        autofillReceiverInfo(); // Tự động điền thông tin người nhận khi đặt hàng ngay
+        closeCart();
+        let modal = document.querySelector('.modal.product-detail');
+        modal.classList.remove('open');
+        body.style.overflow = "hidden"
     }
 }
 
@@ -208,7 +226,7 @@ function closecheckout() {
 }
 
 // Thong tin cac don hang da mua - Xu ly khi nhan nut dat hang
-async function xulyDathang(product) {
+async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     let diachinhan = "";
     let hinhthucgiao = "";
     let thoigiangiao = "";
@@ -248,6 +266,7 @@ async function xulyDathang(product) {
     let order = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
     let madon = createId(order);
     let tongtien = 0;
+    let newOrderDetails = [];
     
     // Handle product(s)
     if(product == undefined) {
@@ -256,18 +275,30 @@ async function xulyDathang(product) {
                 item.madon = madon;
                 item.price = getpriceProduct(item.id);
                 tongtien += item.price * item.soluong;
-                orderDetails.push(item);
+                newOrderDetails.push(item);
             });
         }
     } else {
         product.madon = madon;
         product.price = getpriceProduct(product.id);
         tongtien += product.price * product.soluong;
-        orderDetails.push(product);
-    }   
+        newOrderDetails.push(product);
+    }
+    // CỘNG PHÍ VẬN CHUYỂN nếu chọn giao tận nơi
+    if (giaotannoi.classList.contains("active")) {
+        tongtien += PHIVANCHUYEN;
+    }
     
     let tennguoinhan = document.querySelector("#tennguoinhan").value;
     let sdtnhan = document.querySelector("#sdtnhan").value;
+
+    // Kiểm tra nếu chưa đăng nhập và số điện thoại đã tồn tại trong user
+    let accounts = localStorage.getItem('accounts') ? JSON.parse(localStorage.getItem('accounts')) : [];
+    let isRegistered = accounts.some(acc => acc.phone == sdtnhan);
+    if (!currentUser && isRegistered) {
+        toast({ title: 'Chú ý', message: 'Số điện thoại này đã đăng ký tài khoản. Vui lòng đăng nhập để đặt hàng!', type: 'warning', duration: 4000 });
+        return;
+    }
 
     if(tennguoinhan == "" || sdtnhan == "" || diachinhan == "") {
         toast({ title: 'Chú ý', message: 'Vui lòng nhập đầy đủ thông tin !', type: 'warning', duration: 4000 });
@@ -278,7 +309,7 @@ async function xulyDathang(product) {
         
         let donhang = {
             id: madon,
-            khachhang: currentUser ? currentUser.phone : "Khách hàng đặt trực tiếp",
+            khachhang: currentUser ? currentUser.phone : sdtnhan,
             hinhthucgiao: hinhthucgiao,
             ngaygiaohang: document.querySelector(".pick-date.active").getAttribute("data-date"),
             thoigiangiao: thoigiangiao,
@@ -286,9 +317,10 @@ async function xulyDathang(product) {
             tenguoinhan: tennguoinhan,
             sdtnhan: sdtnhan,
             diachinhan: diachinhan,
-            thoigiandat: vnTime.toISOString(), // Lưu thời gian dạng ISO với timezone đã điều chỉnh
-            tongtien:tongtien,
-            trangthai: 0
+            thoigiandat: vnTime.toISOString(),
+            tongtien: tongtien,
+            trangthai: 0,
+            payment_method: paymentMethod
         }
     
         order.unshift(donhang);
@@ -300,32 +332,60 @@ async function xulyDathang(product) {
         }
     
         localStorage.setItem("order", JSON.stringify(order));
-        localStorage.setItem("orderDetails", JSON.stringify(orderDetails));
+        let allOrderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
+        allOrderDetails = newOrderDetails.concat(allOrderDetails);
+        localStorage.setItem("orderDetails", JSON.stringify(allOrderDetails));
+
+        // Trừ số lượng tồn kho
+        let products = JSON.parse(localStorage.getItem('products'));
+        if(product == undefined) {
+            if (currentUser && currentUser.cart) {
+                currentUser.cart.forEach(async item => {
+                    let p = products.find(sp => sp.id == item.id);
+                    if (p) {
+                        p.soluong = Math.max(0, Number(p.soluong) - Number(item.soluong));
+                        // Gọi API cập nhật số lượng về database
+                        await fetch('update_product_quantity.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: p.id, soluong: Number(p.soluong) })
+                        });
+                    }
+                });
+            }
+        } else {
+            let p = products.find(sp => sp.id == product.id);
+            if (p) {
+                p.soluong = Math.max(0, Number(p.soluong) - Number(product.soluong));
+                // Gọi API cập nhật số lượng về database
+                await fetch('update_product_quantity.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: p.id, soluong: Number(p.soluong) })
+                });
+            }
+        }
+        localStorage.setItem('products', JSON.stringify(products));
 
         toast({ title: 'Thành công', message: 'Đặt hàng thành công !', type: 'success', duration: 1000 });
         
         // Gửi dữ liệu đơn hàng và chi tiết đơn hàng đến server để lưu vào database
-        //try {
-            let formData = new FormData();
-            formData.append('order', JSON.stringify(donhang));
-            formData.append('orderDetails', JSON.stringify(orderDetails));
-
-            const response = await fetch('add_order.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            //const result = await response.json();
-            //if (result.success) {
-                //toast({ title: "Thành công", message: "Đơn hàng đã được thêm vào cơ sở dữ liệu!", type: "success", duration: 3000 });
-            //} else {
-                //toast({ title: "Lỗi", message: "Có lỗi xảy ra khi thêm đơn hàng vào cơ sở dữ liệu!", type: "error", duration: 3000 });
-            //}
-        
+        let formData = new FormData();
+        formData.append('order', JSON.stringify(donhang));
+        formData.append('orderDetails', JSON.stringify(newOrderDetails));
+        const response = await fetch('add_order.php', {
+            method: 'POST',
+            body: formData
+        });
 
         setTimeout((e) => {
-            window.location = "http://localhost/websach/";
+            window.location = "http://localhost/bookstore_datn/";
         }, 2000);  
+    }
+
+    // Sau khi lưu đơn hàng và orderDetails:
+    if (returnInfo) {
+        return { orderId: madon, amount: tongtien };
     }
 }
 
@@ -336,4 +396,50 @@ function getpriceProduct(id) {
         return item.id == id;
     })
     return sp.price;
+}
+
+// Thêm sự kiện cho nút VNPay
+const vnpayBtn = document.getElementById('btnVnpay');
+if (vnpayBtn) {
+    vnpayBtn.addEventListener('click', async function() {
+        let product = window.productBuyNow || undefined;
+        let result = await xulyDathang(product, 'online', true);
+        if (!result || !result.orderId || !result.amount || result.amount <= 0) {
+            toast({ title: 'Lỗi', message: 'Đơn hàng không hợp lệ hoặc không có sản phẩm!', type: 'error', duration: 3000 });
+            return;
+        }
+        let amount = result.amount;
+        let orderId = result.orderId;
+        let orderInfo = 'Thanh toán đơn hàng ' + orderId;
+
+        // Xóa biến productBuyNow sau khi đặt hàng
+        window.productBuyNow = undefined;
+
+        // Tạo form ẩn để submit sang PHP (POST)
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/Bookstore_DATN/vnpay_php/vnpay_pay.php';
+
+        let inputAmount = document.createElement('input');
+        inputAmount.type = 'hidden';
+        inputAmount.name = 'amount';
+        inputAmount.value = amount;
+
+        let inputOrderId = document.createElement('input');
+        inputOrderId.type = 'hidden';
+        inputOrderId.name = 'order_id';
+        inputOrderId.value = orderId;
+
+        let inputOrderInfo = document.createElement('input');
+        inputOrderInfo.type = 'hidden';
+        inputOrderInfo.name = 'order_desc';
+        inputOrderInfo.value = orderInfo;
+
+        form.appendChild(inputAmount);
+        form.appendChild(inputOrderId);
+        form.appendChild(inputOrderInfo);
+
+        document.body.appendChild(form);
+        form.submit();
+    });
 }

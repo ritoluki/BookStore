@@ -1,0 +1,375 @@
+/* Book Review Styles */
+.book-detail-tabs {
+    display: flex;
+    margin: 20px 0;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tab-btn.active {
+    color: #e74c3c;
+    border-bottom-color: #e74c3c;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+}
+
+.tab-btn:hover {
+    color: #e74c3c;
+    background: #fff5f5;
+}
+
+.tab-hidden {
+    display: none !important;
+}
+
+/* Book Rating Container */
+.book-rating-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.book-rating-options {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.book-rating-option {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 16px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.book-rating-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    border-color: #ffd93d;
+}
+
+.book-rating-option.selected {
+    background: linear-gradient(135deg, #ffd93d 0%, #ffb74d 100%);
+    border-color: #ffc107;
+    color: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+}
+
+.book-emoji {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.book-rating-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.book-rating-option.selected .book-rating-label {
+    color: #333;
+}
+
+/* Comment Section */
+.book-comment-section {
+    margin-top: 20px;
+}
+
+.book-comment-input {
+    width: 100%;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.3s ease;
+}
+
+.book-comment-input:focus {
+    outline: none;
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+.book-comment-input::placeholder {
+    color: #adb5bd;
+}
+
+/* Button Group */
+.book-button-group {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.book-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.book-btn-primary {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.book-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+}
+
+/* Reviews Display */
+.existing-reviews {
+    margin-top: 30px;
+}
+
+.reviews-summary {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.avg-rating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.rating-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+}
+
+.stars i {
+    font-size: 20px;
+    color: #ffd93d;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.review-count {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Individual Reviews */
+.reviews-list {
+    space: 16px;
+}
+
+.review-item {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.reviewer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.reviewer-name {
+    font-weight: 600;
+    color: #333;
+    font-size: 15px;
+}
+
+.review-rating {
+    display: flex;
+    gap: 1px;
+}
+
+.review-rating i {
+    font-size: 14px;
+    color: #ffd93d;
+}
+
+.review-date {
+    color: #6c757d;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.review-comment {
+    color: #495057;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.review-image img {
+    max-width: 150px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* No Reviews State */
+.no-reviews {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.no-reviews i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #adb5bd;
+}
+
+.no-reviews p {
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .book-rating-options {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .book-rating-option {
+        padding: 12px 6px;
+    }
+    
+    .book-emoji {
+        font-size: 24px;
+    }
+    
+    .book-rating-label {
+        font-size: 12px;
+    }
+    
+    .avg-rating {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .rating-number {
+        font-size: 28px;
+    }
+    
+    .review-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .book-rating-container {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .book-rating-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .book-detail-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 0;
+    }
+    
+    .tab-btn.active {
+        border-bottom-color: #e74c3c;
+        border-left: 4px solid #e74c3c;
+    }
+}
+
+/* Animation cho khi review mới được thêm */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.review-item.new-review {
+    animation: slideInUp 0.5s ease;
+}
+
+/* Loading state */
+.reviews-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.reviews-loading::after {
+    content: "...";
+    animation: dots 1.5s steps(5, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: "."; }
+    40% { content: ".."; }
+    60% { content: "..."; }
+    90%, 100% { content: ""; }
+}

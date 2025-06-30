@@ -1215,7 +1215,7 @@ label a {
     color: #fff;
     background-color: var(--red);
     padding: 10px 0;
-    padding-left: 40px;
+    padding-left: 25px;
     padding-right: 25px;
     border-radius: 99px;
     position: relative;
@@ -1244,7 +1244,6 @@ label a {
 }
 
 .btn-chuaxuly::before {
-    content: "\f00d";
     font-family: "Font Awesome 6 Pro";
     position: absolute;
     left: 22px;
@@ -1255,7 +1254,6 @@ label a {
 }
 
 .btn-daxuly::before {
-    content: "\f00c";
     font-family: "Font Awesome 6 Pro";
     position: absolute;
     left: 22px;
@@ -1377,7 +1375,6 @@ label a {
     background-color: #dc3545;
     color: #fff;
     margin-left: 10px;
-    border-radius: 5px;
 }
 
 .btn-chuathanhtoan:hover {
@@ -1444,4 +1441,65 @@ label a {
     color: #666;
     margin-top: 5px;
     font-style: italic;
+}
+/* Trạng thái đã xác nhận */
+.confirmed {
+  background: #28a745 !important;
+  color: #fff !important;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Trạng thái hoàn thành */
+.completed {
+  background: #28a745 !important;
+  color: #fff !important;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Trạng thái đang giao hàng */
+.status-shipping {
+  background: #2196f3 !important;
+  color: #fff !important;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Nút hoàn thành đơn (admin) */
+.btn-complete {
+  background: #28a745 !important;
+  color: #fff !important;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 99px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+/* Nút đã nhận được hàng (khách) */
+.btn-danhanhang {
+  background: #28a745 !important;
+  color: #fff !important;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.2s;
+  margin-left: 10px;
 }

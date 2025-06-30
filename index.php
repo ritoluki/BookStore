@@ -1,5 +1,4 @@
 <?php
-
 include 'php/main.php';
 session_start();
 
@@ -20,6 +19,7 @@ session_start();
     <link rel="stylesheet" href="./assets/css/toast-message.css">
     <link rel="stylesheet" href="./assets/css/slider.css">
     <link rel="stylesheet" href="./assets/css/responsive.css">
+    <link rel="stylesheet" href="./assets/css/book_review.css">
     <link rel="stylesheet" href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css"/>
 </head>
 <body>
@@ -373,46 +373,6 @@ session_start();
                     <li><i class="fa-solid fa-circle-check"></i> Nếu không tìm thấy đơn hàng, vui lòng liên hệ hotline: 0123 456 789</li>
                 </ul>
             </div>
-            <div class="tracuu-status-explanation">
-                <h3>Giải thích về trạng thái đơn hàng</h3>
-                <div class="status-explanation-grid">
-                    <div class="status-item">
-                        <span class="status-dot pending"></span>
-                        <div class="status-info">
-                            <h4>Đang xử lý</h4>
-                            <p>Đơn hàng của bạn đã được tiếp nhận và đang chờ xác nhận</p>
-                        </div>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-dot confirmed"></span>
-                        <div class="status-info">
-                            <h4>Đã xử lý</h4>
-                            <p>Đơn hàng đã được xác nhận và đang chuẩn bị giao hàng</p>
-                        </div>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-dot shipping"></span>
-                        <div class="status-info">
-                            <h4>Đang giao hàng</h4>
-                            <p>Đơn hàng đang được vận chuyển đến địa chỉ của bạn</p>
-                        </div>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-dot completed"></span>
-                        <div class="status-info">
-                            <h4>Đã hoàn thành</h4>
-                            <p>Đơn hàng đã được giao thành công</p>
-                        </div>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-dot cancelled"></span>
-                        <div class="status-info">
-                            <h4>Đã hủy</h4>
-                            <p>Đơn hàng đã bị hủy</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="container" align="center">
                 <div id="showOrdersdt"></div>
             </div>
@@ -670,19 +630,19 @@ session_start();
                             <li class="widget-contact-item">
                                 <a href="">
                                     <i class="fa-regular fa-arrow-right"></i>
-                                    <span>Lớp 10</span>
+                                    <span>Khoa Học</span>
                                 </a>
                             </li>
                             <li class="widget-contact-item">
                                 <a href="">
                                     <i class="fa-regular fa-arrow-right"></i>
-                                    <span>Lớp 11</span>
+                                    <span>Tiểu Thuyết</span>
                                 </a>
                             </li>
                             <li class="widget-contact-item">
                                 <a href="">
                                     <i class="fa-regular fa-arrow-right"></i>
-                                    <span>Lớp 12</span>
+                                    <span>Thiếu Nhi</span>
                                 </a>
                             </li>
                             <li class="widget-contact-item">

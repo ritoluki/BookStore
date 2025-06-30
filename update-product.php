@@ -10,6 +10,7 @@ $category = $_POST['category'];
 $price = $_POST['price'];
 $status = $_POST['status'];
 $desc = $_POST['desc'];
+$soluong = $_POST['soluong'];
 $oldImagePath = $_POST['oldImagePath']; // Đường dẫn ảnh cũ
 
 $newImagePath = $oldImagePath; // Mặc định là ảnh cũ
@@ -35,9 +36,9 @@ if (isset($_FILES['newImage']) && $_FILES['newImage']['error'] == UPLOAD_ERR_OK)
 }
 
 // Cập nhật sản phẩm trong cơ sở dữ liệu
-$sql = "UPDATE products SET title = ?, category = ?, price = ?, describes = ?, img = ?, status = ? WHERE id = ?";
+$sql = "UPDATE products SET title = ?, category = ?, price = ?, soluong = ?, describes = ?, img = ?, status = ? WHERE id = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("ssissii", $title, $category, $price, $desc, $img, $status, $id);
+$stmt->bind_param("ssisssii", $title, $category, $price, $soluong, $desc, $img, $status, $id);
 
 if ($stmt->execute()) {
     echo json_encode(["success" => true, "message" => "Sản phẩm đã được cập nhật thành công!"]);

@@ -1,4 +1,3 @@
-
 // Doi sang dinh dang tien VND
 function vnd(price) {
     return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
@@ -9,6 +8,9 @@ const body = document.querySelector("body");
 let modalContainer = document.querySelectorAll('.modal');
 let modalBox = document.querySelectorAll('.mdl-cnt');
 let formLogSign = document.querySelector('.forms');
+let currentPage = 1;
+let totalPage = 0;
+let perPage = 12;
 
 // Click vùng ngoài sẽ tắt Popup
 modalContainer.forEach(item => {
@@ -25,7 +27,6 @@ function closeModal() {
     modalContainer.forEach(item => {
         item.classList.remove('open');
     });
-    console.log(modalContainer)
     body.style.overflow = "auto";
 }
 
@@ -47,16 +48,20 @@ function decreasingNumber(e) {
     }
 }
 
+
 //Xem chi tiet san pham
 function detailProduct(index) {
     let modal = document.querySelector('.modal.product-detail');
     let products = JSON.parse(localStorage.getItem('products'));
     event.preventDefault();
-    let infoProduct = products.find(sp => {
-        return sp.id === index;
-    })
+    // Sửa: dùng so sánh == và kiểm tra null
+    let infoProduct = products.find(sp => sp.id == index);
+    if (!infoProduct) {
+        alert('Không tìm thấy thông tin sản phẩm!');
+        return;
+    }
     let modalHtml = `<div align="center" class="modal-header">
-    <img class="product-image" src="${infoProduct.img}" alt="" >
+    <img class="product-image" src="${infoProduct.img || './assets/img/blank-image.png'}" alt="" >
     </div>
     <div class="modal-body">
         <h2 class="product-title">${infoProduct.title}</h2>
@@ -64,31 +69,90 @@ function detailProduct(index) {
             <div class="priceBox">
                 <span class="current-price">${vnd(infoProduct.price)}</span>
             </div>
-            <div class="buttons_added">
+            ${Number(infoProduct.soluong) == 0 ? `<div class="product-stock out-of-stock">Tạm hết hàng</div>` : `<div class="product-stock">Số lượng: <b>${Number(infoProduct.soluong)}</b></div>`}
+            <div class="buttons_added" style="${Number(infoProduct.soluong) == 0 ? 'display:none;' : ''}">
                 <input class="minus is-form" type="button" value="-" onclick="decreasingNumber(this)">
-                <input class="input-qty" max="100" min="1" name="" type="number" value="1">
+                <input class="input-qty" max="${infoProduct.soluong}" min="1" name="" type="number" value="1">
                 <input class="plus is-form" type="button" value="+" onclick="increasingNumber(this)">
             </div>
         </div>
-        <p class="product-description">${infoProduct.desc}</p>
-    </div>
-    <div class="notebox">
-            <p class="notebox-title">Ghi chú</p>
-            <textarea class="text-note" id="popup-detail-note" placeholder="Nhập thông tin cần lưu ý..."></textarea>
-    </div>
-    <div class="modal-footer">
-        <div class="price-total">
-            <span class="thanhtien">Thành tiền</span>
-            <span class="price">${vnd(infoProduct.price)}</span>
+        <p class="product-description">${infoProduct.describes || ''}</p>
+        <div class="book-detail-tabs">
+            <button id="tab-buy" class="tab-btn active" onclick="switchBookTab('buy')">Mua sách</button>
+            <button id="tab-review" class="tab-btn" onclick="switchBookTab('review')">Đánh giá</button>
         </div>
-        <div class="modal-footer-control">
-            <button class="button-dathangngay" data-product="${infoProduct.id}">Đặt hàng ngay</button>
-            <button class="button-dat" id="add-cart" onclick="animationCart()"><i class="fa-light fa-basket-shopping"></i></button>
+        <div class="tab-buy-content">
+            <div class="notebox">
+                <p class="notebox-title">Ghi chú</p>
+                <textarea class="text-note" id="popup-detail-note" placeholder="Nhập thông tin cần lưu ý..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <div class="price-total">
+                    <span class="thanhtien">Thành tiền</span>
+                    <span class="price">${vnd(infoProduct.price)}</span>
+                </div>
+                <div class="modal-footer-control">
+                    <button class="button-dathangngay${Number(infoProduct.soluong) == 0 ? ' btn-disabled' : ''}" data-product="${infoProduct.id}" ${Number(infoProduct.soluong) == 0 ? 'disabled' : ''}>
+                        <i class="fa-light"></i> Đặt hàng ngay
+                    </button>
+                    <button class="button-dat${Number(infoProduct.soluong) == 0 ? ' btn-disabled' : ''}" id="add-cart" onclick="animationCart()" ${Number(infoProduct.soluong) == 0 ? 'disabled' : ''}>
+                        <i class="fa-light fa-basket-shopping"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>`;
+        <div class="tab-review-content tab-hidden">
+            <div class="book-review-section">
+                <div class="book-rating-container">
+                    <div class="book-rating-options">
+                        <div class="book-rating-option selected" data-rating="excellent">
+                            <div class="book-emoji">😍</div>
+                            <div class="book-rating-label">Tuyệt vời</div>
+                        </div>
+                        <div class="book-rating-option" data-rating="good">
+                            <div class="book-emoji">😊</div>
+                            <div class="book-rating-label">Sách hay</div>
+                        </div>
+                        <div class="book-rating-option" data-rating="ok">
+                            <div class="book-emoji">😐</div>
+                            <div class="book-rating-label">Khá ổn</div>
+                        </div>
+                        <div class="book-rating-option" data-rating="bad">
+                            <div class="book-emoji">😞</div>
+                            <div class="book-rating-label">Chưa hay</div>
+                        </div>
+                        <div class="book-rating-option" data-rating="terrible">
+                            <div class="book-emoji">😱</div>
+                            <div class="book-rating-label">Dở tệ</div>
+                        </div>
+                    </div>
+                    <div class="book-comment-section">
+                        <textarea 
+                            class="book-comment-input" 
+                            placeholder="Viết nhận xét về sách (tùy chọn)"
+                            rows="3"
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="book-button-group">
+                    <button class="book-btn book-btn-primary" onclick="submitBookRating()">Gửi đánh giá</button>
+                </div>
+            </div>
+        </div>`;
     document.querySelector('#product-detail-content').innerHTML = modalHtml;
     modal.classList.add('open');
     body.style.overflow = "hidden";
+    
+    // Gắn sự kiện chọn emoji - QUAN TRỌNG: phải sau khi render HTML
+    setTimeout(() => {
+        document.querySelectorAll('.book-rating-option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.book-rating-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    }, 100);
+    
     //Cap nhat gia tien khi tang so luong san pham
     let tgbtn = document.querySelectorAll('.is-form');
     let qty = document.querySelector('.product-control .input-qty');
@@ -98,6 +162,18 @@ function detailProduct(index) {
             let price = infoProduct.price * parseInt(qty.value);
             priceText.innerHTML = vnd(price);
         });
+    });
+    // Chặn nhập tay vượt quá tồn kho
+    qty.addEventListener('input', function() {
+        let max = parseInt(qty.getAttribute('max'));
+        let min = parseInt(qty.getAttribute('min'));
+        let val = parseInt(qty.value);
+        if (isNaN(val) || val < min) qty.value = min;
+        if (val > max) {
+            qty.value = max;
+            toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 2000 });
+        }
+        priceText.innerHTML = vnd(infoProduct.price * parseInt(qty.value));
     });
     // Them san pham vao gio hang
     let productbtn = document.querySelector('.button-dat');
@@ -111,6 +187,264 @@ function detailProduct(index) {
     })
     // Mua ngay san pham
     dathangngay();
+    renderBookReviews(index);
+}
+
+// Xóa hàm renderBookReviews trùng lặp, chỉ giữ phiên bản localStorage
+function renderBookReviews(bookId) {
+    window.currentBookId = bookId;
+    
+    // Lấy đánh giá từ localStorage trước
+    let localReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
+    let bookReviews = localReviews.filter(review => review.product_id == bookId);
+    
+    // Hiển thị dữ liệu từ localStorage ngay lập tức
+    displayBookReviewsFromLocal(bookReviews);
+    
+    // Đồng thời lấy dữ liệu mới từ server để cập nhật
+    syncReviewsFromServer(bookId);
+}
+
+// Hàm hiển thị đánh giá từ localStorage
+function displayBookReviewsFromLocal(reviews) {
+    let reviewsHtml = '';
+    
+    if (reviews.length === 0) {
+        reviewsHtml = `<div class="no-reviews">
+            <i class="fa-light fa-comment-slash"></i>
+            <p>Chưa có đánh giá nào cho sách này</p>
+        </div>`;
+    } else {
+        // Tính điểm trung bình từ localStorage
+        let totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        let avgRating = (totalRating / reviews.length).toFixed(1);
+        
+        reviewsHtml = `
+            <div class="reviews-summary">
+                <div class="avg-rating">
+                    <span class="rating-number">${avgRating}</span>
+                    <div class="stars">${renderStars(avgRating)}</div>
+                    <span class="review-count">(${reviews.length} đánh giá)</span>
+                </div>
+            </div>
+            <div class="reviews-list">`;
+        
+        reviews.forEach(review => {
+            const reviewDate = new Date(review.created_at).toLocaleDateString('vi-VN');
+            reviewsHtml += `
+                <div class="review-item">
+                    <div class="review-header">
+                        <div class="reviewer-info">
+                            <span class="reviewer-name">${review.user_name}</span>
+                            <div class="review-rating">${renderStars(review.rating)}</div>
+                        </div>
+                        <span class="review-date">${reviewDate}</span>
+                    </div>
+                    ${review.content ? `<div class="review-comment">${review.content}</div>` : ''}
+                    ${review.image ? `<div class="review-image"><img src="${review.image}" alt="Review image"></div>` : ''}
+                </div>`;
+        });
+        reviewsHtml += `</div>`;
+    }
+    
+    // Cập nhật DOM
+    const reviewContent = document.querySelector('.tab-review-content .book-review-section');
+    if (reviewContent) {
+        let existingReviews = reviewContent.querySelector('.existing-reviews');
+        if (existingReviews) {
+            existingReviews.remove();
+        }
+        reviewContent.innerHTML += `<div class="existing-reviews">${reviewsHtml}</div>`;
+    }
+}
+
+// Hàm đồng bộ đánh giá từ server (chạy ngầm)
+function syncReviewsFromServer(bookId) {
+    fetch(`get_book_reviews.php?product_id=${bookId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Cập nhật localStorage với dữ liệu mới từ server
+                let allReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
+                
+                // Xóa các review cũ của sản phẩm này
+                allReviews = allReviews.filter(review => review.product_id != bookId);
+                
+                // Thêm các review mới từ server
+                data.reviews.forEach(serverReview => {
+                    allReviews.push({
+                        id: serverReview.id,
+                        user_id: serverReview.user_id,
+                        user_name: serverReview.user_name,
+                        product_id: serverReview.product_id,
+                        rating: serverReview.rating,
+                        content: serverReview.content,
+                        image: serverReview.image,
+                        created_at: serverReview.created_at
+                    });
+                });
+                
+                // Lưu lại vào localStorage
+                localStorage.setItem('bookReviews', JSON.stringify(allReviews));
+                
+                // Render lại nếu có sự khác biệt
+                let currentBookReviews = allReviews.filter(review => review.product_id == bookId);
+                displayBookReviewsFromLocal(currentBookReviews);
+            }
+        })
+        .catch(err => {
+            console.error('Lỗi đồng bộ đánh giá:', err);
+        });
+}
+
+// Hàm tạo stars rating display
+function renderStars(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            stars += '<i class="fa-solid fa-star"></i>';
+        } else if (i - 0.5 <= rating) {
+            stars += '<i class="fa-solid fa-star-half-stroke"></i>';
+        } else {
+            stars += '<i class="fa-regular fa-star"></i>';
+        }
+    }
+    return stars;
+}
+
+// Cập nhật hàm submitBookRating để lưu cả localStorage và database
+function submitBookRating() {
+    const selected = document.querySelector('.book-rating-option.selected');
+    const ratingMap = { excellent: 5, good: 4, ok: 3, bad: 2, terrible: 1 };
+    const ratingKey = selected ? selected.dataset.rating : null;
+    const rating = ratingMap[ratingKey];
+    const content = document.querySelector('.book-comment-input').value.trim();
+    const currentUser = JSON.parse(localStorage.getItem('currentuser'));
+    
+    if (!currentUser) {
+        toast({ title: 'Lỗi', message: 'Vui lòng đăng nhập để đánh giá!', type: 'error', duration: 2000 });
+        return;
+    }
+    
+    if (!rating) {
+        toast({ title: 'Lỗi', message: 'Vui lòng chọn mức độ đánh giá!', type: 'error', duration: 2000 });
+        return;
+    }
+
+    // Kiểm tra trùng lặp trong localStorage
+    let reviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
+    const existingReview = reviews.find(review => 
+        review.product_id == window.currentBookId && review.user_name === currentUser.fullname
+    );
+    
+    if (existingReview) {
+        toast({ title: 'Lỗi', message: 'Bạn đã đánh giá sách này rồi!', type: 'error', duration: 2000 });
+        return;
+    }
+
+    // Tạo object review cho localStorage
+    const review = {
+        id: Date.now(),
+        user_id: currentUser.id || currentUser.phone,
+        user_name: currentUser.fullname,
+        product_id: window.currentBookId,
+        rating: rating,
+        content: content,
+        image: null,
+        created_at: new Date().toISOString()
+    };
+
+    // Lưu vào localStorage ngay lập tức
+    reviews.push(review);
+    localStorage.setItem('bookReviews', JSON.stringify(reviews));
+    
+    // Hiển thị ngay lập tức
+    toast({ title: 'Thành công', message: 'Cảm ơn bạn đã đánh giá!', type: 'success', duration: 2000 });
+    
+    // Reset form
+    document.querySelector('.book-comment-input').value = '';
+    document.querySelectorAll('.book-rating-option').forEach(opt => opt.classList.remove('selected'));
+    document.querySelector('.book-rating-option[data-rating="excellent"]').classList.add('selected');
+    
+    // Render lại reviews từ localStorage
+    let bookReviews = reviews.filter(r => r.product_id == window.currentBookId);
+    displayBookReviewsFromLocal(bookReviews);
+
+    // Gửi lên server với debug chi tiết
+    getUserRealId(currentUser.phone).then(realUserId => {
+        const reviewData = {
+            user_id: realUserId,
+            product_id: window.currentBookId,
+            rating: rating,
+            content: content
+        };
+
+        fetch('add_book_review.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reviewData)
+        })
+        .then(res => {
+            return res.text(); // Đổi thành text để debug
+        })
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+                
+                if (data.success) {
+                    syncReviewsFromServer(window.currentBookId);
+                } else {
+                    let updatedReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
+                    updatedReviews = updatedReviews.filter(r => r.id !== review.id);
+                    localStorage.setItem('bookReviews', JSON.stringify(updatedReviews));
+                    displayBookReviewsFromLocal(updatedReviews.filter(r => r.product_id == window.currentBookId));
+                    
+                    toast({ title: 'Lỗi', message: 'Không thể lưu đánh giá: ' + data.message, type: 'error', duration: 3000 });
+                }
+            } catch (e) {
+                console.error('add_book_review JSON parse error:', e);
+                console.error('Response text:', text);
+                toast({ title: 'Lỗi', message: 'Có lỗi khi xử lý phản hồi từ server!', type: 'error', duration: 3000 });
+            }
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
+        });
+    });
+}
+
+// Thêm hàm lấy user ID thực từ database với debug tốt hơn
+function getUserRealId(phone) {
+    return fetch('get_user_id.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: phone })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return res.text(); // Đổi thành text để debug
+    })
+    .then(text => {
+        try {
+            const data = JSON.parse(text);
+            
+            if (data.success) {
+                return data.user_id;
+            } else {
+                return null;
+            }
+        } catch (e) {
+            console.error('getUserRealId JSON parse error:', e);
+            console.error('Response text:', text);
+            return null;
+        }
+    })
+    .catch(err => {
+        console.error('Error getting user ID:', err);
+        return null;
+    });
 }
 
 function animationCart() {
@@ -132,18 +466,21 @@ function addCart(index) {
         note: note
     }
     let vitri = currentuser.cart.findIndex(item => item.id == productcart.id);
+    let products = JSON.parse(localStorage.getItem('products'));
+    let infoProduct = products.find(sp => sp.id == index);
+    let currentQtyInCart = vitri !== -1 ? parseInt(currentuser.cart[vitri].soluong) : 0;
+    if (parseInt(productcart.soluong) + currentQtyInCart > infoProduct.soluong) {
+        toast({ title: 'Lỗi', message: 'Số lượng đặt vượt quá số lượng còn lại!', type: 'error', duration: 3000 });
+        return;
+    }
     if (vitri == -1) {
         currentuser.cart.push(productcart);
     } else {
         currentuser.cart[vitri].soluong = parseInt(currentuser.cart[vitri].soluong) + parseInt(productcart.soluong);
     }
-    
-    
-    
     localStorage.setItem('currentuser', JSON.stringify(currentuser));
     updateAmount();
     closeModal();
-    // toast({ title: 'Success', message: 'Thêm thành công sản phẩm vào giỏ hàng', type: 'success', duration: 3000 });
 }
 
 //Show gio hang
@@ -170,7 +507,7 @@ function showCart() {
                     <button class="cart-item-delete" onclick="deleteCartItem(${product.id},this)">Xóa</button>
                     <div class="buttons_added">
                         <input class="minus is-form" type="button" value="-" onclick="decreasingNumber(this)">
-                        <input class="input-qty" max="100" min="1" name="" type="number" value="${product.soluong}">
+                        <input class="input-qty" max="${product.soluong}" min="1" name="" type="number" value="${product.soluong}">
                         <input class="plus is-form" type="button" value="+" onclick="increasingNumber(this)">
                     </div>
                 </div>
@@ -216,7 +553,8 @@ function deleteCartItem(id, el) {
 
 //Update cart total
 function updateCartTotal() {
-    document.querySelector('.text-price').innerText = vnd(getCartTotal());
+    const priceEl = document.querySelector('.text-price');
+    if (priceEl) priceEl.innerText = vnd(getCartTotal());
 }
 
 // Lay tong tien don hang
@@ -276,7 +614,15 @@ function saveAmountCart() {
             let productId = currentUser.cart.find(item => {
                 return item.id == id;
             });
-            productId.soluong = parseInt(listProduct[parseInt(index / 2)].querySelector(".input-qty").value);
+            let products = JSON.parse(localStorage.getItem('products'));
+            let infoProduct = products.find(sp => sp.id == id);
+            let newQty = parseInt(listProduct[parseInt(index / 2)].querySelector(".input-qty").value);
+            if (newQty > infoProduct.soluong) {
+                toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 3000 });
+                listProduct[parseInt(index / 2)].querySelector(".input-qty").value = infoProduct.soluong;
+                return;
+            }
+            productId.soluong = newQty;
             localStorage.setItem('currentuser', JSON.stringify(currentUser));
             updateCartTotal();
         })
@@ -465,6 +811,18 @@ signupButton.addEventListener('click', () => {
                 accounts.push(user);
                 localStorage.setItem('accounts', JSON.stringify(accounts));
                 localStorage.setItem('currentuser', JSON.stringify(user));
+                // Đồng bộ đơn guest vào tài khoản
+                let orders = localStorage.getItem('order') ? JSON.parse(localStorage.getItem('order')) : [];
+                let updated = false;
+                for (let i = 0; i < orders.length; i++) {
+                    if (orders[i].khachhang == user.phone) {
+                        orders[i].khachhang = user.phone; // Nếu sau này dùng id user thì đổi thành user.id
+                        updated = true;
+                    }
+                }
+                if (updated) {
+                    localStorage.setItem('order', JSON.stringify(orders));
+                }
                 fetch('register_user.php', {
                     method: 'POST',
                     headers: {
@@ -477,7 +835,7 @@ signupButton.addEventListener('click', () => {
                 kiemtradangnhap();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/websach/";
+                    window.location = "http://localhost/bookstore_datn/";
                 }, 2000); 
             } else {
                 toast({ title: 'Thất bại', message: 'Email hoặc số điện thoại đã tồn tại !', type: 'error', duration: 3000 });
@@ -514,21 +872,21 @@ loginButton.addEventListener('click', () => {
     }
 
     if (phonelog && passlog) {
-        let vitri = accounts.findIndex(item => item.phone == phonelog);
-        if (vitri == -1) {
+        let user = accounts.find(item => item.phone == phonelog);
+        if (!user) {
             toast({ title: 'Error', message: 'Tài khoản của bạn không tồn tại', type: 'error', duration: 3000 });
-        } else if (accounts[vitri].password == passlog) {
-            if(accounts[vitri].status == 0) {
+        } else if (user.password == passlog) {
+            if(user.status == 0) {
                 toast({ title: 'Warning', message: 'Tài khoản của bạn đã bị khóa', type: 'warning', duration: 3000 });
             } else {
-                localStorage.setItem('currentuser', JSON.stringify(accounts[vitri]));
+                localStorage.setItem('currentuser', JSON.stringify(user));
                 toast({ title: 'Success', message: 'Đăng nhập thành công', type: 'success', duration: 2000 });
                 closeModal();
                 kiemtradangnhap();
                 checkAdmin();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/websach/";
+                    window.location = "http://localhost/bookstore_datn/";
                 }, 2000);  
             }
         } else {
@@ -545,7 +903,6 @@ function kiemtradangnhap() {
         document.querySelector('.auth-container').innerHTML = `<span class="text-dndk">Tài khoản</span>
             <span class="text-tk">${user.fullname} <i class="fa-sharp fa-solid fa-caret-down"></span>`
         document.querySelector('.header-middle-right-menu').innerHTML = `<li><a href="javascript:;" onclick="myAccount()"><i class="fa-light fa-circle-user"></i> Tài khoản của tôi</a></li>
-            <li><a href="javascript:;" onclick="orderHistory()"><i class="fa-regular fa-bags-shopping"></i> Đơn hàng đã mua</a></li>
             <li class="border"><a id="logout" href="javascript:;"><i class="fa-light fa-right-from-bracket"></i class="updateCart1"> Thoát tài khoản</a></li>`
         document.querySelector('#logout').addEventListener('click',logOut)
     }
@@ -613,7 +970,7 @@ function orderHistory() {
     document.getElementById('account-user').classList.remove('open');
     document.getElementById('trangchu').classList.add('hide');
     document.getElementById('order-history').classList.add('open');
-    //renderOrderProduct();
+    renderOrderProduct();
 }
 
 function emailIsValid(email) {
@@ -665,6 +1022,7 @@ function changeInformation() {
     // Lưu thông tin vào localStorage
     localStorage.setItem('currentuser', JSON.stringify(user));
     localStorage.setItem('accounts', JSON.stringify(accounts));
+    
     
     // Gửi yêu cầu AJAX tới PHP để cập nhật thông tin trong cơ sở dữ liệu
     fetch('update_user_info.php', {
@@ -755,7 +1113,6 @@ function changePassword() {
                         }
                     })
                     .catch(error => {
-                        //console.error('Error:', error);
                         toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
                     });
                 } else {
@@ -785,7 +1142,7 @@ function renderOrderProduct() {
     let orderHtml = "";
     let arrDonHang = [];
     for (let i = 0; i < order.length; i++) {
-        if (order[i].khachhang === currentUser.phone) {
+        if (order[i].khachhang == currentUser.phone) {
             arrDonHang.push(order[i]);
         }
     }
@@ -815,8 +1172,14 @@ function renderOrderProduct() {
             });
             let textCompl, classCompl;
             if (item.trangthai == 1) {
-                textCompl = "Đã xử lý";
-                classCompl = "complete";
+                textCompl = "Đã xác nhận";
+                classCompl = "confirmed";
+            } else if (item.trangthai == 2) {
+                textCompl = "Đang giao hàng";
+                classCompl = "shipping";
+            } else if (item.trangthai == 3) {
+                textCompl = "Hoàn thành";
+                classCompl = "completed";
             } else if (item.trangthai == 4) {
                 textCompl = "Đã hủy";
                 classCompl = "cancel";
@@ -828,6 +1191,7 @@ function renderOrderProduct() {
                 <div class="order-history-status">
                     <span class="order-history-status-sp ${classCompl}">${textCompl}</span>
                     <button id="order-history-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Xem chi tiết</button>
+                    ${item.trangthai == 2 ? `<button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>` : ''}
                 </div>
                 <div class="order-history-total">
                     <span class="order-history-total-desc">Tổng tiền: </span>
@@ -838,7 +1202,8 @@ function renderOrderProduct() {
             orderHtml += productHtml;
         });
     }
-    document.querySelector(".order-history-section").innerHTML = orderHtml;
+    const orderSection = document.querySelector(".order-history-section");
+    if (orderSection) orderSection.innerHTML = orderHtml;
 }
 
 // Get Order Details
@@ -1003,7 +1368,8 @@ function searchProducts(mode) {
     document.getElementById("home-service").scrollIntoView();
     switch (mode){
         case 0:
-            result = JSON.parse(localStorage.getItem('products'));;
+            // Reset to original filtered productAll, not the entire products list
+            result = JSON.parse(localStorage.getItem('products')).filter(item => item.status == 1);
             document.querySelector('.form-search-input').value = "";
             document.getElementById("advanced-search-category-select").value = "Tất cả";
             document.getElementById("min-price").value = "";
@@ -1020,9 +1386,6 @@ function searchProducts(mode) {
 }
 
 // Phân trang 
-let perPage = 12;
-let currentPage = 1;
-let totalPage = 0;
 let perProducts = [];
 
 function displayList(productAll, perPage, currentPage) {
@@ -1038,9 +1401,64 @@ function showHomeProduct(products) {
     setupPagination(productAll, perPage, currentPage);
 }
 
-window.onload = showHomeProduct(JSON.parse(localStorage.getItem('products')))
+document.addEventListener('DOMContentLoaded', function() {
+    kiemtradangnhap();
+    checkAdmin();
+    updateAmount();
+    updateCartTotal();
+    showHomeProduct(JSON.parse(localStorage.getItem('products')));
+    // Gán lại các sự kiện cho nút đăng nhập/đăng ký nếu cần
+    let signup = document.querySelector('.signup-link');
+    let login = document.querySelector('.login-link');
+    let container = document.querySelector('.signup-login .modal-container');
+    if (login) {
+        login.addEventListener('click', () => {
+            container.classList.add('active');
+        });
+    }
+    if (signup) {
+        signup.addEventListener('click', () => {
+            container.classList.remove('active');
+        });
+    }
+    let signupbtn = document.getElementById('signup');
+    let loginbtn = document.getElementById('login');
+    let formsg = document.querySelector('.modal.signup-login');
+    if (signupbtn) {
+        signupbtn.addEventListener('click', () => {
+            formsg.classList.add('open');
+            container.classList.remove('active');
+            body.style.overflow = "hidden";
+        });
+    }
+    if (loginbtn) {
+        loginbtn.addEventListener('click', () => {
+            document.querySelector('.form-message-check-login').innerHTML = '';
+            formsg.classList.add('open');
+            container.classList.add('active');
+            body.style.overflow = "hidden";
+        });
+    }
+    // Khởi tạo đánh giá
+    initBookReviews();
+});
 
-function setupPagination(productAll, perPage) {
+// Hàm khởi tạo đánh giá khi tải trang
+function initBookReviews() {
+    // Lấy đánh giá từ server và lưu vào localStorage
+    fetch('get_all_book_reviews.php')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.setItem('bookReviews', JSON.stringify(data.reviews));
+            }
+        })
+        .catch(err => {
+            console.log('Sử dụng dữ liệu đánh giá offline');
+        });
+}
+
+function setupPagination(productAll, perPage, currentPage) {
     document.querySelector('.page-nav-list').innerHTML = '';
     let page_count = Math.ceil(productAll.length / perPage);
     for (let i = 1; i <= page_count; i++) {
@@ -1091,16 +1509,15 @@ function showCategory(category) {
     });
     
     let searchCategory = category;
-    // Lọc sản phẩm theo danh mục
-    let productSearch = productAll.filter(value => {
-        return value.category === searchCategory; 
+    // Lọc sản phẩm theo danh mục - Sử dụng trực tiếp từ localStorage thay vì biến productAll
+    let products = JSON.parse(localStorage.getItem('products'));
+    let productSearch = products.filter(value => {
+        return value.category === searchCategory && value.status == 1; 
     });
     
-    console.log(`Tìm thấy ${productSearch.length} sản phẩm trong danh mục "${searchCategory}"`);
-    
-    let currentPageSeach = 1;
-    displayList(productSearch, perPage, currentPageSeach);
-    setupPagination(productSearch, perPage, currentPageSeach);
+    currentPage = 1; // Reset về trang đầu tiên khi chuyển category
+    displayList(productSearch, perPage, currentPage);
+    setupPagination(productSearch, perPage, currentPage);
     document.getElementById("home-title").scrollIntoView();
 }
 
@@ -1136,7 +1553,7 @@ function showTraCuu() {
 
     // Xóa active class khỏi tất cả menu items và đặt active cho menu Tra cứu đơn hàng
     clearActiveMenuItems();
-    document.querySelectorAll('.menu-list-item').forEach(item => {
+    document.querySelectorAll('.menu-list-item').forEach (item => {
         if (item.textContent.trim() === 'Tra cứu đơn hàng') {
             item.classList.add('active');
         }
@@ -1147,24 +1564,26 @@ function showTraCuu() {
 function showOrder(arr) {
     let orderHtml = "";
     if(arr.length == 0) {
-        orderHtml = `<td colspan="6">Không có dữ liệu</td>`;
+        orderHtml = `<td colspan="8">Không có dữ liệu</td>`;
     } else {
         arr.forEach((item) => {
-            // Chuyển đổi trạng thái thành số nguyên để đảm bảo so sánh chính xác
             let trangThai = parseInt(item.trangthai);
             let status;
-            
-            // Xác định trạng thái hiển thị
             if (trangThai === 0) {
                 status = `<span class="status-no-complete">Chưa xử lý</span>`;
             } else if (trangThai === 1) {
-                status = `<span class="status-complete">Đã xử lý</span>`;
+                status = `<span class="status-complete">Đã xác nhận</span>`;
+            } else if (trangThai === 2) {
+                status = `<span class="status-shipping">Đang giao hàng</span>`;
+            } else if (trangThai === 3) {
+                status = `<span class="status-complete">Hoàn thành</span>`;
             } else if (trangThai === 4) {
                 status = `<span class="status-cancel">Đã hủy</span>`;
             } else {
                 status = `<span class="status-no-complete">Không xác định (${trangThai})</span>`;
             }
-            
+            let paymentStatus = (parseInt(item.payment_status) === 1) ? `<span class="status-complete">Đã thanh toán</span>` : `<span class="status-no-complete">Chưa thanh toán</span>`;
+            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' ? 'Online' : 'COD') : 'COD';
             let date = formatDate(item.thoigiandat);
             orderHtml += `
             <tr>
@@ -1173,8 +1592,11 @@ function showOrder(arr) {
             <td>${date}</td>
             <td>${vnd(item.tongtien)}</td>                               
             <td>${status}</td>
+            <td>${paymentStatus}</td>
+            <td>${paymentMethod}</td>
             <td class="control">
             <button class="btn-detail" id="" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
+            ${item.trangthai == 2 ? `<button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>` : ''}
             </td>
             </tr>      
             `;
@@ -1186,30 +1608,14 @@ function showOrder(arr) {
 // Hiển thị đơn hàng khi trang tải
 //window.onload = () => showOrder(orders);
 
-// Get Order Details
-function getOrderDetails(madon) {
-    let orderDetails = localStorage.getItem("orderDetails") ?
-        JSON.parse(localStorage.getItem("orderDetails")) : [];
-    let ctDon = [];
-    orderDetails.forEach((item) => {
-        if (item.madon == madon) {
-            ctDon.push(item);
-        }
-    });
-    return ctDon;
-}
-
 // Show Order Detail
 function detailOrder(id) {
     document.querySelector(".modal.detail-order").classList.add("open");
     let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
     let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
-    // Lấy hóa đơn 
     let order = orders.find((item) => item.id == id);
-    // Lấy chi tiết hóa đơn
     let ctDon = getOrderDetails(id);
     let spHtml = `<div class="modal-detail-left"><div class="order-item-group">`;
-
     ctDon.forEach((item) => {
         let detaiSP = products.find(product => product.id == item.id);
         if (detaiSP) {
@@ -1265,34 +1671,53 @@ function detailOrder(id) {
     </div>`;
     document.querySelector(".modal-detail-order").innerHTML = spHtml;
 
-    // Chuyển đổi trạng thái thành số nguyên
     let trangThai = parseInt(order.trangthai);
-    let classDetailBtn, textDetailBtn;
-    
+    let classDetailBtn, textDetailBtn, actionDetailBtn;
+    let extraBtns = '';
+    // Hiện nút Thanh toán ngay nếu đơn online, chưa thanh toán, trạng thái là Chưa xử lý hoặc Đã xác nhận
+    if (
+        (trangThai === 0 || trangThai === 1) &&
+        order.payment_method &&
+        order.payment_method.toLowerCase() === 'online' &&
+        (!order.payment_status || parseInt(order.payment_status) !== 1)
+    ) {
+        extraBtns = `<button class="modal-detail-btn btn-payagain" onclick="payAgain('${order.id}')">Thanh toán ngay</button>`;
+    }
     if (trangThai === 0) {
-        classDetailBtn = "btn-chuaxuly";
-        textDetailBtn = "Chưa xử lý";
+        classDetailBtn = "btn-cancel-order";
+        textDetailBtn = "Hủy đơn";
+        actionDetailBtn = `onclick=\"cancelOrder('${order.id}', this)\"`;
     } else if (trangThai === 1) {
         classDetailBtn = "btn-daxuly";
-        textDetailBtn = "Đã xử lý";
+        textDetailBtn = "Đã xác nhận";
+        actionDetailBtn = '';
+    } else if (trangThai === 2) {
+        classDetailBtn = "btn-shipping";
+        textDetailBtn = "Đang giao hàng";
+        actionDetailBtn = '';
+        extraBtns = `<button class=\"btn-danhanhang\" onclick=\"confirmReceived('${order.id}')\">Đã nhận được hàng</button>`;
+    } else if (trangThai === 3) {
+        classDetailBtn = "btn-complete";
+        textDetailBtn = "Hoàn thành";
+        actionDetailBtn = '';
+        extraBtns = '';
     } else if (trangThai === 4) {
-        classDetailBtn = "btn-cancel";
+        classDetailBtn = "btn-dahuy";
         textDetailBtn = "Đã hủy";
-    } else {
-        classDetailBtn = "btn-chuaxuly";
-        textDetailBtn = "Không xác định";
+        actionDetailBtn = '';
+        extraBtns = '';
     }
-    
     document.querySelector(
         ".modal-detail-bottom"
-    ).innerHTML = `<div class="modal-detail-bottom-left">
-        <div class="price-total">
-            <span class="thanhtien">Thành tiền</span>
-            <span class="price">${vnd(order.tongtien)}</span>
+    ).innerHTML = `<div class=\"modal-detail-bottom-left\">
+        <div class=\"price-total\">
+            <span class=\"thanhtien\">Thành tiền</span>
+            <span class=\"price\">${vnd(order.tongtien)}</span>
         </div>
     </div>
-    <div class="modal-detail-bottom-right">
-        <button class="modal-detail-btn ${classDetailBtn}" onclick="changeStatus('${order.id}',this)">${textDetailBtn}</button>
+    <div class=\"modal-detail-bottom-right\">
+        ${extraBtns}
+        <button class=\"modal-detail-btn ${classDetailBtn}\" ${actionDetailBtn}>${textDetailBtn}</button>
     </div>`;
 }
 
@@ -1385,8 +1810,134 @@ function showTrangChu() {
         }
     });
     
-    // Hiển thị tất cả sản phẩm
-    let currentPageSearch = 1;
-    displayList(productAll, perPage, currentPageSearch);
-    setupPagination(productAll, perPage, currentPageSearch);
+    // Hiển thị tất cả sản phẩm - Lấy dữ liệu mới từ localStorage
+    let allProducts = JSON.parse(localStorage.getItem('products')).filter(item => item.status == 1);
+    currentPage = 1;
+    displayList(allProducts, perPage, currentPage);
+    setupPagination(allProducts, perPage, currentPage);
+}
+
+// Thêm hàm hủy đơn hàng chuẩn phân quyền
+function cancelOrder(orderId, btn) {
+    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+    if (!currentUser) {
+        toast({ title: 'Lỗi', message: 'Bạn cần đăng nhập để hủy đơn hàng!', type: 'error', duration: 2000 });
+        return;
+    }
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
+
+    let bodyData = { orderId: orderId };
+    if (currentUser.userType == 1) {
+        // Admin
+        bodyData.isAdmin = true;
+    } else {
+        // Khách
+        bodyData.userPhone = currentUser.phone;
+    }
+
+    fetch('cancel_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+            fetch('get_orders.php')
+                .then(res => res.json())
+                .then(orders => {
+                    localStorage.setItem('order', JSON.stringify(orders));
+                    renderOrderProduct && renderOrderProduct();
+                });
+            refreshProducts(); // Đồng bộ lại sản phẩm từ server
+            document.querySelector('.modal.detail-order')?.classList.remove('open');
+        } else {
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
+        }
+    })
+    .catch(err => {
+        toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
+    });
+}
+
+function switchBookTab(tab) {
+    // Nút tab
+    document.getElementById('tab-buy').classList.remove('active');
+    document.getElementById('tab-review').classList.remove('active');
+    // Nội dung
+    const buyContent = document.querySelector('.tab-buy-content');
+    const reviewContent = document.querySelector('.tab-review-content');
+
+    if(tab === 'buy') {
+        document.getElementById('tab-buy').classList.add('active');
+        buyContent.classList.remove('tab-hidden');
+        reviewContent.classList.add('tab-hidden');
+    } else {
+        document.getElementById('tab-review').classList.add('active');
+        reviewContent.classList.remove('tab-hidden');
+        buyContent.classList.add('tab-hidden');
+    }
+}
+
+// Hàm Thanh toán lại cho đơn online chưa thanh toán
+function payAgain(orderId) {
+    let orders = JSON.parse(localStorage.getItem('order') || '[]');
+    let order = orders.find(o => o.id === orderId);
+    if (order) {
+        // Tạo lại form gửi sang VNPay với thông tin đơn hàng cũ
+        let form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/Bookstore_DATN/vnpay_php/vnpay_pay.php';
+
+        let inputAmount = document.createElement('input');
+        inputAmount.type = 'hidden';
+        inputAmount.name = 'amount';
+        inputAmount.value = order.tongtien;
+
+        let inputOrderId = document.createElement('input');
+        inputOrderId.type = 'hidden';
+        inputOrderId.name = 'order_id';
+        inputOrderId.value = order.id;
+
+        let inputOrderInfo = document.createElement('input');
+        inputOrderInfo.type = 'hidden';
+        inputOrderInfo.name = 'order_desc';
+        inputOrderInfo.value = 'Thanh toán đơn hàng ' + order.id;
+
+        form.appendChild(inputAmount);
+        form.appendChild(inputOrderId);
+        form.appendChild(inputOrderInfo);
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// --- confirmReceived ---
+function confirmReceived(orderId) {
+    if (!confirm('Bạn xác nhận đã nhận được hàng?')) return;
+    fetch('update_order_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderId, status: 3 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            toast({ title: 'Thành công', message: 'Cảm ơn bạn đã xác nhận!', type: 'success', duration: 2000 });
+            fetch('get_orders.php')
+                .then(res => res.json())
+                .then(orders => {
+                    localStorage.setItem('order', JSON.stringify(orders));
+                    renderOrderProduct && renderOrderProduct();
+                });
+            document.querySelector('.modal.detail-order')?.classList.remove('open');
+        } else {
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+        }
+    })
+    .catch(err => {
+        toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
+    });
 }

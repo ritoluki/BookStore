@@ -1,8 +1,9 @@
 <?php
 header('Content-Type: application/json');
 
-// Cấu hình
-$upload_dir = './assets/img/products/';
+// Lấy category từ client, nếu không có thì dùng 'default'
+$category = isset($_POST['category']) ? $_POST['category'] : 'default';
+$upload_dir = './assets/img/products/' . $category . '/';
 $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 $max_file_size = 5 * 1024 * 1024; // 5MB
 

@@ -1,67 +1,97 @@
 // Sự kiện tra cứu đơn hàng
-document.querySelector(".form-tracuu").addEventListener("submit", (e) => {
-    e.preventDefault(); // Ngăn chặn hành vi mặc định của form
-
-    // Lấy số điện thoại từ input
-    let sdt = document.querySelector(".tracuudon").value;
-
-    // Kiểm tra nếu số điện thoại không trống
-    if (sdt === "") {
-        toast({ title: "Chú ý", message: "Vui lòng nhập số điện thoại!", type: "warning", duration: 3000 });
-        return;
-    }
-
-    // Lấy danh sách đơn hàng từ localStorage
-    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-
-    // Lọc danh sách đơn hàng theo số điện thoại
-    let filteredOrders = orders.filter(order => order.sdtnhan === sdt);
-
-    // Hiển thị kết quả tra cứu
-    showOrdersdt(filteredOrders);
-});
+const tracuuForm = document.querySelector(".form-tracuu");
+if (tracuuForm) {
+    tracuuForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        let sdtInput = document.querySelector(".tracuudon");
+        let sdt = sdtInput.value.trim();
+        let currentUser = JSON.parse(localStorage.getItem('currentuser')) || null;
+        // Nếu chưa nhập SĐT
+        if (!sdt) {
+            toast({ title: "Cảnh báo", message: "Vui lòng nhập số điện thoại để tra cứu đơn hàng!", type: "warning", duration: 3000 });
+            return;
+        }
+        // Guest: luôn yêu cầu đăng nhập, không cho tra cứu
+        if (!currentUser) {
+            toast({ title: "Thông báo", message: "Vui lòng đăng nhập để tra cứu đơn hàng!", type: "warning", duration: 3000 });
+            return;
+        }
+        // Admin: tra cứu bất kỳ sdt nào
+        if (currentUser.userType == 1) {
+            // Lấy mới nhất từ server
+            let orders = [];
+            try {
+                const res = await fetch('get_orders.php');
+                orders = await res.json();
+            } catch (e) {
+                orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+            }
+            let filteredOrders = orders.filter(order => order.sdtnhan === sdt);
+            showOrdersdt(filteredOrders, sdt);
+            return;
+        }
+        // User thường: chỉ tra cứu đúng sdt của mình
+        if (sdt !== currentUser.phone) {
+            toast({ title: "Cảnh báo", message: "Bạn chỉ có thể tra cứu đơn hàng của chính mình!", type: "warning", duration: 3000 });
+            return;
+        }
+        // Đúng sdt, lấy mới nhất từ server
+        let orders = [];
+        try {
+            const res = await fetch('get_orders.php');
+            orders = await res.json();
+        } catch (e) {
+            orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+        }
+        let filteredOrders = orders.filter(order => order.sdtnhan === sdt);
+        showOrdersdt(filteredOrders, sdt);
+    });
+}
 
 // Hàm hiển thị đơn hàng
-function showOrdersdt(arr) {
+function showOrdersdt(arr, sdt) {
     let orderHtml = ``;
     if (arr.length === 0) {
         orderHtml = `<br><h2>Giỏ hàng của bạn vẫn đang chờ bạn!<br>Đừng bỏ lỡ những sản phẩm tuyệt vời từ Shop mình nhé (^.^)</h2>`;
     } else {
-        orderHtml = '<br><div class="main-account"><div class="main-account-header"><h3>Thông tin đơn hàng từ SĐT của bạn</h3><p>Xem chi tiết, trạng thái của những đơn hàng.</p></div><div class="section"><div class="table"><table width="100%"><thead><tr><td>Mã đơn</td><td>Tên người nhận</td><td>Ngày đặt</td><td>Tổng tiền</td><td>Trạng thái</td><td>Thao tác</td></tr></thead><tbody>';
+        // Kiểm tra có đơn nào là của đúng SĐT tra cứu không
+        let hasOwnerOrder = arr.some(item => item.sdtnhan && sdt && item.sdtnhan.trim() === sdt.trim());
+        orderHtml = '<br><div class="main-account"><div class="main-account-header"><h3>Thông tin đơn hàng từ SĐT của bạn</h3><p>Xem chi tiết, trạng thái của những đơn hàng.</p></div><div class="section"><div class="table"><table width="100%"><thead><tr><td>Mã đơn</td><td>Tên người nhận</td><td>Ngày đặt</td><td>Tổng tiền</td><td>Trạng thái</td><td>Thanh toán</td><td>Hình thức</td>';
+        if (hasOwnerOrder) {
+            orderHtml += '<td>Thao tác</td>';
+        }
+        orderHtml += '</tr></thead><tbody>';
         arr.forEach((item) => {
-            // Chuyển đổi trạng thái thành số nguyên để đảm bảo so sánh chính xác
             let trangThai = parseInt(item.trangthai);
             let status;
-            
             if (trangThai === 0) {
                 status = `<span class="status-no-complete">Chưa xử lý</span>`;
             } else if (trangThai === 1) {
-                status = `<span class="status-complete">Đã xử lý</span>`;
+                status = `<span class=\"confirmed\">Đã xác nhận</span>`;
+            } else if (trangThai === 2) {
+                status = `<span class=\"status-shipping\">Đang giao hàng</span>`;
+            } else if (trangThai === 3) {
+                status = `<span class=\"completed\">Hoàn thành</span>`;
             } else if (trangThai === 4) {
-                status = `<span class="status-cancel">Đã hủy</span>`;
+                status = `<span class=\"status-cancel\">Đã hủy</span>`;
             } else {
-                status = `<span class="status-no-complete">Không xác định (${trangThai})</span>`;
+                status = `<span class=\"status-no-complete\">Không xác định (${trangThai})</span>`;
             }
-            
-            console.log(`Đơn hàng ${item.id}: trangthai = ${item.trangthai}, trangThai = ${trangThai}`);
-            
             let date = formatDate(item.thoigiandat);
-            
-            // Check if the current logged-in user's phone matches the order's phone
-            let currentUser = JSON.parse(localStorage.getItem('currentuser')) || null;
-            let isPhoneMatch = currentUser && currentUser.phone === item.sdtnhan;
-            
-            // Only show cancel button if status is 0 (not processed) AND phone matches
-            let cancelButton = '';
-            if (trangThai === 0) {
-                if (isPhoneMatch) {
-                    cancelButton = `<button class="btn-cancel" onclick="cancelOrder('${item.id}')"><i class="fa-regular fa-times"></i> Hủy đơn</button>`;
-                } else {
-                    // Add a disabled button with tooltip explaining why it's disabled
-                    cancelButton = `<button class="btn-cancel" disabled title="Chỉ chủ sở hữu đơn hàng mới có thể hủy đơn"><i class="fa-regular fa-times"></i> Hủy đơn</button>`;
-                }
-            }
-            
+            let isOwner = item.sdtnhan && sdt && item.sdtnhan.trim() === sdt.trim();
+            // Nút chi tiết chỉ hiện nếu đúng chủ đơn hàng
+            let detailBtn = isOwner
+                ? `<button class="btn-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>`
+                : '';
+            // Trạng thái thanh toán
+            let paymentStatus = (parseInt(item.payment_status) === 1)
+                ? '<span class="pay-status pay-success">Đã thanh toán</span>'
+                : '<span class="pay-status pay-pending">Chưa thanh toán</span>';
+            let paymentMethod = item.payment_method
+                ? (item.payment_method.toLowerCase() === 'online'
+                    ? '<span class="pay-method pay-online">Online</span>'
+                    : '<span class="pay-method pay-cod">COD</span>')
+                : '<span class="pay-method pay-cod">COD</span>';
             orderHtml += `
             <tr>
                 <td>${item.id}</td>
@@ -69,10 +99,15 @@ function showOrdersdt(arr) {
                 <td>${date}</td>
                 <td>${vnd(item.tongtien)}</td>
                 <td>${status}</td>
+                <td>${paymentStatus}</td>
+                <td>${paymentMethod}</td>`;
+            if (hasOwnerOrder) {
+                orderHtml += `
                 <td class="control">
-                    <button class="btn-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
-                    ${cancelButton}
-                </td>
+                    ${detailBtn}
+                </td>`;
+            }
+            orderHtml += `
             </tr>`;
         });
         orderHtml += '</tbody></table></div></div></div>';
@@ -186,93 +221,107 @@ function getOrderDetails(madon) {
 
 // Hàm hủy đơn hàng
 function cancelOrder(orderId) {
+    let currentUser = JSON.parse(localStorage.getItem('currentuser')) || null;
+    if (!currentUser) {
+        toast({ title: 'Lỗi', message: 'Bạn cần đăng nhập để hủy đơn hàng!', type: 'error', duration: 2000 });
+        return;
+    }
     if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
-        // Lấy thông tin người dùng hiện tại
-        let currentUser = JSON.parse(localStorage.getItem('currentuser')) || null;
-        let userPhone = currentUser ? currentUser.phone : null;
-        
-        // Chuẩn bị dữ liệu để gửi đến server
-        const requestData = {
-            orderId: orderId,
-            userPhone: userPhone
-        };
-        
-        // Gọi API hủy đơn hàng
-        fetch('cancel_order.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok: ' + response.status);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('API response:', data);
-            
-            if (data.success) {
-                // Hiển thị thông báo thành công
-                toast({ 
-                    title: "Thành công", 
-                    message: "Đã hủy đơn hàng thành công!", 
-                    type: "success", 
-                    duration: 3000 
-                });
-                
-                // Cập nhật lại giao diện
-                let sdt = document.querySelector(".tracuudon").value;
-                
-                // Lấy danh sách đơn hàng từ localStorage
-                let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-                
-                // Tìm và cập nhật đơn hàng đã hủy trong localStorage
-                let orderIndex = orders.findIndex(order => order.id === orderId);
-                if (orderIndex !== -1) {
-                    // Sử dụng trạng thái từ phản hồi API thay vì giá trị cứng
-                    if (data.order && typeof data.order.trangthai !== 'undefined') {
-                        orders[orderIndex].trangthai = data.order.trangthai;
-                        console.log(`Đơn hàng ${orderId} đã được cập nhật thành trạng thái ${data.order.trangthai} từ API`);
-                    } else {
-                        // Sử dụng giá trị mặc định nếu không nhận được từ API
-                        orders[orderIndex].trangthai = 4;
-                        console.log(`Đơn hàng ${orderId} đã được cập nhật thành trạng thái 4 (mặc định)`);
-                    }
-                    
-                    // Lưu vào localStorage
-                    localStorage.setItem("order", JSON.stringify(orders));
-                    
-                    // Kiểm tra xem lưu có thành công không
-                    let updatedOrders = JSON.parse(localStorage.getItem("order"));
-                    let updatedOrder = updatedOrders.find(o => o.id === orderId);
-                    console.log(`Sau khi lưu, trạng thái đơn hàng ${orderId}: ${updatedOrder.trangthai} (type: ${typeof updatedOrder.trangthai})`);
+        let userPhone = currentUser.phone;
+        let orders = localStorage.getItem('order') ? JSON.parse(localStorage.getItem('order')) : [];
+        let order = orders.find(item => item.id == orderId);
+        // Cho phép admin hủy bất kỳ đơn nào, khách chỉ được hủy đơn của mình
+        if (order && (order.khachhang == userPhone || currentUser.userType == 1)) {
+            // Hoàn trả số lượng sách về kho
+            let orderDetails = localStorage.getItem('orderDetails') ? JSON.parse(localStorage.getItem('orderDetails')) : [];
+            let products = JSON.parse(localStorage.getItem('products'));
+            let details = orderDetails.filter(item => item.madon == orderId);
+            details.forEach(async detail => {
+                let p = products.find(sp => sp.id == detail.id);
+                if (p) {
+                    p.soluong += parseInt(detail.soluong);
+                    // Gọi API cập nhật số lượng về database
+                    await fetch('update_product_quantity.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: p.id, soluong: p.soluong })
+                    });
                 }
-                
-                // Lọc và hiển thị lại danh sách đơn hàng
-                let filteredOrders = orders.filter(order => order.sdtnhan === sdt);
-                showOrdersdt(filteredOrders);
-            } else {
-                // Hiển thị thông báo lỗi
+            });
+            localStorage.setItem('products', JSON.stringify(products));
+            // Chuẩn bị dữ liệu để gửi đến server
+            const requestData = {
+                orderId: orderId,
+                userPhone: userPhone
+            };
+            if (currentUser.userType == 1) {
+                requestData.isAdmin = true;
+            }
+            // Gọi API hủy đơn hàng
+            fetch('cancel_order.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Hiển thị thông báo thành công
+                    toast({ 
+                        title: "Thành công", 
+                        message: "Đã hủy đơn hàng thành công!", 
+                        type: "success", 
+                        duration: 3000 
+                    });
+                    // Cập nhật lại giao diện
+                    let sdt = document.querySelector(".tracuudon").value;
+                    // Lấy danh sách đơn hàng từ localStorage
+                    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+                    // Tìm và cập nhật đơn hàng đã hủy trong localStorage
+                    let orderIndex = orders.findIndex(order => order.id === orderId);
+                    if (orderIndex !== -1) {
+                        // Sử dụng trạng thái từ phản hồi API thay vì giá trị cứng
+                        if (data.order && typeof data.order.trangthai !== 'undefined') {
+                            orders[orderIndex].trangthai = data.order.trangthai;
+                        } else {
+                            // Sử dụng giá trị mặc định nếu không nhận được từ API
+                            orders[orderIndex].trangthai = 4;
+                        }
+                        // Lưu vào localStorage
+                        localStorage.setItem("order", JSON.stringify(orders));
+                    }
+                    // Lọc và hiển thị lại danh sách đơn hàng
+                    let filteredOrders = orders.filter(order => order.sdtnhan === sdt);
+                    showOrdersdt(filteredOrders, sdt);
+                } else {
+                    // Hiển thị thông báo lỗi
+                    toast({ 
+                        title: "Thất bại", 
+                        message: data.message || "Không thể hủy đơn hàng!", 
+                        type: "error", 
+                        duration: 3000 
+                    });
+                }
+            })
+            .catch(error => {
                 toast({ 
-                    title: "Thất bại", 
-                    message: data.message || "Không thể hủy đơn hàng!", 
+                    title: "Lỗi", 
+                    message: "Đã xảy ra lỗi khi hủy đơn hàng: " + error.message, 
                     type: "error", 
                     duration: 3000 
                 });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            toast({ 
-                title: "Lỗi", 
-                message: "Đã xảy ra lỗi khi hủy đơn hàng: " + error.message, 
-                type: "error", 
-                duration: 3000 
             });
-        });
+        } else {
+            toast({ title: 'Lỗi', message: 'Bạn không có quyền hủy đơn này!', type: 'error', duration: 2000 });
+            return;
+        }
     }
 }
 
@@ -280,15 +329,9 @@ function cancelOrder(orderId) {
 function syncOrderStatusWithServer() {
     // Lấy danh sách đơn hàng từ localStorage
     let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-    
     if (orders.length === 0) {
-        console.log("Không có đơn hàng nào trong localStorage để đồng bộ");
         return;
     }
-    
-    console.log("Đang đồng bộ trạng thái đơn hàng với server...");
-    
-    // Gọi API để lấy trạng thái đơn hàng từ server
     fetch('get_orders.php')
         .then(response => {
             if (!response.ok) {
@@ -300,13 +343,9 @@ function syncOrderStatusWithServer() {
             if (!Array.isArray(serverOrders)) {
                 throw new Error('Invalid server response format');
             }
-            
             let hasUpdates = false;
             let fixes = [];
-            
-            // Duyệt qua các đơn hàng trong localStorage và so sánh với server
             orders.forEach((localOrder, index) => {
-                // Đảm bảo trạng thái là số nguyên trong localStorage
                 if (typeof localOrder.trangthai === 'string') {
                     orders[index].trangthai = parseInt(localOrder.trangthai) || 0;
                     fixes.push({
@@ -317,18 +356,11 @@ function syncOrderStatusWithServer() {
                     });
                     hasUpdates = true;
                 }
-                
-                // Tìm đơn hàng tương ứng từ server
                 const serverOrder = serverOrders.find(o => o.id === localOrder.id);
-                
                 if (serverOrder) {
-                    // Chuyển đổi trạng thái thành số nguyên để so sánh
                     const localStatus = parseInt(orders[index].trangthai);
                     const serverStatus = parseInt(serverOrder.trangthai);
-                    
-                    // Nếu trạng thái khác nhau, cập nhật localStorage
                     if (localStatus !== serverStatus) {
-                        console.log(`Đồng bộ đơn hàng ${localOrder.id}: local=${localStatus}, server=${serverStatus}`);
                         orders[index].trangthai = serverStatus;
                         fixes.push({
                             id: localOrder.id,
@@ -340,13 +372,8 @@ function syncOrderStatusWithServer() {
                     }
                 }
             });
-            
-            // Nếu có cập nhật, lưu lại vào localStorage
             if (hasUpdates) {
                 localStorage.setItem("order", JSON.stringify(orders));
-                console.log("Đã đồng bộ trạng thái đơn hàng với server!", fixes);
-                
-                // Hiển thị thông báo khi có sự thay đổi
                 if (fixes.length > 0) {
                     toast({ 
                         title: "Đồng bộ dữ liệu", 
@@ -355,15 +382,7 @@ function syncOrderStatusWithServer() {
                         duration: 3000 
                     });
                 }
-                
-                // Nếu đang ở trang tra cứu đơn hàng, hiển thị lại danh sách
-                let sdt = document.querySelector(".tracuudon");
-                if (sdt && sdt.value) {
-                    let filteredOrders = orders.filter(order => order.sdtnhan === sdt.value);
-                    showOrdersdt(filteredOrders);
-                }
-            } else {
-                console.log("Không có sự khác biệt trạng thái nào được tìm thấy.");
+                // KHÔNG render lại bảng ở đây!
             }
         })
         .catch(error => {
@@ -384,147 +403,4 @@ document.addEventListener('DOMContentLoaded', function() {
 document.querySelector(".form-tracuu").addEventListener("submit", function(e) {
     // Đồng bộ trước khi hiển thị kết quả
     syncOrderStatusWithServer();
-});
-
-// Script để tìm kiếm và hiển thị đơn hàng theo số điện thoại
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Lấy các phần tử DOM
-    const searchForm = document.querySelector('.form-tracuu');
-    const searchInput = document.querySelector('.tracuudon');
-    const searchButton = document.querySelector('.filter-don');
-    
-    // Xử lý sự kiện submit form tìm kiếm
-    searchForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        searchOrders();
-    });
-    
-    // Xử lý sự kiện click nút tìm kiếm
-    searchButton.addEventListener('click', function(e) {
-        e.preventDefault();
-        searchOrders();
-    });
-    
-    // Hàm tìm kiếm đơn hàng
-    function searchOrders() {
-        const phoneNumber = searchInput.value.trim();
-        
-        if (!phoneNumber) {
-            toast({ 
-                title: 'Cảnh báo', 
-                message: 'Vui lòng nhập số điện thoại để tra cứu đơn hàng', 
-                type: 'warning', 
-                duration: 3000 
-            });
-            return;
-        }
-        
-        // Lấy danh sách đơn hàng từ localStorage
-        const orders = localStorage.getItem('order') ? JSON.parse(localStorage.getItem('order')) : [];
-        
-        // Lọc đơn hàng theo số điện thoại
-        const filteredOrders = orders.filter(order => order.khachhang === phoneNumber || order.sdtnhan === phoneNumber);
-        
-        // Hiển thị kết quả
-        displayOrders(filteredOrders);
-    }
-    
-    // Hàm hiển thị đơn hàng
-    function displayOrders(orders) {
-        const ordersContainer = document.getElementById('showOrdersdt');
-        
-        // Nếu không có đơn hàng nào
-        if (orders.length === 0) {
-            ordersContainer.innerHTML = `
-                <div style="text-align: center; padding: 30px;">
-                    <img src="./assets/img/empty-order.jpg" alt="Không có đơn hàng" style="max-width: 200px; margin-bottom: 20px;">
-                    <p style="color: #666; font-size: 16px;">Không tìm thấy đơn hàng nào với số điện thoại này</p>
-                </div>
-            `;
-            return;
-        }
-        
-        // Sắp xếp đơn hàng theo thời gian (mới nhất lên đầu)
-        orders.sort((a, b) => new Date(b.thoigiandat) - new Date(a.thoigiandat));
-        
-        // Tạo HTML cho bảng đơn hàng
-        let html = `
-            <table>
-                <thead>
-                    <tr>
-                        <td>MÃ ĐƠN</td>
-                        <td>TÊN NGƯỜI NHẬN</td>
-                        <td>NGÀY ĐẶT</td>
-                        <td>TỔNG TIỀN</td>
-                        <td>TRẠNG THÁI</td>
-                        <td>THAO TÁC</td>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        // Thêm từng đơn hàng vào bảng
-        orders.forEach(order => {
-            // Xử lý trạng thái đơn hàng
-            let statusHtml = '';
-            let statusClass = '';
-            
-            switch (parseInt(order.trangthai)) {
-                case 0:
-                    statusHtml = 'Đang xử lý';
-                    statusClass = 'status-no-complete';
-                    break;
-                case 1:
-                    statusHtml = 'Đã xử lý';
-                    statusClass = 'status-complete';
-                    break;
-                case 4:
-                    statusHtml = 'Đã hủy';
-                    statusClass = 'status-cancel';
-                    break;
-                default:
-                    statusHtml = 'Không xác định';
-                    statusClass = 'status-no-complete';
-            }
-            
-            // Format ngày đặt hàng
-            const orderDate = formatDate(order.thoigiandat);
-            
-            // Thêm dòng đơn hàng
-            html += `
-                <tr>
-                    <td>${order.id}</td>
-                    <td>${order.tenguoinhan}</td>
-                    <td>${orderDate}</td>
-                    <td>${vnd(order.tongtien)}</td>
-                    <td><span class="${statusClass}">${statusHtml}</span></td>
-                    <td>
-                        <button class="btn-detail" onclick="detailOrder('${order.id}')">
-                            <i class="fa-regular fa-eye"></i> Chi tiết
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        html += `
-                </tbody>
-            </table>
-        `;
-        
-        // Hiển thị bảng đơn hàng
-        ordersContainer.innerHTML = html;
-    }
-    
-    // Hàm định dạng ngày tháng
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-    }
-    
-    // Hàm định dạng tiền VND
-    function vnd(price) {
-        return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-    }
 });

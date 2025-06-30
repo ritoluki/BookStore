@@ -17,19 +17,12 @@ try {
     $mail->SMTPAuth   = true;                             // Bật xác thực SMTP
     $mail->Username   = 'bookshopdatn@gmail.com';         // Email của bạn
     
-    // CHÚ Ý: Đây là App Password (không phải mật khẩu Gmail thông thường)
-    // Để tạo mật khẩu ứng dụng:
-    // 1. Truy cập Google Account > Security > 2-Step Verification (phải bật)
-    // 2. Sau đó vào App Passwords > Tạo mật khẩu mới cho ứng dụng
+
     $mail->Password   = 'kvec wxoz ptjx utif';            // Thay bằng App Password thực của bạn
     
     // Cấu hình bảo mật
     $mail->SMTPSecure = 'ssl';                            // Sử dụng SSL
     $mail->Port       = 465;                              // Cổng SSL
-    
-    // Hoặc có thể dùng TLS (bỏ comment dòng dưới và comment 2 dòng trên nếu muốn dùng TLS)
-    // $mail->SMTPSecure = 'tls';                         // Sử dụng TLS
-    // $mail->Port       = 587;                           // Cổng TLS
     
     // Cấu hình bổ sung
     $mail->CharSet    = 'UTF-8';                          // Hỗ trợ tiếng Việt
@@ -114,5 +107,26 @@ function testSMTPConnection() {
     } catch (Exception $e) {
         return "Lỗi kiểm tra SMTP: " . $e->getMessage();
     }
+}
+
+function sendPaymentReminderMail($order) {
+    $to = $order['email'];
+    $orderId = htmlspecialchars($order['id']);
+    $customerName = htmlspecialchars($order['tenguoinhan']);
+    $subject = "Vui lòng hoàn tất thanh toán đơn hàng #$orderId";
+    $body = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);'>
+        <h2 style='color:#e67e22;'>Nhắc nhở thanh toán đơn hàng #$orderId</h2>
+        <p>Xin chào $customerName,</p>
+        <p>Bạn đã đặt đơn hàng tại Book Shop nhưng chưa hoàn tất thanh toán online. Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý và giao hàng cho bạn sớm nhất.</p>
+        <p><b>Thông tin đơn hàng:</b></p>
+        <ul>
+            <li><b>Mã đơn hàng:</b> #$orderId</li>
+            <li><b>Ngày đặt:</b> " . date('d/m/Y', strtotime($order['thoigiandat'])) . "</li>
+            <li><b>Tổng tiền:</b> " . number_format($order['tongtien']) . " VNĐ</li>
+        </ul>
+        <p>Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi qua email hoặc hotline.</p>
+        <p style='color:#888;font-size:13px;'>Cảm ơn bạn đã lựa chọn Book Shop!</p>
+    </div>";
+    return sendEmail($to, $subject, $body);
 }
 ?>

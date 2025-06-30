@@ -1,0 +1,56 @@
+TRẠNG THÁI ĐƠN HÀNG TRONG WEBSITE BÁN SÁCH
+
+1. trangthai = 0: Chưa xử lý
+   - Hiển thị: "Chưa xử lý"
+   - Màu: Cam (status-no-complete)
+   - Chức năng: Có thể hủy đơn, admin xác nhận để chuyển sang "Đã xác nhận"
+
+2. trangthai = 1: Đã xác nhận
+   - Hiển thị: "Đã xác nhận"
+   - Màu: Xanh lá (confirmed)
+   - Chức năng: Admin có thể chuyển sang "Đang giao hàng"
+   - Không thể hủy đơn ở trạng thái này
+
+3. trangthai = 2: Đang giao hàng
+   - Hiển thị: "Đang giao hàng"
+   - Màu: Xanh dương (status-shipping)
+   - Chức năng: Khách hàng có thể bấm "Đã nhận được hàng" để chuyển sang "Hoàn thành"
+   - Không thể hủy đơn ở trạng thái này
+
+4. trangthai = 3: Hoàn thành
+   - Hiển thị: "Hoàn thành"
+   - Màu: Xanh nước biển (completed)
+   - Chức năng: Đơn đã hoàn tất, không thể thay đổi trạng thái nữa
+
+5. trangthai = 4: Đã hủy
+   - Hiển thị: "Đã hủy"
+   - Màu: Đỏ (status-cancel)
+   - Chức năng: Đơn đã bị hủy, không thể thay đổi trạng thái nữa
+
+---
+
+LUỒNG CHUYỂN TRẠNG THÁI HỢP LỆ:
+
+- 0 (Chưa xử lý) → 1 (Đã xác nhận) → 2 (Đang giao hàng) → 3 (Hoàn thành)
+- 0 (Chưa xử lý) → 4 (Đã hủy)
+
+- Không thể chuyển trạng thái ngược hoặc nhảy cóc.
+- Không thể hủy đơn khi trạng thái > 0.
+
+---
+
+Màu sắc hiển thị:
+- status-no-complete: Cam
+- confirmed: Xanh lá
+- status-shipping: Xanh dương
+- completed: Xanh nước biển
+- status-cancel: Đỏ
+
+---
+
+Chức năng tương ứng:
+- Admin có thể xác nhận, chuyển sang đang giao hàng, hoàn thành đơn.
+- Khách hàng chỉ có thể xác nhận "Đã nhận được hàng" khi đơn ở trạng thái "Đang giao hàng".
+- Đơn đã hoàn thành hoặc đã hủy không thể thay đổi trạng thái.
+
+LƯU Ý: Khi hủy đơn hàng, trạng thái trong database (bảng `order`) sẽ được cập nhật thành 4. 

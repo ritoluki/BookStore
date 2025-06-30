@@ -6,7 +6,7 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "websach";
+$dbname = "websach"; 
 $port = 3308;
 
 // Create connection
@@ -22,4 +22,4 @@ mysqli_query($conn, "SET time_zone = '+07:00'");
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
-?> 
+?>

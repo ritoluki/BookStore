@@ -18,6 +18,7 @@ function createProduct() {
                         img: String(product.img),           // Đảm bảo là chuỗi
                         category: String(product.category), // Đảm bảo là chuỗi
                         price: Number(product.price),       // Chuyển đổi thành số nếu cần
+                        soluong: Number(product.soluong),   // Thêm trường số lượng
                         desc: String(product.describes) // Đảm bảo là chuỗi
                     };
                 });
@@ -47,6 +48,7 @@ function refreshProducts() {
                     img: String(product.img),
                     category: String(product.category),
                     price: Number(product.price),
+                    soluong: Number(product.soluong),
                     desc: String(product.describes)
                 };
             });
@@ -196,7 +198,44 @@ function createOrders() {
     }
 }
 
+function cancelOrder(orderId, btn) {
+    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+    if (!currentUser) {
+        toast({ title: 'Lỗi', message: 'Bạn cần đăng nhập để hủy đơn hàng!', type: 'error', duration: 2000 });
+        return;
+    }
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) return;
 
+    let bodyData = { orderId: orderId };
+    if (currentUser.userType == 1) {
+        // Admin
+        bodyData.isAdmin = true;
+    } else {
+        // Khách
+        bodyData.userPhone = currentUser.phone;
+    }
+
+    fetch('cancel_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+            // Reload lại danh sách đơn hàng
+            renderOrderProduct && renderOrderProduct();
+            // Đóng modal nếu có
+            document.querySelector('.modal.detail-order')?.classList.remove('open');
+        } else {
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
+        }
+    })
+    .catch(err => {
+        toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
+    });
+}
 
 // Gọi các hàm cập nhật khi tải lại trang
 window.onload = function () {

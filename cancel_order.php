@@ -51,10 +51,12 @@ try {
     // Check if the user is authorized to cancel this order
     // Admin can cancel any order, regular user can only cancel their own
     $isAdmin = isset($data['isAdmin']) && $data['isAdmin'] === true;
-    
-    if (!$isAdmin && $userPhone !== null && $order['sdtnhan'] !== $userPhone) {
-        echo json_encode(['success' => false, 'message' => 'Bạn không có quyền hủy đơn hàng này']);
-        exit;
+    if (!$isAdmin) {
+        // Chỉ cần khách đăng nhập và số điện thoại nhận hàng trùng userPhone
+        if ($userPhone === null || $order['sdtnhan'] !== $userPhone) {
+            echo json_encode(['success' => false, 'message' => 'Bạn không có quyền hủy đơn hàng này']);
+            exit;
+        }
     }
 
     // Cập nhật trạng thái đơn hàng thành đã hủy (4)
@@ -72,6 +74,23 @@ try {
     $affected = mysqli_stmt_affected_rows($updateStmt);
     
     if ($affected > 0) {
+        // Hoàn trả số lượng về kho
+        $sqlDetails = "SELECT product_id, soluong FROM orderDetails WHERE madon = ?";
+        $stmtDetails = $conn->prepare($sqlDetails);
+        $stmtDetails->bind_param("s", $orderId);
+        $stmtDetails->execute();
+        $resultDetails = $stmtDetails->get_result();
+        while ($row = $resultDetails->fetch_assoc()) {
+            $sqlUpdateProduct = "UPDATE products SET soluong = soluong + ? WHERE id = ?";
+            $stmtUpdateProduct = $conn->prepare($sqlUpdateProduct);
+            $soluong = intval($row['soluong']);
+            $product_id = intval($row['product_id']);
+            $stmtUpdateProduct->bind_param("ii", $soluong, $product_id);
+            $stmtUpdateProduct->execute();
+            $stmtUpdateProduct->close();
+        }
+        $stmtDetails->close();
+        
         // Lấy thông tin email của khách hàng
         $getUserSql = "SELECT email FROM users WHERE id = ?";
         $userStmt = mysqli_prepare($conn, $getUserSql);
@@ -92,7 +111,7 @@ try {
         // Gửi email thông báo hủy đơn hàng
         if (!empty($user_email)) {
             require_once 'order_mail_helper.php';
-            sendOrderCancellationEmail($order, $user_email);
+            sendOrderCancellationEmailByCustomer($order, $user_email);
         }
 
         // Truy vấn lại để lấy thông tin đơn hàng đã cập nhật
@@ -108,7 +127,7 @@ try {
             'message' => 'Đã hủy đơn hàng thành công',
             'order' => [
                 'id' => $updatedOrder['id'],
-                'trangthai' => (int)$updatedOrder['trangthai'], // Chuyển đổi sang số nguyên rõ ràng
+                'trangthai' => (int)$updatedOrder['trangthai'],
                 'message' => 'Đơn hàng đã được cập nhật thành trạng thái ' . $updatedOrder['trangthai']
             ]
         ]);
@@ -125,5 +144,6 @@ try {
 } catch (Exception $e) {
     error_log("Lỗi hủy đơn hàng: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()]);
+    exit;
 }
 ?> 

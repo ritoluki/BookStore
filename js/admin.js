@@ -17,15 +17,6 @@ menuIconButton.addEventListener("click", () => {
     sidebar.classList.toggle("open");
 });
 
-// log out admin user
-/*
-let toogleMenu = document.querySelector(".profile");
-let mune = document.querySelector(".profile-cropdown");
-toogleMenu.onclick = function () {
-    mune.classList.toggle("active");
-};
-*/
-
 // tab for section
 const sidebars = document.querySelectorAll(".sidebar-list-item.tab-content");
 const sections = document.querySelectorAll(".section");
@@ -147,12 +138,15 @@ async function updateStatisticsDisplay() {
 // Call this function when the page loads
 document.addEventListener('DOMContentLoaded', function() {
     updateStatisticsDisplay();
+    // Load orders when page loads
+    loadOrdersFromDatabase();
 });
 
 // Doi sang dinh dang tien VND
 function vnd(price) {
     return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 }
+
 // Phân trang 
 let perPage = 12;
 let currentPage = 1;
@@ -212,7 +206,7 @@ function showProductArr(arr) {
                     <img src="${imgPath}" alt="">
                     <div class="list-info">
                         <h4>${product.title}</h4>
-                        <p class="list-note">${product.desc}</p>
+                        <p class="list-note">${product.describes || ''}</p>
                         <span class="list-category">${product.category}</span>
                     </div>
                 </div>
@@ -231,35 +225,28 @@ function showProductArr(arr) {
         });
     }
     document.getElementById("show-product").innerHTML = productHtml;
-}
+}   
 
 // Hàm tìm đường dẫn đầy đủ của hình ảnh
 function findProductImagePath(imgPath) {
     // If it's already a full URL (from upload_image.php) or an absolute path, return as is
     if (imgPath.startsWith('./assets/img/products/') || imgPath.startsWith('http')) {
         return imgPath;
-    }
-    
     // If it's a data URL (from FileReader), return as is
-    if (imgPath.startsWith('data:image/')) {
+    } else if (imgPath.startsWith('data:image/')) {
         return imgPath;
-    }
-    
     // Handle relative paths
-    if (!imgPath.includes('/assets/img/products/')) {
+    } else {
         // Extract filename if it contains a path
         const fileName = imgPath.split('/').pop();
         return `./assets/img/products/${fileName}`;
     }
-    
-    return imgPath;
 }
 
 function showProduct() {
     let selectOp = document.getElementById('the-loai').value;
     let valeSearchInput = document.getElementById('form-search-product').value;
     let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
-
     if(selectOp == "Tất cả") {
         result = products.filter((item) => item.status == 1);
     } else if(selectOp == "Đã xóa") {
@@ -267,11 +254,9 @@ function showProduct() {
     } else {
         result = products.filter((item) => item.category == selectOp);
     }
-
     result = valeSearchInput == "" ? result : result.filter(item => {
         return item.title.toString().toUpperCase().includes(valeSearchInput.toString().toUpperCase());
     })
-
     displayList(result, perPage, currentPage);
     setupPagination(result, perPage, currentPage);
 }
@@ -284,8 +269,6 @@ function cancelSearchProduct() {
     setupPagination(products, perPage, currentPage);
 }
 
-window.onload = showProduct();
-
 function createId(arr) {
     let id = arr.length;
     let check = arr.find((item) => item.id == id);
@@ -295,6 +278,7 @@ function createId(arr) {
     }
     return id;
 }
+
 // Xóa sản phẩm 
 function deleteProduct(id) {
     let products = JSON.parse(localStorage.getItem("products"));
@@ -303,21 +287,20 @@ function deleteProduct(id) {
     })
     if (confirm("Bạn có chắc muốn xóa?") == true) {
         products[index].status = 0;
-        
-        toast({ title: 'Success', message: 'Xóa sản phẩm thành công !', type: 'success', duration: 3000 });
+        localStorage.setItem("products", JSON.stringify(products));
+        // Gửi yêu cầu AJAX tới PHP để cập nhật database
+        fetch('modify_product.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'delete' })
+        }); 
+        showProduct();
     }
-    localStorage.setItem("products", JSON.stringify(products));
-    // Gửi yêu cầu AJAX tới PHP để cập nhật database
-    fetch('modify_product.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: id, action: 'delete' })
-    });
-    showProduct();
 }
 
+// Khôi phục sản phẩm
 function changeStatusProduct(id) {
     let products = JSON.parse(localStorage.getItem("products"));
     let index = products.findIndex(item => {
@@ -325,26 +308,24 @@ function changeStatusProduct(id) {
     })
     if (confirm("Bạn có chắc chắn muốn hủy xóa?") == true) {
         products[index].status = 1;
-        
-        toast({ title: 'Success', message: 'Khôi phục sản phẩm thành công !', type: 'success', duration: 3000 });
+        localStorage.setItem("products", JSON.stringify(products));
+        // Gửi yêu cầu AJAX tới PHP để cập nhật database
+        fetch('modify_product.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: id, action: 'restore' })
+        }); 
+        showProduct();
     }
-    localStorage.setItem("products", JSON.stringify(products));
-    // Gửi yêu cầu AJAX tới PHP để cập nhật database
-    fetch('modify_product.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: id, action: 'restore' })
-    });
-    showProduct();
 }
 
 var indexCur;
 function editProduct(id) {
     let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
     let index = products.findIndex(item => {
-        return item.id == id;
+        return item.id == id
     })
     indexCur = index;
     document.querySelectorAll(".add-product-e").forEach(item => {
@@ -358,20 +339,19 @@ function editProduct(id) {
     document.querySelector(".upload-image-preview").src = findProductImagePath(products[index].img);
     document.getElementById("ten-sach").value = products[index].title;
     document.getElementById("gia-moi").value = products[index].price;
-    document.getElementById("mo-ta").value = products[index].desc;
+    document.getElementById("mo-ta").value = products[index].describes || '';
     document.getElementById("chon-sach").value = products[index].category;
+    document.getElementById("so-luong").value = products[index].soluong;
 }
 
 let btnUpdateProductIn = document.getElementById("update-product-button");
 btnUpdateProductIn.addEventListener("click", async (e) => {
     e.preventDefault();
-
     let products = JSON.parse(localStorage.getItem("products"));
     if (!products || !Array.isArray(products)) {
         toast({ title: "Lỗi", message: "Danh sách sản phẩm không tìm thấy hoặc không hợp lệ!", type: "error", duration: 3000 });
         return;
     }
-
     // Get the image path from the hidden field (if it exists) or fallback to preview src
     let imgProductCur;
     const hiddenImagePath = document.getElementById('hidden-image-path');
@@ -380,37 +360,35 @@ btnUpdateProductIn.addEventListener("click", async (e) => {
     } else {
         imgProductCur = document.querySelector(".upload-image-preview").src;
     }
-
     let titleProductCur = document.getElementById("ten-sach").value;
     let curProductCur = document.getElementById("gia-moi").value;
-    let descProductCur = document.getElementById("mo-ta").value;
+    let soluongCur = document.getElementById("so-luong").value;
+    let descProductCur = document.getElementById("mo-ta").value || '';
     let categoryText = document.getElementById("chon-sach").value;
-
     if (indexCur === undefined || indexCur < 0 || indexCur >= products.length) {
         toast({ title: "Lỗi", message: "Chỉ số sản phẩm không hợp lệ!", type: "error", duration: 3000 });
         return;
     }
-
     let idProduct = products[indexCur].id;
     let imgProduct = products[indexCur].img;
     let titleProduct = products[indexCur].title;
     let curProduct = products[indexCur].price;
-    let descProduct = products[indexCur].desc;
+    let soluongProduct = products[indexCur].soluong;
+    let descProduct = products[indexCur].describes || '';
     let categoryProduct = products[indexCur].category;
-
-    if (imgProductCur !== imgProduct || titleProductCur !== titleProduct || curProductCur !== curProduct || descProductCur !== descProduct || categoryText !== categoryProduct) {
+    if (imgProductCur !== imgProduct || titleProductCur !== titleProduct || curProductCur !== curProduct || soluongCur !== soluongProduct || descProductCur !== descProduct || categoryText !== categoryProduct) {
         let productadd = {
             id: idProduct,
             title: titleProductCur,
             img: imgProductCur,
             category: categoryText,
             price: parseInt(curProductCur),
-            desc: descProductCur,
+            soluong: parseInt(soluongCur),
+            describes: descProductCur,
             status: 1,
-        };
+        }; 
         products.splice(indexCur, 1, productadd); // Thay thế sản phẩm tại vị trí indexCur
         localStorage.setItem("products", JSON.stringify(products));
-
         try {
             let formData = new FormData();
             formData.append("id", idProduct);
@@ -418,19 +396,17 @@ btnUpdateProductIn.addEventListener("click", async (e) => {
             formData.append("img", imgProductCur);
             formData.append("category", categoryText);
             formData.append("price", parseInt(curProductCur));
-            formData.append("desc", descProductCur);
+            formData.append("soluong", parseInt(soluongCur));
+            formData.append("describes", descProductCur);
             formData.append("status", 1);
-
             // Gửi yêu cầu cập nhật sản phẩm đến máy chủ
             const response = await fetch("update-product.php", {
                 method: "POST",
                 body: formData
             });
-
             toast({ title: "Thành công", message: "Sửa sản phẩm thành công!", type: "success", duration: 3000 });
             setDefaultValue();
             document.querySelector(".add-product").classList.remove("open");
-            showProduct();
         } catch (error) {
             toast({ title: "Lỗi", message: "Có lỗi xảy ra khi cập nhật sản phẩm!", type: "error", duration: 3000 });
         }
@@ -439,12 +415,9 @@ btnUpdateProductIn.addEventListener("click", async (e) => {
     }
 });
 
-
-
 let btnAddProductIn = document.getElementById("add-product-button");
 btnAddProductIn.addEventListener("click", async (e) => {
     e.preventDefault();
-    
     // Get the image path from the hidden field (if it exists) or fallback to preview src
     let imgProduct;
     const hiddenImagePath = document.getElementById('hidden-image-path');
@@ -456,78 +429,71 @@ btnAddProductIn.addEventListener("click", async (e) => {
         if (previewSrc.includes('blank-image.png')) {
             toast({ title: "Chú ý", message: "Vui lòng tải lên hình ảnh sản phẩm!", type: "warning", duration: 3000 });
             return;
-        }
-        imgProduct = previewSrc;
-    }
-    
-    let tensach = document.getElementById("ten-sach").value;
-    let price = document.getElementById("gia-moi").value;
-    let moTa = document.getElementById("mo-ta").value;
-    let categoryText = document.getElementById("chon-sach").value;
-
-    if (tensach == "" || price == "" || moTa == "") {
-        toast({ title: "Chú ý", message: "Vui lòng nhập đầy đủ thông tin sách!", type: "warning", duration: 3000 });
-    } else {
-        if (isNaN(price)) {
-            toast({ title: "Chú ý", message: "Giá phải ở dạng số!", type: "warning", duration: 3000 });
         } else {
-            let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
-            let product = {
-                id: createId(products),
-                title: tensach,
-                img: imgProduct,
-                category: categoryText,
-                price: parseInt(price),
-                desc: moTa,
-                status: 1
-            };
-            products.unshift(product);
-            localStorage.setItem("products", JSON.stringify(products));
-            showProduct();
-            document.querySelector(".add-product").classList.remove("open");
-            setDefaultValue();
-
-            // Gửi dữ liệu sản phẩm mới đến server để thêm vào database
-            try {
-                let formData = new FormData();
-                formData.append('title', tensach);
-                formData.append('img', imgProduct);
-                formData.append('category', categoryText);
-                formData.append('price', parseInt(price));
-                formData.append('desc', moTa);
-                formData.append('status', 1);
-
-                const response = await fetch('add_product.php', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    toast({ title: "Thành công", message: "Thêm sản phẩm thành công!", type: "success", duration: 3000 });
-                } else {
-                    toast({ title: "Lỗi", message: "Có lỗi xảy ra khi thêm sản phẩm vào cơ sở dữ liệu!", type: "error", duration: 3000 });
-                }
-            } catch (error) {
-                console.error("Error adding product to database:", error);
-                toast({ title: "Lỗi", message: "Không thể kết nối đến server!", type: "error", duration: 3000 });
+            imgProduct = previewSrc;
+        }
+    }
+    let tensach = document.getElementById("ten-sach").value;
+    let giaMoi = document.getElementById("gia-moi").value;
+    let soluong = document.getElementById("so-luong").value;
+    let moTa = document.getElementById("mo-ta").value || '';
+    let categoryText = document.getElementById("chon-sach").value;
+    if (tensach == "" || giaMoi == "" || soluong == "" || moTa == "") {
+        toast({ title: "Chú ý", message: "Vui lòng nhập đầy đủ thông tin sách!", type: "warning", duration: 3000 });
+    } else if (isNaN(giaMoi) || isNaN(soluong)) {
+        toast({ title: "Chú ý", message: "Giá và số lượng phải là số!", type: "warning", duration: 3000 });
+    } else {
+        let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
+        let product = {
+            id: createId(products),
+            title: tensach,
+            img: imgProduct,
+            category: categoryText,
+            price: parseInt(giaMoi),
+            soluong: parseInt(soluong),
+            describes: moTa,
+            status: 1,
+        }; 
+        products.unshift(product);
+        localStorage.setItem("products", JSON.stringify(products));
+        showProduct();
+        document.querySelector(".add-product").classList.remove("open");
+        // Gửi dữ liệu sản phẩm mới đến server để thêm vào database
+        try {
+            let formData = new FormData();
+            formData.append('title', tensach);
+            formData.append('img', imgProduct);
+            formData.append('category', categoryText);
+            formData.append('price', parseInt(giaMoi));
+            formData.append('soluong', parseInt(soluong));
+            formData.append('describes', moTa);
+            formData.append('status', 1);
+            const response = await fetch('add_product.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success) {
+                toast({ title: "Thành công", message: "Thêm sản phẩm thành công!", type: "success", duration: 3000 });
+            } else {
+                toast({ title: "Lỗi", message: "Có lỗi xảy ra khi thêm sản phẩm vào cơ sở dữ liệu!", type: "error", duration: 3000 });
             }
+        } catch (error) {
+            console.error("Error adding product to database:", error);
+            toast({ title: "Lỗi", message: "Không thể kết nối đến server!", type: "error", duration: 3000 });
         }
     }
 });
-
-
 document.querySelector(".modal-close.product-form").addEventListener("click",() => {
     setDefaultValue();
 })
-
 function setDefaultValue() {
     document.querySelector(".upload-image-preview").src = "./assets/img/blank-image.png";
     document.getElementById("ten-sach").value = "";
     document.getElementById("gia-moi").value = "";
     document.getElementById("mo-ta").value = "";
     document.getElementById("chon-sach").value = "Sách khác";
-    
+    document.getElementById("so-luong").value = "";
     // Reset the hidden image path field if it exists
     const hiddenImagePath = document.getElementById('hidden-image-path');
     if (hiddenImagePath) {
@@ -550,7 +516,6 @@ btnAddProduct.addEventListener("click", () => {
 // Close Popup Modal
 let closePopup = document.querySelectorAll(".modal-close");
 let modalPopup = document.querySelectorAll(".modal");
-
 for (let i = 0; i < closePopup.length; i++) {
     closePopup[i].onclick = () => {
         modalPopup[i].classList.remove("open");
@@ -564,7 +529,6 @@ function uploadImage(el) {
         toast({ title: 'Lỗi', message: 'Không tìm thấy tệp hình ảnh!', type: 'error', duration: 3000 });
         return;
     }
-    
     const file = el.files[0];
     
     // Validate file type (only images)
@@ -572,18 +536,18 @@ function uploadImage(el) {
         toast({ title: 'Lỗi', message: 'Vui lòng chọn một tệp hình ảnh!', type: 'error', duration: 3000 });
         return;
     }
-    
     // Show preview immediately using FileReader
     const reader = new FileReader();
     reader.onload = function(e) {
         document.querySelector(".upload-image-preview").setAttribute("src", e.target.result);
     }
     reader.readAsDataURL(file);
-    
     // Upload the file to server
     const formData = new FormData();
     formData.append('product_image', file);
-    
+    // LẤY CATEGORY ĐANG CHỌN
+    var category = document.getElementById('chon-sach').value;
+    formData.append('category', category);
     fetch('upload_image.php', {
         method: 'POST',
         body: formData
@@ -615,7 +579,6 @@ function uploadImage(el) {
 // Đổi trạng thái đơn hàng
 async function changeStatus(id, el) {
     let status = el.classList.contains('btn-chuaxuly') ? 1 : 0;
-    
     try {
         const response = await fetch('update_order_status.php', {
             method: 'POST',
@@ -627,23 +590,20 @@ async function changeStatus(id, el) {
                 status: status
             })
         });
-        
         const data = await response.json();
         
         if (data.success) {
             if (status === 1) {
                 el.classList.remove('btn-chuaxuly');
                 el.classList.add('btn-daxuly');
-                el.innerText = 'Đã xử lý';
+                el.innerText = 'Đã xác nhận';
             } else {
                 el.classList.remove('btn-daxuly');
                 el.classList.add('btn-chuaxuly');
                 el.innerText = 'Chưa xử lý';
             }
-            
             // Update in local display
             loadOrdersFromDatabase();
-            
             toast({
                 title: "Thành công",
                 message: "Cập nhật trạng thái đơn hàng thành công!",
@@ -657,7 +617,7 @@ async function changeStatus(id, el) {
         console.error('Error:', error);
         toast({
             title: "Thất bại",
-            message: "Không thể cập nhật trạng thái đơn hàng",
+            message: "Có lỗi xảy ra khi cập nhật trạng thái đơn hàng",
             type: "error",
             duration: 3000
         });
@@ -667,7 +627,6 @@ async function changeStatus(id, el) {
 // Format Date
 function formatDate(date) {
     let fm = new Date(date);
-    
     // Chuẩn hóa múi giờ Việt Nam (+7)
     const options = { 
         year: 'numeric', 
@@ -675,7 +634,6 @@ function formatDate(date) {
         day: '2-digit',
         timeZone: 'Asia/Ho_Chi_Minh' 
     };
-    
     return new Intl.DateTimeFormat('vi-VN', options).format(fm);
 }
 
@@ -700,11 +658,45 @@ async function loadOrdersFromDatabase() {
     }
 }
 
-// Show order
+// Hàm lọc đơn hàng theo trạng thái, thanh toán, tìm kiếm, ngày đặt
+function findOrder() {
+    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+    let status = document.getElementById('tinh-trang').value;
+    let payment = document.getElementById('thanh-toan').value;
+    let search = document.getElementById('form-search-order').value.trim().toLowerCase();
+    let timeStart = document.getElementById('time-start').value;
+    let timeEnd = document.getElementById('time-end').value;
+
+    // Lọc trạng thái đơn hàng
+    if (status !== "2") {
+        orders = orders.filter(o => String(o.trangthai) === status);
+    }
+    // Lọc trạng thái thanh toán
+    if (payment !== "2") {
+        orders = orders.filter(o => String(o.payment_status) === payment);
+    }
+    // Lọc tìm kiếm
+    if (search) {
+        orders = orders.filter(o =>
+            (o.id && o.id.toLowerCase().includes(search)) ||
+            (o.khachhang && o.khachhang.toString().toLowerCase().includes(search))
+        );
+    }
+    // Lọc theo ngày
+    if (timeStart) {
+        orders = orders.filter(o => new Date(o.thoigiandat) >= new Date(timeStart));
+    }
+    if (timeEnd) {
+        orders = orders.filter(o => new Date(o.thoigiandat) <= new Date(timeEnd));
+    }
+    showOrder(orders);
+}
+
+// Sửa showOrder: Nút chi tiết chỉ icon, thêm nút xóa
 function showOrder(arr) {
     let orderHtml = "";
     if(arr.length == 0) {
-        orderHtml = `<td colspan="7">Không có dữ liệu</td>`;
+        orderHtml = `<td colspan="8">Không có dữ liệu</td>`;
     } else {
         arr.forEach((item) => {
             // Đảm bảo trạng thái là số nguyên
@@ -712,36 +704,31 @@ function showOrder(arr) {
             let status = "";
             let paymentStatus = "";
             let actionButtons = "";
-            
             // Xác định status dựa trên trạng thái
             if (trangThai === 0) {
                 status = `<span class="status-no-complete">Chưa xử lý</span>`;
-                actionButtons = `
-                <button class="btn-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
-                <button class="btn-cancel" onclick="cancelOrder('${item.id}')">Hủy đơn</button>
-                `;
             } else if (trangThai === 1) {
-                status = `<span class="status-complete">Đã xử lý</span>`;
-                actionButtons = `
-                <button class="btn-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
-                `;
+                status = `<span class="confirmed">Đã xác nhận</span>`;
+            } else if (trangThai === 2) {
+                status = `<span class="status-shipping">Đang giao hàng</span>`;
+            } else if (trangThai === 3) {
+                status = `<span class="completed">Hoàn thành</span>`;
             } else if (trangThai === 4) {
                 status = `<span class="status-cancel">Đã hủy</span>`;
-                actionButtons = `
-                <button class="btn-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
-                `;
             }
-            
-            // Xác định trạng thái thanh toán - FIX: Sử dụng payment_status thay vì dathanhtoan
+            // Xác định trạng thái thanh toán
             const paymentStatusValue = item.payment_status !== undefined ? parseInt(item.payment_status) : 0;
             if (paymentStatusValue === 1) {
                 paymentStatus = `<span class="status-complete">Đã thanh toán</span>`;
             } else {
                 paymentStatus = `<span class="status-no-complete">Chưa thanh toán</span>`;
             }
-            
             let date = formatDate(item.thoigiandat);
-            
+            actionButtons = `
+                <button class="btn-detail" title="Chi tiết" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i></button>
+                <button class="btn-delete" title="Xóa đơn hàng" onclick="deleteOrderAdmin('${item.id}')"><i class="fa-regular fa-trash"></i></button>
+            `;
+            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' ? 'Online' : 'COD') : 'COD';
             orderHtml += `
             <tr>
                 <td>${item.id}</td>
@@ -750,6 +737,7 @@ function showOrder(arr) {
                 <td>${vnd(item.tongtien)}</td>                               
                 <td>${status}</td>
                 <td>${paymentStatus}</td>
+                <td>${paymentMethod}</td>
                 <td class="control">${actionButtons}</td>
             </tr>`;
         });
@@ -757,83 +745,57 @@ function showOrder(arr) {
     document.getElementById("showOrder").innerHTML = orderHtml;
 }
 
-// Cancel order
-async function cancelOrder(orderId) {
-    if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
-
-    try {
-        const requestData = { 
-            orderId: orderId, 
-            status: 4 // Status for canceled orders
-        };
-        
-        const response = await fetch('update_order_status.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Server responded with status ${response.status}`);
-        }
-        
-        const data = await response.json();
-
+// Hàm xóa đơn hàng từ admin
+function deleteOrderAdmin(orderId) {
+    if (!confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
+    fetch('delete_order.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderId })
+    })
+    .then(res => res.json())
+    .then(data => {
         if (data.success) {
-            toast({
-                title: "Thành công",
-                message: "Đã hủy đơn hàng thành công!",
-                type: "success",
-                duration: 3000
-            });
-            // Đóng modal chi tiết
-            document.querySelector(".modal.detail-order").classList.remove("open");
-            // Tải lại danh sách đơn hàng
-            loadOrdersFromDatabase();
+            toast({ title: 'Thành công', message: 'Đã xóa đơn hàng', type: 'success', duration: 3000 });
+            // Đồng bộ lại đơn hàng từ server
+            fetch('get_orders.php')
+                .then(res => res.json())
+                .then(orders => {
+                    localStorage.setItem('order', JSON.stringify(orders));
+                    findOrder();
+                });
         } else {
-            throw new Error(data.message || "Failed to update order status");
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
         }
-    } catch (error) {
+    })
+    .catch(error => {
         console.error('Error:', error);
-        toast({
-            title: "Thất bại",
-            message: "Có lỗi xảy ra khi hủy đơn hàng: " + error.message,
-            type: "error",
-            duration: 3000
-        });
-    }
+        toast({ title: 'Lỗi', message: 'Có lỗi xảy ra khi xóa đơn hàng', type: 'error', duration: 3000 });
+    });
 }
-
-// Initialize orders when page loads
-window.addEventListener('load', function() {
-    loadOrdersFromDatabase();
-});
 
 // Get Order Details
 function getOrderDetails(madon) {
     // Lấy chi tiết đơn hàng từ database thay vì localStorage
     return fetch(`get_order_details.php?order_id=${madon}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                return data.orderDetails;
-            } else {
-                console.error('Error fetching order details:', data.message);
-                return [];
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            return data.orderDetails;
+        } else {
+            console.error('Error fetching order details:', data.message);
             return [];
-        });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        return [];
+    });
 }
 
 // Show Order Detail
 async function detailOrder(id) {
     document.querySelector(".modal.detail-order").classList.add("open");
-    
     try {
         // Lấy thông tin đơn hàng
         const orderResponse = await fetch(`get_order.php?order_id=${id}`);
@@ -845,17 +807,15 @@ async function detailOrder(id) {
 
         // Lấy chi tiết đơn hàng
         const orderDetails = await getOrderDetails(id);
-        
+
         // Lấy thông tin sản phẩm
         const productsResponse = await fetch('get_products.php');
         const products = await productsResponse.json();
 
         let spHtml = `<div class="modal-detail-left"><div class="order-item-group">`;
-
         for (const item of orderDetails) {
-            const product = products.find(p => p.id == item.product_id);
+            const product = products.find(p => p.id == (item.product_id || item.id));
             if (product) {
-                // Sử dụng findProductImagePath để tìm đường dẫn đầy đủ
                 let imgPath = findProductImagePath(product.img);
                 spHtml += `<div class="order-product">
                     <div class="order-product-left">
@@ -863,7 +823,7 @@ async function detailOrder(id) {
                         <div class="order-product-info">
                             <h4>${product.title}</h4>
                             <p class="order-product-note">${item.note || ''}</p>
-                            <p class="order-product-quantity">SL: ${item.quantity}<p>
+                            <p class="order-product-quantity">SL: ${item.quantity || item.soluong || 0}</p>
                         </div>
                     </div>
                     <div class="order-product-right">
@@ -909,36 +869,31 @@ async function detailOrder(id) {
         </div>`;
         document.querySelector(".modal-detail-order").innerHTML = spHtml;
 
-        // Xác định trạng thái xử lý đơn hàng
+        // Nút trạng thái đơn hàng
         let statusButton = '';
-        
-        // Ensure payment_status is a number
+        if (order.trangthai == 0) {
+            statusButton = `<button class="modal-detail-btn btn-chuaxuly" onclick="changeStatus('${order.id}', this)">Chưa xử lý</button>`;
+        } else if (order.trangthai == 1) {
+            statusButton = `<button class="modal-detail-btn btn-shipping" onclick="changeStatusShipping('${order.id}', this)">Chuyển sang đang giao hàng</button>`;
+        } else if (order.trangthai == 2) {
+            statusButton = `<button class="modal-detail-btn btn-complete" onclick="changeStatusComplete('${order.id}', this)">Hoàn thành đơn</button>`;
+        } else if (order.trangthai == 3) {
+            statusButton = `<button class="modal-detail-btn btn-success" disabled>Hoàn thành</button>`;
+        } else if (order.trangthai == 4) {
+            statusButton = `<button class="modal-detail-btn btn-danger" disabled>Đã hủy</button>`;
+        }
+        // Trạng thái thanh toán
         const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
-        
-        // Create payment status button with appropriate styling
         let paymentStatusButton = '';
         if (paymentStatus === 1) {
             paymentStatusButton = `<button class="modal-detail-btn btn-dathanhtoan payment-status-btn" onclick="togglePaymentStatus('${order.id}', 1)">
-                <i class="fa-regular fa-check-circle"></i> Đã thanh toán
+                <i class="fa-regular "></i> Đã thanh toán
             </button>`;
         } else {
             paymentStatusButton = `<button class="modal-detail-btn btn-chuathanhtoan payment-status-btn" onclick="togglePaymentStatus('${order.id}', 0)">
-                <i class="fa-regular fa-times-circle"></i> Chưa thanh toán
+                <i class="fa-regular"></i> Chưa thanh toán
             </button>`;
         }
-        
-        // Create order status button based on current status
-        if (order.trangthai == 0) {
-            // Not processed yet
-            statusButton = `<button class="modal-detail-btn btn-chuaxuly" onclick="changeStatus('${order.id}', this)">Chưa xử lý</button>`;
-        } else if (order.trangthai == 1) {
-            // Already processed
-            statusButton = `<button class="modal-detail-btn btn-daxuly" onclick="changeStatus('${order.id}', this)">Đã xử lý</button>`;
-        } else if (order.trangthai == 4) {
-            // Cancelled
-            statusButton = `<button class="modal-detail-btn btn-danger" disabled>Đã hủy</button>`;
-        }
-        
         document.querySelector(".modal-detail-bottom").innerHTML = `
             <div class="modal-detail-bottom-left">
                 <div class="price-total">
@@ -950,7 +905,6 @@ async function detailOrder(id) {
                 ${statusButton}
                 ${paymentStatusButton}
             </div>`;
-            
     } catch (error) {
         console.error('Error:', error);
         toast({
@@ -962,344 +916,85 @@ async function detailOrder(id) {
     }
 }
 
-// Find Order
-function findOrder() {
-    let tinhTrang = parseInt(document.getElementById("tinh-trang").value);
-    let thanhToan = parseInt(document.getElementById("thanh-toan").value);
-    let ct = document.getElementById("form-search-order").value;
-    let timeStart = document.getElementById("time-start").value;
-    let timeEnd = document.getElementById("time-end").value;
-    
-    if (timeEnd < timeStart && timeEnd != "" && timeStart != "") {
-        alert("Lựa chọn thời gian sai !");
-        return;
-    }
-    
-    // Fetch the latest data from server instead of using localStorage
-    fetch('get_orders.php')
-        .then(response => response.json())
-        .then(orders => {
-            // Lọc theo trạng thái xử lý
-            let result;
-            
-            if (tinhTrang == 2) {
-                // Tất cả
-                result = orders;
-            } else if (tinhTrang == 0) {
-                // Chưa xử lý - chỉ hiển thị đơn có trạng thái = 0
-                result = orders.filter(item => item.trangthai === 0);
-            } else if (tinhTrang == 1) {
-                // Đã xử lý - chỉ hiển thị đơn có trạng thái = 1
-                result = orders.filter(item => item.trangthai === 1);
-            } else if (tinhTrang == 4) {
-                // Đã hủy - chỉ hiển thị đơn có trạng thái = 4
-                result = orders.filter(item => item.trangthai === 4);
-            }
-            
-            // Lọc theo trạng thái thanh toán
-            if (thanhToan != 2) {
-                result = result.filter((item) => {
-                    // Đảm bảo payment_status là số (0 hoặc 1)
-                    const paymentStatus = item.payment_status !== undefined ? parseInt(item.payment_status) : 0;
-                    return paymentStatus == thanhToan;
-                });
-            }
-            
-            // Lọc theo từ khóa tìm kiếm
-            result = ct == "" ? result : result.filter((item) => {
-                return (item.khachhang.toLowerCase().includes(ct.toLowerCase()) || 
-                        item.id.toString().toLowerCase().includes(ct.toLowerCase()));
-            });
+// Cancel order
+async function cancelOrder(orderId) {
+    if (!confirm("Bạn có chắc muốn hủy đơn hàng này?")) return;
 
-            // Lọc theo thời gian
-            if (timeStart != "" && timeEnd == "") {
-                result = result.filter((item) => {
-                    return new Date(item.thoigiandat) >= new Date(timeStart).setHours(0, 0, 0);
-                });
-            } else if (timeStart == "" && timeEnd != "") {
-                result = result.filter((item) => {
-                    return new Date(item.thoigiandat) <= new Date(timeEnd).setHours(23, 59, 59);
-                });
-            } else if (timeStart != "" && timeEnd != "") {
-                result = result.filter((item) => {
-                    return (new Date(item.thoigiandat) >= new Date(timeStart).setHours(0, 0, 0) && 
-                            new Date(item.thoigiandat) <= new Date(timeEnd).setHours(23, 59, 59));
+    try {
+        // Lấy thông tin đơn hàng và chi tiết đơn hàng trước khi hủy
+        let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+        let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
+        let products = JSON.parse(localStorage.getItem('products'));
+        
+        // Tìm chi tiết đơn hàng cần hủy - sử dụng logic giống như ở phía người dùng
+        let details = orderDetails.filter(item => item.madon == orderId);
+        
+        // Hoàn trả số lượng sách về kho
+        details.forEach(async detail => {
+            // Sử dụng detail.id thay vì detail.product_id để khớp với localStorage
+            let p = products.find(sp => sp.id == detail.id);
+            if (p) {
+                // Sử dụng detail.soluong để khớp với cấu trúc trong localStorage
+                p.soluong += parseInt(detail.soluong);
+                console.log(`Hoàn trả ${detail.soluong} sách cho sản phẩm ${p.title}. Số lượng mới: ${p.soluong}`);
+                
+                // Gọi API cập nhật số lượng về database
+                await fetch('update_product_quantity.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: p.id, soluong: p.soluong })
                 });
             }
-            
-            showOrder(result);
-        })
-        .catch(error => {
-            console.error('Error fetching orders:', error);
+        });
+        
+        // Cập nhật lại products trong localStorage
+        localStorage.setItem('products', JSON.stringify(products));
+
+        const requestData = { 
+            orderId: orderId, 
+            status: 4 // Status for canceled orders
+        };
+        
+        const response = await fetch('update_order_status.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+        
+        const data = await response.json();
+
+        if (data.success) {
             toast({
-                title: "Lỗi",
-                message: "Không thể tải dữ liệu đơn hàng",
-                type: "error",
+                title: "Thành công",
+                message: "Đã hủy đơn hàng và hoàn trả số lượng sách thành công!",
+                type: "success",
                 duration: 3000
             });
-        });
-}
-
-function cancelSearchOrder(){
-    document.getElementById("tinh-trang").value = 2;
-    document.getElementById("thanh-toan").value = 2;
-    document.getElementById("form-search-order").value = "";
-    document.getElementById("time-start").value = "";
-    document.getElementById("time-end").value = "";
-    
-    // Reload orders from server
-    loadOrdersFromDatabase();
-}
-
-// Create Object Thong ke
-async function createObj() {
-    // Fetch latest data from server before creating objects
-    try {
-        // Fetch latest orders
-        const ordersResponse = await fetch('get_orders.php');
-        const serverOrders = await ordersResponse.json();
-        if (Array.isArray(serverOrders)) {
-            // Update localStorage with the latest order data
-            localStorage.setItem("order", JSON.stringify(serverOrders));
-        }
-        
-        // Fetch latest order details
-        const detailsResponse = await fetch('get_all_order_details.php');
-        const serverOrderDetails = await detailsResponse.json();
-        if (Array.isArray(serverOrderDetails)) {
-            // Update localStorage with the latest order detail data
-            localStorage.setItem("orderDetails", JSON.stringify(serverOrderDetails));
-        }
-    } catch (error) {
-        console.error("Error fetching data for statistics:", error);
-    }
-    
-    // Now proceed with the existing logic using the updated localStorage data
-    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-    let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : []; 
-    let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : []; 
-    let result = [];
-    
-    // Chỉ xử lý các đơn hàng chưa bị hủy và đã thanh toán
-    orderDetails.forEach(item => {
-        // Tìm đơn hàng mà chi tiết này thuộc về
-        const order = orders.find(o => o.id === item.madon);
-        
-        // Chỉ thêm vào kết quả nếu đơn hàng tồn tại, không phải là đơn hàng đã hủy và đã thanh toán
-        if (order && parseInt(order.trangthai) !== 4 && parseInt(order.payment_status) === 1) {
-            // Lấy thông tin sản phẩm
-            let prod = products.find(product => {return product.id == item.id;});
-            if (prod) {
-                let obj = new Object();
-                obj.id = item.id;
-                obj.madon = item.madon;
-                obj.price = item.price;
-                obj.quantity = item.soluong;
-                obj.category = prod.category;
-                obj.title = prod.title;
-                obj.img = prod.img;
-                obj.time = order.thoigiandat;
-                result.push(obj);
-            }
-        }
-    });
-    
-    return result;
-}
-
-// Filter 
-async function thongKe(mode) {
-    // Trước khi thống kê, tải dữ liệu mới nhất từ server để đảm bảo thông tin được cập nhật
-    try {
-        const response = await fetch('get_orders.php');
-        const data = await response.json();
-        if (Array.isArray(data)) {
-            // Cập nhật dữ liệu order trong localStorage
-            localStorage.setItem("order", JSON.stringify(data));
-        }
-    } catch (error) {
-        console.error("Lỗi khi tải dữ liệu đơn hàng:", error);
-    }
-
-    // Tiếp tục với thống kê
-    let categoryTk = document.getElementById("the-loai-tk").value;
-    let ct = document.getElementById("form-search-tk").value;
-    let timeStart = document.getElementById("time-start-tk").value;
-    let timeEnd = document.getElementById("time-end-tk").value;
-    if (timeEnd < timeStart && timeEnd != "" && timeStart != "") {
-        alert("Lựa chọn thời gian sai !");
-        return;
-    }
-    let arrDetail = await createObj();
-    let result = categoryTk == "Tất cả" ? arrDetail : arrDetail.filter((item) => {
-        return item.category == categoryTk;
-    });
-
-    result = ct == "" ? result : result.filter((item) => {
-        return (item.title.toLowerCase().includes(ct.toLowerCase()));
-    });
-
-    if (timeStart != "" && timeEnd == "") {
-        result = result.filter((item) => {
-            return new Date(item.time) > new Date(timeStart).setHours(0, 0, 0);
-        });
-    } else if (timeStart == "" && timeEnd != "") {
-        result = result.filter((item) => {
-            return new Date(item.time) < new Date(timeEnd).setHours(23, 59, 59);
-        });
-    } else if (timeStart != "" && timeEnd != "") {
-        result = result.filter((item) => {
-            return (new Date(item.time) > new Date(timeStart).setHours(0, 0, 0) && new Date(item.time) < new Date(timeEnd).setHours(23, 59, 59)
-            );
-        });
-    }    
-    await showThongKe(result, mode);
-}
-
-// Show số lượng sp, số lượng đơn bán, doanh thu
-function showOverview(arr){
-    document.getElementById("quantity-product").innerText = arr.length;
-    document.getElementById("quantity-order").innerText = arr.reduce((sum, cur) => (sum + parseInt(cur.quantity)),0);
-    document.getElementById("quantity-sale").innerText = vnd(arr.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)),0));
-}
-
-async function showThongKe(arr, mode) {
-    let orderHtml = "";
-    let mergeObj = mergeObjThongKe(arr);
-    showOverview(mergeObj);
-
-    switch (mode){
-        case 0:
-            // Khi reset, vẫn phải đảm bảo lọc ra các đơn hàng đã hủy
-            mergeObj = mergeObjThongKe(await createObj());
-            showOverview(mergeObj);
-            document.getElementById("the-loai-tk").value = "Tất cả";
-            document.getElementById("form-search-tk").value = "";
-            document.getElementById("time-start-tk").value = "";
-            document.getElementById("time-end-tk").value = "";
-            break;
-        case 1:
-            mergeObj.sort((a,b) => parseInt(a.quantity) - parseInt(b.quantity));
-            break;
-        case 2:
-            mergeObj.sort((a,b) => parseInt(b.quantity) - parseInt(a.quantity));
-            break;
-    }
-    
-    // Hiển thị thông tin tổng quan về đơn hàng và doanh thu
-    const totalProductsCountElement = document.getElementById("total-products-count");
-    const totalRevenueElement = document.getElementById("total-revenue");
-    
-    if (totalProductsCountElement) {
-        totalProductsCountElement.textContent = mergeObj.length;
-    }
-    
-    if (totalRevenueElement) {
-        totalRevenueElement.textContent = vnd(mergeObj.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)), 0));
-    }
-    
-    for(let i = 0; i < mergeObj.length; i++) {
-        // Sử dụng findProductImagePath để tìm đường dẫn đầy đủ
-        let imgPath = findProductImagePath(mergeObj[i].img);
-        orderHtml += `
-        <tr>
-        <td>${i + 1}</td>
-        <td><div class="prod-img-title"><img class="prd-img-tbl" src="${imgPath}" alt=""><p>${mergeObj[i].title}</p></div></td>
-        <td>${mergeObj[i].quantity}</td>
-        <td>${vnd(mergeObj[i].doanhthu)}</td>
-        <td><button class="btn-detail product-order-detail" data-id="${mergeObj[i].id}"><i class="fa-regular fa-eye"></i> Chi tiết</button></td>
-        </tr>      
-        `;
-    }
-    document.getElementById("showTk").innerHTML = orderHtml;
-    document.querySelectorAll(".product-order-detail").forEach(item => {
-        let idProduct = item.getAttribute("data-id");
-        item.addEventListener("click", () => {           
-            detailOrderProduct(arr, idProduct);
-        });
-    });
-}
-
-// Update initial call to showThongKe to fetch latest data first
-(async function initializeStatistics() {
-    try {
-        // Tải dữ liệu mới nhất từ server trước khi hiển thị thống kê
-        const response = await fetch('get_orders.php');
-        const data = await response.json();
-        if (Array.isArray(data)) {
-            // Cập nhật dữ liệu order trong localStorage
-            localStorage.setItem("order", JSON.stringify(data));
-        }
-        
-        // Tải chi tiết đơn hàng
-        const detailsResponse = await fetch('get_all_order_details.php');
-        const detailsData = await detailsResponse.json();
-        if (Array.isArray(detailsData)) {
-            localStorage.setItem("orderDetails", JSON.stringify(detailsData));
-        }
-    } catch (error) {
-        console.error("Lỗi khi tải dữ liệu đơn hàng:", error);
-    }
-    
-    // Sau khi tải dữ liệu mới, hiển thị thống kê
-    try {
-        const objData = await createObj();
-        await showThongKe(objData);
-    } catch (error) {
-        console.error("Lỗi khi hiển thị thống kê:", error);
-    }
-})();
-
-function mergeObjThongKe(arr) {
-    let result = [];
-    arr.forEach(item => {
-        let check = result.find(i => i.id == item.id) // Không tìm thấy gì trả về undefined
-
-        if(check){
-            check.quantity = parseInt(check.quantity)  + parseInt(item.quantity);
-            check.doanhthu += parseInt(item.price) * parseInt(item.quantity);
+            // Đóng modal chi tiết
+            document.querySelector(".modal.detail-order").classList.remove("open");
+            // Tải lại danh sách đơn hàng
+            loadOrdersFromDatabase();
+            // Refresh product list to show updated quantities
+            showProduct();
         } else {
-            const newItem = {...item}
-            newItem.doanhthu = newItem.price * newItem.quantity;
-            result.push(newItem);
+            throw new Error(data.message || "Failed to update order status");
         }
-        
-    });
-    return result;
-}
-
-function detailOrderProduct(arr, id) {
-    let orderHtml = "";
-    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-    
-    // Chỉ hiển thị các đơn hàng không bị hủy
-    arr.forEach(item => {
-        if (item.id == id) {
-            // Tìm đơn hàng để kiểm tra trạng thái
-            const order = orders.find(o => o.id === item.madon);
-            // Chỉ hiển thị nếu đơn hàng tồn tại và không phải trạng thái hủy (4)
-            if (order && parseInt(order.trangthai) !== 4) {
-                orderHtml += `<tr>
-                <td>${item.madon}</td>
-                <td>${item.quantity}</td>
-                <td>${vnd(item.price)}</td>
-                <td>${formatDate(item.time)}</td>
-                </tr>`;
-            }
-        }
-    });
-    
-    if (orderHtml === "") {
-        orderHtml = `<tr><td colspan="4">Không có dữ liệu hoặc chỉ có đơn hàng đã hủy</td></tr>`;
+    } catch (error) {
+        console.error('Error:', error);
+        toast({
+            title: "Thất bại",
+            message: "Có lỗi xảy ra khi hủy đơn hàng: " + error.message,
+            type: "error",
+            duration: 3000
+        });
     }
-    
-    document.getElementById("show-product-order-detail").innerHTML = orderHtml;
-    document.querySelector(".modal.detail-order-product").classList.add("open");
 }
-
-// User
-let addAccount = document.getElementById('signup-button');
-let updateAccount = document.getElementById("btn-update-account")
 
 // Add the togglePaymentStatus function
 async function togglePaymentStatus(orderId, currentStatus) {
@@ -1335,11 +1030,11 @@ async function togglePaymentStatus(orderId, currentStatus) {
                     if (newStatus === 1) {
                         btn.classList.remove("btn-chuathanhtoan");
                         btn.classList.add("btn-dathanhtoan");
-                        btn.innerHTML = '<i class="fa-regular fa-check-circle"></i> Đã thanh toán';
+                        btn.innerHTML = '<i class="fa-regular"></i> Đã thanh toán';
                     } else {
                         btn.classList.remove("btn-dathanhtoan");
                         btn.classList.add("btn-chuathanhtoan");
-                        btn.innerHTML = '<i class="fa-regular fa-times-circle"></i> Chưa thanh toán';
+                        btn.innerHTML = '<i class="fa-regular"></i> Chưa thanh toán';
                     }
                     btn.setAttribute("onclick", `togglePaymentStatus('${orderId}', ${newStatus})`);
                 }
@@ -1361,180 +1056,261 @@ async function togglePaymentStatus(orderId, currentStatus) {
     }
 }
 
-document.querySelector(".modal.signup .modal-close").addEventListener("click",() => {
-    signUpFormReset();
-})
-
-function openCreateAccount() {
-    document.querySelector(".signup").classList.add("open");
-    document.querySelectorAll(".edit-account-e").forEach(item => {
-        item.style.display = "none"
-    })
-    document.querySelectorAll(".add-account-e").forEach(item => {
-        item.style.display = "block"
-    })
-}
-
-function signUpFormReset() {
-    document.getElementById('fullname').value = ""
-    document.getElementById('phone').value = ""
-    document.getElementById('password').value = ""
-    document.querySelector('.form-message-name').innerHTML = '';
-    document.querySelector('.form-message-phone').innerHTML = '';
-    document.querySelector('.form-message-password').innerHTML = '';
-}
-
-// Load users from database when page loads
-async function loadUsersFromDatabase() {
+// Filter thống kê
+async function thongKe(mode) {
+    // Trước khi thống kê, tải dữ liệu mới nhất từ server để đảm bảo thông tin được cập nhật
     try {
-        const response = await fetch('getAccounts.php');
-        const users = await response.json();
-        showUserArr(users.filter(user => user.userType == 0));
+        const response = await fetch('get_orders.php');
+        const data = await response.json();
+        if (Array.isArray(data)) {
+            // Cập nhật dữ liệu order trong localStorage
+            localStorage.setItem("order", JSON.stringify(data));
+        }
+        
+        // Tải chi tiết đơn hàng
+        const detailsResponse = await fetch('get_all_order_details.php');
+        const detailsData = await detailsResponse.json();
+        if (Array.isArray(detailsData)) {
+            localStorage.setItem("orderDetails", JSON.stringify(detailsData));
+        }
     } catch (error) {
-        console.error("Error loading users:", error);
-        toast({ title: 'Lỗi', message: 'Không thể tải dữ liệu khách hàng', type: 'error', duration: 3000 });
+        console.error("Lỗi khi tải dữ liệu đơn hàng:", error);
     }
-}
 
-// Initialize users when page loads
-window.addEventListener('load', function() {
-    loadUsersFromDatabase();
-});
-
-function showUser() {
-    let tinhTrang = parseInt(document.getElementById("tinh-trang-user").value);
-    let ct = document.getElementById("form-search-user").value;
-    let timeStart = document.getElementById("time-start-user").value;
-    let timeEnd = document.getElementById("time-end-user").value;
+    // Tiếp tục với thống kê
+    let categoryTk = document.getElementById("the-loai-tk").value;
+    let ct = document.getElementById("form-search-tk").value;
+    let timeStart = document.getElementById("time-start-tk").value;
+    let timeEnd = document.getElementById("time-end-tk").value;
 
     if (timeEnd < timeStart && timeEnd != "" && timeStart != "") {
         alert("Lựa chọn thời gian sai !");
         return;
     }
 
-    // Lấy dữ liệu từ getAccounts.php
-    fetch('getAccounts.php')
+    let arrDetail = await createObj();
+    let result = arrDetail;
+
+    // Lọc theo thể loại
+    if (categoryTk != "Tất cả") {
+        result = result.filter((item) => {
+            return item.category == categoryTk;
+        });
+    }
+
+    // Lọc theo từ khóa tìm kiếm
+    result = ct == "" ? result : result.filter((item) => {
+        return item.title.toLowerCase().includes(ct.toLowerCase());
+    });
+
+    // Lọc theo thời gian
+    if (timeStart != "" && timeEnd == "") {
+        result = result.filter((item) => {
+            return new Date(item.time) >= new Date(timeStart).setHours(0, 0, 0);
+        });
+    } else if (timeStart == "" && timeEnd != "") {
+        result = result.filter((item) => {
+            return new Date(item.time) <= new Date(timeEnd).setHours(23, 59, 59);
+        });
+    } else if (timeStart != "" && timeEnd != "") {
+        result = result.filter((item) => {
+            return (new Date(item.time) >= new Date(timeStart).setHours(0, 0, 0) && 
+                    new Date(item.time) <= new Date(timeEnd).setHours(23, 59, 59));
+        });
+    }
+    
+    await showThongKe(result, mode);
+}
+
+// Show số lượng sp, số lượng đơn bán, doanh thu
+function showOverview(arr){
+    document.getElementById("quantity-product").innerText = arr.length;
+    document.getElementById("quantity-order").innerText = arr.reduce((sum, cur) => (sum + parseInt(cur.quantity)),0);
+    document.getElementById("quantity-sale").innerText = vnd(arr.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)),0));
+}
+
+// Hàm fetch dữ liệu thống kê, chỉ gọi khi load trang hoặc cần làm mới
+async function fetchStatisticsData() {
+    try {
+        const [ordersResponse, detailsResponse, productsResponse] = await Promise.all([
+            fetch('get_orders.php'),
+            fetch('get_all_order_details.php'),
+            fetch('get_products.php')
+        ]);
+        const [orders, orderDetails, products] = await Promise.all([
+            ordersResponse.json(),
+            detailsResponse.json(),
+            productsResponse.json()
+        ]);
+        // Ghi đè dữ liệu, không push thêm
+        localStorage.setItem("order", JSON.stringify(orders));
+        localStorage.setItem("orderDetails", JSON.stringify(orderDetails));
+        localStorage.setItem("products", JSON.stringify(products));
+    } catch (error) {
+        console.error("Lỗi khi tải dữ liệu thống kê:", error);
+    }
+}
+
+// createObj chỉ lấy dữ liệu từ localStorage, không fetch lại
+async function createObj() {
+    let orders = JSON.parse(localStorage.getItem("order") || "[]");
+    let products = JSON.parse(localStorage.getItem("products") || "[]");
+    let orderDetails = JSON.parse(localStorage.getItem("orderDetails") || "[]");
+    let result = [];
+    // Lọc ra các đơn hàng đã thanh toán và chưa bị hủy
+    const validOrders = orders.filter(order => parseInt(order.trangthai) !== 4 && parseInt(order.payment_status) === 1);
+    const validOrderIds = validOrders.map(order => order.id);
+    orderDetails.forEach(item => {
+        if (validOrderIds.includes(item.madon)) {
+            let prod = products.find(product => product.id == item.id);
+            if (prod) {
+                let obj = {
+                    id: item.id,
+                    madon: item.madon,
+                    price: item.price,
+                    quantity: item.soluong,
+                    category: prod.category,
+                    title: prod.title,
+                    img: prod.img,
+                    time: validOrders.find(o => o.id === item.madon).thoigiandat
+                };
+                result.push(obj);
+            }
+        }
+    });
+    return result;
+}
+
+// Reset bảng thống kê trước khi render
+async function showThongKe(arr, mode) {
+    let orderHtml = "";
+    let mergeObj = mergeObjThongKe(arr);
+    showOverview(mergeObj);
+
+    // Reset bảng trước khi render
+    document.getElementById("showTk").innerHTML = "";
+
+    switch (mode){
+        case 0:
+            // Khi reset, vẫn phải đảm bảo lọc ra các đơn hàng đã hủy
+            mergeObj = mergeObjThongKe(await createObj());
+            showOverview(mergeObj);
+            document.getElementById("the-loai-tk").value = "Tất cả";
+            document.getElementById("form-search-tk").value = "";
+            document.getElementById("time-start-tk").value = "";
+            document.getElementById("time-end-tk").value = "";
+            break;
+        case 1:
+            mergeObj.sort((a,b) => parseInt(a.quantity) - parseInt(b.quantity));
+            break;
+        case 2:
+            mergeObj.sort((a,b) => parseInt(b.quantity) - parseInt(a.quantity));
+            break;
+    }
+
+    // Hiển thị thông tin tổng quan về đơn hàng và doanh thu
+    const totalProductsCountElement = document.getElementById("total-products-count");
+    const totalRevenueElement = document.getElementById("total-revenue");
+
+    if (totalProductsCountElement) {
+        totalProductsCountElement.textContent = mergeObj.length;
+    }
+
+    if (totalRevenueElement) {
+        totalRevenueElement.textContent = vnd(mergeObj.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)), 0));
+    }
+
+    for(let i = 0; i < mergeObj.length; i++) {
+        // Sử dụng findProductImagePath để tìm đường dẫn đầy đủ
+        let imgPath = findProductImagePath(mergeObj[i].img);
+        orderHtml += `
+        <tr>
+        <td>${i + 1}</td>
+        <td><div class="prod-img-title"><img class="prd-img-tbl" src="${imgPath}" alt=""><p>${mergeObj[i].title}</p></div></td>
+        <td>${mergeObj[i].quantity}</td>
+        <td>${vnd(mergeObj[i].doanhthu)}</td>
+        <td><button class="btn-detail product-order-detail" data-id="${mergeObj[i].id}"><i class="fa-regular fa-eye"></i> Chi tiết</button></td>
+        </tr>      
+        `;
+    }
+    document.getElementById("showTk").innerHTML = orderHtml;
+    
+    document.querySelectorAll(".product-order-detail").forEach(item => {
+        let idProduct = item.getAttribute("data-id");           
+        item.addEventListener("click", () => {           
+            detailOrderProduct(arr, idProduct);
+        });
+    });
+}
+
+// Khởi tạo thống kê chỉ fetch dữ liệu 1 lần khi load trang
+(async function initializeStatistics() {
+    await fetchStatisticsData(); // Chỉ fetch 1 lần khi load trang
+    try {
+        const objData = await createObj();
+        await showThongKe(objData);
+    } catch (error) {
+        console.error("Lỗi khi hiển thị thống kê:", error);
+    }
+})();
+
+// Debug function to check if order display works
+function debugOrders() {
+    // Xóa các lệnh console.log debug để không log ra console nữa
+    /*
+    console.log("Checking if showOrder element exists:", document.getElementById("showOrder"));
+    fetch('get_orders.php')
         .then(response => response.json())
         .then(data => {
-            // Lọc chỉ lấy user (không phải admin)
-            let accounts = data.filter(item => item.userType == 0);
-            
-            // Lọc theo trạng thái
-            let result = tinhTrang == 2 ? accounts : accounts.filter(item => item.status == tinhTrang);
-
-            // Lọc theo từ khóa tìm kiếm
-            result = ct == "" ? result : result.filter((item) => {
-                return (item.fullname.toLowerCase().includes(ct.toLowerCase()) || 
-                       item.phone.toString().toLowerCase().includes(ct.toLowerCase()));
-            });
-
-            // Lọc theo thời gian
-            if (timeStart != "" && timeEnd == "") {
-                result = result.filter((item) => {
-                    return new Date(item.join_date) >= new Date(timeStart).setHours(0, 0, 0);
-                });
-            } else if (timeStart == "" && timeEnd != "") {
-                result = result.filter((item) => {
-                    return new Date(item.join_date) <= new Date(timeEnd).setHours(23, 59, 59);
-                });
-            } else if (timeStart != "" && timeEnd != "") {
-                result = result.filter((item) => {
-                    return (new Date(item.join_date) >= new Date(timeStart).setHours(0, 0, 0) && 
-                            new Date(item.join_date) <= new Date(timeEnd).setHours(23, 59, 59));
-                });
+            console.log("Orders data from server:", data);
+            if (Array.isArray(data) && data.length > 0) {
+                showOrder(data);
+                console.log("Orders should be displayed now");
+            } else {
+                console.log("No orders found or invalid data format");
             }
+        })
+        .catch(error => {
+            console.error("Error fetching orders for debug:", error);
+        });
+    */
+}
 
-            showUserArr(result);
+// Call debug function after a short delay to ensure DOM is ready
+setTimeout(() => {
+    debugOrders();
+}, 1000);
+
+// Add missing product management functions
+function editAccount(phone) {
+    fetch('getAccounts.php')
+        .then(response => response.json())
+        .then(accounts => {
+            let user = accounts.find(account => account.phone == phone);
+            if (user) {
+                document.querySelector(".signup").classList.add("open");
+                document.querySelectorAll(".add-account-e").forEach(item => {
+                    item.style.display = "none"
+                })
+                document.querySelectorAll(".edit-account-e").forEach(item => {
+                    item.style.display = "block"
+                })
+                document.getElementById('fullname').value = user.fullname;
+                document.getElementById('phone').value = user.phone;
+                document.getElementById('password').value = user.password;
+                document.getElementById('btn-update-account').setAttribute('data-phone', user.phone);
+                // Set trạng thái cho switch
+                document.getElementById('user-status').checked = (user.status == 1);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            toast({ title: 'Lỗi', message: 'Không thể tải dữ liệu khách hàng', type: 'error', duration: 3000 });
-        });
-}
-
-function showUserArr(arr) {
-    let accountHtml = '';
-    if(arr.length == 0) {
-        accountHtml = `<tr><td colspan="6">Không có dữ liệu</td></tr>`;
-    } else {
-        arr.forEach((account, index) => {
-            let tinhtrang = account.status == 0 ? 
-                `<span class="status-no-complete">Bị khóa</span>` : 
-                `<span class="status-complete">Hoạt động</span>`;
-            accountHtml += ` <tr>
-            <td>${index + 1}</td>
-            <td>${account.fullname}</td>
-            <td>${account.phone}</td>
-            <td>${formatDate(account.join_date)}</td>
-            <td>${tinhtrang}</td>
-            <td class="control control-table">
-            <button class="btn-edit" id="edit-account" onclick='editAccount(${account.phone})' ><i class="fa-light fa-pen-to-square"></i></button>
-            <button class="btn-delete" id="delete-account" onclick="deleteAccount(${account.phone})"><i class="fa-regular fa-trash"></i></button>
-            </td>
-        </tr>`;
-        });
-    }
-    document.getElementById('show-user').innerHTML = accountHtml;
-}
-
-function cancelSearchUser() {
-    document.getElementById("tinh-trang-user").value = 2;
-    document.getElementById("form-search-user").value = "";
-    document.getElementById("time-start-user").value = "";
-    document.getElementById("time-end-user").value = "";
-    showUser();
-}
-
-// Thêm hàm lọc người dùng
-function filterUsers() {
-    showUser();
-}
-
-// Thêm hàm toggle trạng thái người dùng
-function toggleUserStatus(phone) {
-    fetch('getAccounts.php')
-        .then(response => response.json())
-        .then(data => {
-            const user = data.find(u => u.phone === phone);
-            if (user) {
-                const newStatus = user.status === 1 ? 0 : 1;
-                fetch('update_user_status.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        phone: phone,
-                        status: newStatus
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        showUser();
-                    } else {
-                        alert('Không thể cập nhật trạng thái người dùng');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Đã xảy ra lỗi khi cập nhật trạng thái người dùng');
-                });
-            }
+            toast({ title: 'Lỗi', message: 'Không thể tải thông tin tài khoản', type: 'error', duration: 3000 });
         });
 }
 
 function deleteAccount(phone) {
-    let accounts = JSON.parse(localStorage.getItem('accounts'));
-    let index = accounts.findIndex(item => item.phone == phone);
-
-    if (confirm("Bạn có chắc muốn xóa?")) {
-        // Xóa tài khoản trong localStorage
-        accounts.splice(index, 1);
-        localStorage.setItem("accounts", JSON.stringify(accounts));
-        showUser();
-
-        // Gửi yêu cầu AJAX tới PHP để xóa tài khoản trong database
+    if (confirm("Bạn có chắc muốn xóa tài khoản này?")) {
         fetch('delete_account.php', {
             method: 'POST',
             headers: {
@@ -1545,201 +1321,292 @@ function deleteAccount(phone) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                toast({ title: 'Success', message: 'Xóa tài khoản thành công!', type: 'success', duration: 3000 });
+                // Đồng bộ lại localStorage từ server
+                fetch('getAccounts.php')
+                    .then(res => res.json())
+                    .then(accounts => {
+                        localStorage.setItem('accounts', JSON.stringify(accounts));
+                        showUser();
+                    });
+                toast({ title: 'Thành công', message: 'Đã xóa tài khoản', type: 'success', duration: 3000 });
             } else {
-                toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi xóa tài khoản!', type: 'error', duration: 3000 });
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
             }
         })
         .catch(error => {
-            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
+            console.error('Error:', error);
+            toast({ title: 'Lỗi', message: 'Có lỗi xảy ra', type: 'error', duration: 3000 });
         });
     }
 }
 
+// Hàm đồng bộ accounts từ server và hiển thị user
+function syncAccountsAndShowUser() {
+    fetch('getAccounts.php')
+        .then(res => res.json())
+        .then(accounts => {
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            showUser();
+        });
+}
+// Gọi hàm này khi load trang
+window.addEventListener('DOMContentLoaded', syncAccountsAndShowUser);
 
-let indexFlag;
-function editAccount(phone) {
-    document.querySelector(".signup").classList.add("open");
-    document.querySelectorAll(".add-account-e").forEach(item => {
-        item.style.display = "none"
-    })
-    document.querySelectorAll(".edit-account-e").forEach(item => {
-        item.style.display = "block"
-    })
-    let accounts = JSON.parse(localStorage.getItem("accounts"));
-    let index = accounts.findIndex(item => {
-        return item.phone == phone
-    })
-    indexFlag = index;
-    document.getElementById("fullname").value = accounts[index].fullname;
-    document.getElementById("phone").value = accounts[index].phone;
-    document.getElementById("password").value = accounts[index].password;
-    document.getElementById("user-status").checked = accounts[index].status == 1 ? true : false;
+// Merge các sản phẩm thống kê theo id, cộng dồn số lượng và doanh thu
+function mergeObjThongKe(arr) {
+    let result = [];
+    arr.forEach(item => {
+        let check = result.find(i => i.id == item.id);
+        if (check) {
+            check.quantity = parseInt(check.quantity) + parseInt(item.quantity);
+            check.doanhthu += parseInt(item.price) * parseInt(item.quantity);
+        } else {
+            const newItem = {...item};
+            newItem.doanhthu = newItem.price * newItem.quantity;
+            result.push(newItem);
+        }
+    });
+    return result;
 }
 
-// Hàm cập nhật thông tin tài khoản
-updateAccount.addEventListener("click", (e) => {
-    e.preventDefault();
-    let accounts = JSON.parse(localStorage.getItem("accounts"));
-    let fullname = document.getElementById("fullname").value;
-    let phone = document.getElementById("phone").value;
-    let password = document.getElementById("password").value;
-    
-    if(fullname == "" || phone == "" || password == "") {
-        toast({ title: 'Chú ý', message: 'Vui lòng nhập đầy đủ thông tin!', type: 'warning', duration: 3000 });
-    } else {
-        // Cập nhật thông tin tài khoản trong localStorage
-        accounts[indexFlag].fullname = fullname;
-        accounts[indexFlag].phone = phone;
-        accounts[indexFlag].password = password;
-        accounts[indexFlag].status = document.getElementById("user-status").checked ? true : false;
-        localStorage.setItem("accounts", JSON.stringify(accounts));
-        
-        // Gửi yêu cầu AJAX tới PHP để cập nhật database
-        fetch('update_account.php', {
+// Hàm xem chi tiết thống kê sản phẩm theo id
+function detailOrderProduct(arr, id) {
+    let orderHtml = "";
+    let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
+    // Loại bỏ duplicate theo id + madon
+    let seen = new Set();
+    let uniqueArr = arr.filter(item => {
+        let key = item.id + '-' + item.madon;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+    // Chỉ hiển thị các đơn hàng không bị hủy
+    uniqueArr.forEach(item => {
+        if (item.id == id) {
+            // Tìm đơn hàng để kiểm tra trạng thái
+            const order = orders.find(o => o.id === item.madon);
+            // Chỉ hiển thị nếu đơn hàng tồn tại và không phải trạng thái hủy (4)
+            if (order && parseInt(order.trangthai) !== 4) {
+                orderHtml += `<tr>
+                <td>${item.madon}</td>
+                <td>${item.quantity || item.soluong || 0}</td>
+                <td>${vnd(item.price)}</td>
+                <td>${formatDate(item.time)}</td>
+                </tr>`;
+            }
+        }
+    });
+    if (orderHtml === "") {
+        orderHtml = `<tr><td colspan="4">Không có dữ liệu hoặc chỉ có đơn hàng đã hủy</td></tr>`;
+    }
+    document.getElementById("show-product-order-detail").innerHTML = orderHtml;
+    document.querySelector(".modal.detail-order-product").classList.add("open");
+}
+
+// Hiển thị danh sách khách hàng
+function showUser() {
+    // Lấy dữ liệu
+    let accounts = localStorage.getItem("accounts") ? JSON.parse(localStorage.getItem("accounts")) : [];
+    // Lọc chỉ lấy userType = 0 (khách hàng)
+    accounts = accounts.filter(acc => acc.userType == 0);
+
+    // Lọc theo trạng thái
+    let status = document.getElementById('tinh-trang-user').value;
+    if (status !== "2") {
+        accounts = accounts.filter(acc => String(acc.status) === status);
+    }
+
+    // Lọc theo tìm kiếm
+    let search = document.getElementById('form-search-user').value.trim().toLowerCase();
+    if (search) {
+        accounts = accounts.filter(acc => acc.fullname.toLowerCase().includes(search) || acc.phone.includes(search));
+    }
+
+    // Lọc theo ngày tham gia
+    let timeStart = document.getElementById('time-start-user').value;
+    let timeEnd = document.getElementById('time-end-user').value;
+    if (timeStart) {
+        accounts = accounts.filter(acc => acc.join && new Date(acc.join) >= new Date(timeStart));
+    }
+    if (timeEnd) {
+        accounts = accounts.filter(acc => acc.join && new Date(acc.join) <= new Date(timeEnd));
+    }
+
+    // Render ra bảng
+    let html = "";
+    accounts.forEach((acc, idx) => {
+        html += `<tr>
+            <td>${idx + 1}</td>
+            <td>${acc.fullname}</td>
+            <td>${acc.phone}</td>
+            <td>${acc.join_date ? new Date(acc.join_date).toLocaleDateString('vi-VN') : ''}</td>
+            <td>${acc.status == 1 ? 'Hoạt động' : 'Bị khóa'}</td>
+            <td>
+                <button class="btn-edit" onclick="editAccount('${acc.phone}')"><i class='fa-light fa-pen-to-square'></i></button>
+                <button class="btn-delete" onclick="deleteAccount('${acc.phone}')"><i class='fa-regular fa-trash'></i></button>
+            </td>
+        </tr>`
+    });
+    document.getElementById("show-user").innerHTML = html;
+}
+
+// Hàm đồng bộ products từ server và hiển thị sản phẩm
+function syncProductsAndShowProduct() {
+    fetch('get_products.php')
+        .then(res => res.json())
+        .then(products => {
+            localStorage.setItem('products', JSON.stringify(products));
+            showProduct();
+        });
+}
+// Gọi hàm này khi load trang
+window.addEventListener('DOMContentLoaded', syncProductsAndShowProduct);
+
+// Reset bộ lọc và tìm kiếm ở tab Khách hàng
+function cancelSearchUser() {
+    document.getElementById('tinh-trang-user').value = "2";
+    document.getElementById('form-search-user').value = "";
+    document.getElementById('time-start-user').value = "";
+    document.getElementById('time-end-user').value = "";
+    showUser();
+}
+
+// Reset bộ lọc và tìm kiếm ở tab Đơn hàng
+function cancelSearchOrder() {
+    document.getElementById('tinh-trang').value = "2";
+    document.getElementById('thanh-toan').value = "2";
+    document.getElementById('form-search-order').value = "";
+    document.getElementById('time-start').value = "";
+    document.getElementById('time-end').value = "";
+    findOrder();
+}
+
+// Thêm hàm openCreateAccount cho admin
+function openCreateAccount() {
+    // Mở modal tạo tài khoản
+    document.querySelector('.signup').classList.add('open');
+    // Hiện nút thêm, ẩn nút sửa
+    document.querySelectorAll('.add-account-e').forEach(item => item.style.display = 'block');
+    document.querySelectorAll('.edit-account-e').forEach(item => item.style.display = 'none');
+    // Reset các trường nhập
+    document.getElementById('fullname').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('user-status').checked = true;
+}
+
+// SỰ KIỆN CHO NÚT ĐĂNG KÝ (THÊM KHÁCH HÀNG MỚI)
+document.querySelectorAll('.add-account-e').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const fullname = document.getElementById('fullname').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const status = document.getElementById('user-status').checked ? 1 : 0;
+        const address = '';
+        const email = '';
+        const join = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        const userType = 0;
+        if (!fullname || !phone || !password) {
+            toast({ title: 'Lỗi', message: 'Vui lòng nhập đầy đủ thông tin!', type: 'error', duration: 3000 });
+            return;
+        }
+        fetch('add_account.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                fullname: fullname,
-                phone: phone,
-                password: password,
-                status: accounts[indexFlag].status
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullname, phone, password, address, email, status, join, userType })
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             if (data.success) {
-                toast({ title: 'Thành công', message: 'Thay đổi thông tin thành công!', type: 'success', duration: 3000 });
-                document.querySelector(".signup").classList.remove("open");
-                signUpFormReset();
-                showUser();
+                toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+                document.querySelector('.signup').classList.remove('open');
+                syncAccountsAndShowUser();
             } else {
-                toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi cập nhật tài khoản!', type: 'error', duration: 3000 });
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
             }
         })
-        .catch(error => {
-            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Không thể kết nối server!', type: 'error', duration: 3000 });
         });
-    }
+    });
 });
 
-// Hàm thêm tài khoản mới
-addAccount.addEventListener("click", (e) => {
-    e.preventDefault();
-    let fullNameUser = document.getElementById('fullname').value;
-    let phoneUser = document.getElementById('phone').value;
-    let passwordUser = document.getElementById('password').value;
-
-    // Check validate (giữ nguyên mã kiểm tra hiện tại)
-    
-    if (fullNameUser && phoneUser && passwordUser) {
-        let user = {
-            fullname: fullNameUser,
-            phone: phoneUser,
-            password: passwordUser,
-            address: '',
-            email: '',
-            status: 1,
-            join: new Date(),
-            cart: [],
-            userType: 0
+// SỰ KIỆN CHO NÚT LƯU THÔNG TIN (CHỈNH SỬA KHÁCH HÀNG)
+document.querySelectorAll('.edit-account-e').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const fullname = document.getElementById('fullname').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const status = document.getElementById('user-status').checked ? 1 : 0;
+        if (!fullname || !phone || !password) {
+            toast({ title: 'Lỗi', message: 'Vui lòng nhập đầy đủ thông tin!', type: 'error', duration: 3000 });
+            return;
         }
-        
-        let accounts = localStorage.getItem('accounts') ? JSON.parse(localStorage.getItem('accounts')) : [];
-        let checkloop = accounts.some(account => account.phone == user.phone);
-
-        if (!checkloop) {
-            accounts.push(user);
-            localStorage.setItem('accounts', JSON.stringify(accounts));
-
-            // Gửi yêu cầu AJAX tới PHP để thêm tài khoản vào database
-            fetch('add_account.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(user)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    toast({ title: 'Thành công', message: 'Tạo thành công tài khoản!', type: 'success', duration: 3000 });
-                    document.querySelector(".signup").classList.remove("open");
-                    showUser();
-                    signUpFormReset();
-                } else {
-                    toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi thêm tài khoản!', type: 'error', duration: 3000 });
-                }
-            })
-            .catch(error => {
-                toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
-            });
-        } else {
-            toast({ title: 'Cảnh báo!', message: 'Tài khoản đã tồn tại!', type: 'error', duration: 3000 });
-        }
-        
-    } else {
-        toast({ title: 'Cảnh báo!', message: 'Tài khoản đã tồn tại!', type: 'error', duration: 3000 });
-    }
-});
-
-
-document.getElementById("logout-acc").addEventListener('click', (e) => {
-    e.preventDefault();
-    localStorage.removeItem("currentuser");
-    window.location = "http://localhost/websach/";
-})
-
-function showOrderArr(arr) {
-    let orderHtml = '';
-    if(arr.length == 0) {
-        orderHtml = `<tr><td colspan="7">Không có dữ liệu</td></tr>`;
-    } else {
-        arr.forEach((order, index) => {
-            let tinhtrang = '';
-            let actionButton = '';
-            
-            // Xác định trạng thái và nút tương ứng
-            if(order.status == 0) {
-                tinhtrang = `<span class="status-no-complete">Chưa xử lý</span>`;
-                // Chỉ hiển thị nút hủy khi đơn hàng chưa xử lý
-                actionButton = `
-                    <button class="btn-cancel" onclick="cancelOrder('${order.id}')" title="Hủy đơn hàng">
-                        <i class="fa-solid fa-ban"></i> Hủy đơn
-                    </button>
-                    <button class="btn-detail" onclick="detailOrder('${order.id}')" title="Xem chi tiết">
-                        <i class="fa-solid fa-eye"></i> Chi tiết
-                    </button>
-                `;
-            } else if(order.status == 1) {
-                tinhtrang = `<span class="status-complete">Đã xử lý</span>`;
-                actionButton = `
-                    <button class="btn-detail" onclick="detailOrder('${order.id}')" title="Xem chi tiết">
-                        <i class="fa-solid fa-eye"></i> Chi tiết
-                    </button>
-                `;
-            } else if(order.status == 4) {
-                tinhtrang = `<span class="status-cancel">Đã hủy</span>`;
-                actionButton = `
-                    <button class="btn-detail" onclick="detailOrder('${order.id}')" title="Xem chi tiết">
-                        <i class="fa-solid fa-eye"></i> Chi tiết
-                    </button>
-                `;
+        fetch('update_account.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fullname, phone, password, status })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+                document.querySelector('.signup').classList.remove('open');
+                syncAccountsAndShowUser();
+            } else {
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
             }
-            
-            orderHtml += `<tr>
-                <td>${index + 1}</td>
-                <td>${order.fullname}</td>
-                <td>${formatDate(order.date)}</td>
-                <td>${vnd(order.tongtien)}</td>
-                <td>${tinhtrang}</td>
-                <td class="control control-table">
-                    ${actionButton}
-                </td>
-            </tr>`;
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Không thể kết nối server!', type: 'error', duration: 3000 });
         });
+    });
+});
+
+// Thêm các hàm chuyển trạng thái mới
+async function changeStatusShipping(orderId, el) {
+    // Chuyển sang trạng thái 2: Đang giao hàng
+    await changeOrderStatus(orderId, 2, el, 'Đang giao hàng');
+}
+async function changeStatusComplete(orderId, el) {
+    // Chuyển sang trạng thái 3: Hoàn thành
+    await changeOrderStatus(orderId, 3, el, 'Hoàn thành');
+}
+async function changeOrderStatus(orderId, status, el, text) {
+    try {
+        // Lấy thông tin đơn hàng trước khi chuyển trạng thái
+        const orderRes = await fetch(`get_order.php?order_id=${orderId}`);
+        const orderData = await orderRes.json();
+        if (!orderData.success) throw new Error('Không lấy được thông tin đơn hàng');
+        const order = orderData.order;
+        // Nếu chuyển sang Đang giao hàng (2) hoặc Hoàn thành (3) mà đơn online chưa thanh toán thì chặn
+        if ((status === 2 || status === 3) && (order.payment_method == 'online' || order.payment_method == 1) && order.payment_status != 1) {
+            // Gửi mail nhắc nhở thanh toán
+            await fetch('send_payment_reminder.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: orderId })
+            });
+            toast({ title: 'Cảnh báo', message: 'Khách hàng chưa thanh toán online. Đã gửi mail nhắc nhở!', type: 'warning', duration: 4000 });
+            return;
+        }
+        const response = await fetch('update_order_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: orderId, status: status })
+        });
+        const data = await response.json();
+        if (data.success) {
+            toast({ title: 'Thành công', message: `Đã chuyển trạng thái đơn hàng sang ${text}`, type: 'success', duration: 2000 });
+            loadOrdersFromDatabase();
+            document.querySelector('.modal.detail-order')?.classList.remove('open');
+        } else {
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+        }
+    } catch (error) {
+        toast({ title: 'Lỗi', message: 'Có lỗi khi cập nhật trạng thái!', type: 'error', duration: 3000 });
     }
-    document.getElementById('show-order').innerHTML = orderHtml;
 }

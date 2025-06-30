@@ -197,7 +197,7 @@
                                 <td>Liên hệ</td>
                                 <td>Ngày tham gia</td>
                                 <td>Tình trạng</td>
-                                <td></td>
+                                <td>Thao tác</td>
                             </tr>
                         </thead>
                         <tbody id="show-user">
@@ -212,7 +212,7 @@
                         <select name="tinh-trang" id="tinh-trang" onchange="findOrder()">
                             <option value="2">Tất cả</option>
                             <option value="0">Chưa xử lý</option>
-                            <option value="1">Đã xử lý</option>
+                            <option value="1">Đã xác nhận</option>
                             <option value="4">Đã hủy</option>
                         </select>
                         <select name="thanh-toan" id="thanh-toan" onchange="findOrder()">
@@ -251,6 +251,7 @@
                                 <td>Tổng tiền</td>
                                 <td>Trạng thái</td>
                                 <td>Thanh toán</td>
+                                <td>Phương thức</td>
                                 <td>Thao tác</td>
                             </tr>
                         </thead>
@@ -370,6 +371,7 @@
                                 <option>Khoa Học</option>
                                 <option>Tiểu Thuyết</option>
                                 <option>Thiếu Nhi</option>
+                                <option>Không Phân Loại</option>
                             </select>
                             <span class="form-message"></span>
                         </div>
@@ -377,6 +379,11 @@
                             <label for="gia-moi" class="form-label">Giá bán</label>
                             <input id="gia-moi" name="gia-moi" type="number" placeholder="Nhập giá bán"
                                 class="form-control">
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="so-luong" class="form-label">Số lượng</label>
+                            <input id="so-luong" name="so-luong" type="number" min="0" placeholder="Nhập số lượng" class="form-control">
                             <span class="form-message"></span>
                         </div>
                         <div class="form-group">
@@ -429,7 +436,7 @@
     <div class="modal signup">
         <div class="modal-container">
             <h3 class="modal-container-title add-account-e">THÊM KHÁCH HÀNG MỚI</h3>
-            <h3 class="modal-container-title edit-account-e">CHỈNH SỬA THÔNG TIN</h3>
+            <h3 class="modal-container-title ">CHỈNH SỬA THÔNG TIN</h3>
             <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
             <div class="form-content sign-up">
                 <form action="" class="signup-form">
@@ -448,7 +455,7 @@
                         <input id="password" name="password" type="text" placeholder="Nhập mật khẩu" class="form-control">
                         <span class="form-message-password form-message"></span>
                     </div>   
-                    <div class="form-group edit-account-e">
+                    <div class="form-group">
                         <label class="form-label">Trạng thái</label>
                         <input type="checkbox" id="user-status" class="switch-input">
                         <label for="user-status" class="switch"></label>
@@ -461,6 +468,11 @@
     </div>
     <div id="toast"></div>
     <script src="./js/admin.js"></script>
+    <script>
+      // Đảm bảo gọi showUser khi trang load (nếu có tab khách hàng)
+      if (typeof showUser === 'function') showUser();
+      else window.addEventListener('DOMContentLoaded', function() { if (typeof showUser === 'function') showUser(); });
+    </script>
     <script src="./js/toast-message.js"></script>
 </body>
 </html>
