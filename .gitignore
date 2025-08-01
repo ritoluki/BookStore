@@ -1,0 +1,16 @@
+# Ignore environment variables
+.env
+
+# Ignore vendor folder
+vendor/
+
+# Ignore IDE files
+.idea/
+.vscode/
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore log files
+*.log
