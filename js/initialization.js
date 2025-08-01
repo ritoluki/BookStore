@@ -8,7 +8,7 @@ function createProduct() {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
                 let products = JSON.parse(xhr.responseText);
-                
+
                 // Đảm bảo rằng sản phẩm có cấu trúc chính xác
                 products = products.map(product => {
                     return {
@@ -38,7 +38,7 @@ function refreshProducts() {
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
             let products = JSON.parse(xhr.responseText);
-            
+
             // Đảm bảo rằng sản phẩm có cấu trúc chính xác
             products = products.map(product => {
                 return {
@@ -132,7 +132,7 @@ function createOrderDetails() {
                     // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
                     let response = JSON.parse(xhr.responseText);
                     let orderDetails = response.orderDetails || [];
-                    
+
                     // Đảm bảo rằng chi tiết đơn hàng có cấu trúc chính xác
                     if (Array.isArray(orderDetails)) {
                         orderDetails = orderDetails.map(detail => {
@@ -144,7 +144,7 @@ function createOrderDetails() {
                                 soluong: Number(detail.soluong || 0)
                             };
                         });
-                        
+
                         // Lưu dữ liệu vào localStorage
                         localStorage.setItem('orderDetails', JSON.stringify(orderDetails));
                     } else {
@@ -171,7 +171,7 @@ function createOrders() {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
                 let orders = JSON.parse(xhr.responseText);
-                
+
                 // Đảm bảo rằng đơn hàng có cấu trúc chính xác
                 orders = orders.map(order => {
                     return {
@@ -220,21 +220,21 @@ function cancelOrder(orderId, btn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
-            // Reload lại danh sách đơn hàng
-            renderOrderProduct && renderOrderProduct();
-            // Đóng modal nếu có
-            document.querySelector('.modal.detail-order')?.classList.remove('open');
-        } else {
-            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
-        }
-    })
-    .catch(err => {
-        toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+                // Reload lại danh sách đơn hàng
+                renderOrderProduct && renderOrderProduct();
+                // Đóng modal nếu có
+                document.querySelector('.modal.detail-order')?.classList.remove('open');
+            } else {
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
+            }
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
+        });
 }
 
 // Gọi các hàm cập nhật khi tải lại trang
