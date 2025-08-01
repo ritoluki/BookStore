@@ -1,5 +1,5 @@
 <?php
-include 'php/main.php';
+include 'src/utils/main.php';
 session_start();
 
 ?>
@@ -502,7 +502,7 @@ session_start();
                         <button class="form-submit" id="login-button">Đăng nhập</button>
                     </form>
                     <p class="change-login">Bạn chưa có tài khoản ? <a href="javascript:;" class="signup-link">Đăng kí
-                            ngay</a><br><a href="quenpass.php" class="">Quên mật khẩu</a></p>
+                            ngay</a><br><a href="src/controllers/quenpass.php" class="">Quên mật khẩu</a></p>
                 </div>
             </div>
         </div>

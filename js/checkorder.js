@@ -21,7 +21,7 @@ if (tracuuForm) {
             // Lấy mới nhất từ server
             let orders = [];
             try {
-                const res = await fetch('get_orders.php');
+                const res = await fetch('src/controllers/get_orders.php');
                 orders = await res.json();
             } catch (e) {
                 orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
@@ -38,7 +38,7 @@ if (tracuuForm) {
         // Đúng sdt, lấy mới nhất từ server
         let orders = [];
         try {
-            const res = await fetch('get_orders.php');
+            const res = await fetch('src/controllers/get_orders.php');
             orders = await res.json();
         } catch (e) {
             orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
@@ -241,7 +241,7 @@ function cancelOrder(orderId) {
                 if (p) {
                     p.soluong += parseInt(detail.soluong);
                     // Gọi API cập nhật số lượng về database
-                    await fetch('update_product_quantity.php', {
+                    await fetch('src/controllers/update_product_quantity.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ id: p.id, soluong: p.soluong })
@@ -258,7 +258,7 @@ function cancelOrder(orderId) {
                 requestData.isAdmin = true;
             }
             // Gọi API hủy đơn hàng
-            fetch('cancel_order.php', {
+            fetch('src/controllers/cancel_order.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -332,7 +332,7 @@ function syncOrderStatusWithServer() {
     if (orders.length === 0) {
         return;
     }
-    fetch('get_orders.php')
+    fetch('src/controllers/get_orders.php')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');

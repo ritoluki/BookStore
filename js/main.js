@@ -379,7 +379,7 @@ function submitBookRating() {
             content: content
         };
 
-        fetch('add_book_review.php', {
+        fetch('src/controllers/add_book_review.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(reviewData)
@@ -402,7 +402,7 @@ function submitBookRating() {
                     toast({ title: 'Lỗi', message: 'Không thể lưu đánh giá: ' + data.message, type: 'error', duration: 3000 });
                 }
             } catch (e) {
-                console.error('add_book_review JSON parse error:', e);
+                console.error('src/controllers/add_book_review JSON parse error:', e);
                 console.error('Response text:', text);
                 toast({ title: 'Lỗi', message: 'Có lỗi khi xử lý phản hồi từ server!', type: 'error', duration: 3000 });
             }
@@ -415,7 +415,7 @@ function submitBookRating() {
 
 // Thêm hàm lấy user ID thực từ database với debug tốt hơn
 function getUserRealId(phone) {
-    return fetch('get_user_id.php', {
+    return fetch('src/controllers/get_user_id.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone })
@@ -823,7 +823,7 @@ signupButton.addEventListener('click', () => {
                 if (updated) {
                     localStorage.setItem('order', JSON.stringify(orders));
                 }
-                fetch('register_user.php', {
+                fetch('src/controllers/register_user.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -921,7 +921,7 @@ function logOut() {
     
 
     // Gửi giỏ hàng cập nhật lên server
-    fetch('updateCart.php', {
+    fetch('src/controllers/updateCart.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1025,7 +1025,7 @@ function changeInformation() {
     
     
     // Gửi yêu cầu AJAX tới PHP để cập nhật thông tin trong cơ sở dữ liệu
-    fetch('update_user_info.php', {
+    fetch('src/controllers/update_user_info.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1097,7 +1097,7 @@ function changePassword() {
                     localStorage.setItem('accounts', JSON.stringify(accounts));
 
                     // Gửi yêu cầu AJAX tới PHP để cập nhật mật khẩu trong database
-                    fetch('update_password.php', {
+                    fetch('src/controllers/update_password.php', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -1446,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Hàm khởi tạo đánh giá khi tải trang
 function initBookReviews() {
     // Lấy đánh giá từ server và lưu vào localStorage
-    fetch('get_all_book_reviews.php')
+    fetch('src/controllers/get_all_book_reviews.php')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -1844,7 +1844,7 @@ function cancelOrder(orderId, btn) {
     .then(data => {
         if (data.success) {
             toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
-            fetch('get_orders.php')
+            fetch('src/controllers/get_orders.php')
                 .then(res => res.json())
                 .then(orders => {
                     localStorage.setItem('order', JSON.stringify(orders));
@@ -1917,7 +1917,7 @@ function payAgain(orderId) {
 // --- confirmReceived ---
 function confirmReceived(orderId) {
     if (!confirm('Bạn xác nhận đã nhận được hàng?')) return;
-    fetch('update_order_status.php', {
+    fetch('src/controllers/update_order_status.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, status: 3 })
@@ -1926,7 +1926,7 @@ function confirmReceived(orderId) {
     .then(data => {
         if (data.success) {
             toast({ title: 'Thành công', message: 'Cảm ơn bạn đã xác nhận!', type: 'success', duration: 2000 });
-            fetch('get_orders.php')
+            fetch('src/controllers/get_orders.php')
                 .then(res => res.json())
                 .then(orders => {
                     localStorage.setItem('order', JSON.stringify(orders));

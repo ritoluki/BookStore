@@ -53,7 +53,7 @@ function getAmoumtUser() {
 function getMoney() {
     // First, try to get the latest order data from the server
     return new Promise((resolve, reject) => {
-        fetch('get_orders.php')
+        fetch('src/controllers/get_orders.php')
             .then(response => response.json())
             .then(serverOrders => {
                 if (Array.isArray(serverOrders)) {
@@ -61,7 +61,7 @@ function getMoney() {
                     localStorage.setItem("order", JSON.stringify(serverOrders));
                     
                     // Also fetch order details
-                    return fetch('get_all_order_details.php');
+                    return fetch('src/controllers/get_all_order_details.php');
                 }
                 throw new Error('Invalid server order data');
             })
@@ -289,7 +289,7 @@ function deleteProduct(id) {
         products[index].status = 0;
         localStorage.setItem("products", JSON.stringify(products));
         // Gửi yêu cầu AJAX tới PHP để cập nhật database
-        fetch('modify_product.php', {
+        fetch('src/controllers/modify_product.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -310,7 +310,7 @@ function changeStatusProduct(id) {
         products[index].status = 1;
         localStorage.setItem("products", JSON.stringify(products));
         // Gửi yêu cầu AJAX tới PHP để cập nhật database
-        fetch('modify_product.php', {
+        fetch('src/controllers/modify_product.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -400,7 +400,7 @@ btnUpdateProductIn.addEventListener("click", async (e) => {
             formData.append("describes", descProductCur);
             formData.append("status", 1);
             // Gửi yêu cầu cập nhật sản phẩm đến máy chủ
-            const response = await fetch("update-product.php", {
+            const response = await fetch("src/controllers/update-product.php", {
                 method: "POST",
                 body: formData
             });
@@ -468,7 +468,7 @@ btnAddProductIn.addEventListener("click", async (e) => {
             formData.append('soluong', parseInt(soluong));
             formData.append('describes', moTa);
             formData.append('status', 1);
-            const response = await fetch('add_product.php', {
+            const response = await fetch('src/controllers/add_product.php', {
                 method: 'POST',
                 body: formData
             });
@@ -548,7 +548,7 @@ function uploadImage(el) {
     // LẤY CATEGORY ĐANG CHỌN
     var category = document.getElementById('chon-sach').value;
     formData.append('category', category);
-    fetch('upload_image.php', {
+    fetch('src/controllers/upload_image.php', {
         method: 'POST',
         body: formData
     })
@@ -580,7 +580,7 @@ function uploadImage(el) {
 async function changeStatus(id, el) {
     let status = el.classList.contains('btn-chuaxuly') ? 1 : 0;
     try {
-        const response = await fetch('update_order_status.php', {
+        const response = await fetch('src/controllers/update_order_status.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -640,7 +640,7 @@ function formatDate(date) {
 // Load orders from database
 async function loadOrdersFromDatabase() {
     try {
-        const response = await fetch('get_orders.php');
+        const response = await fetch('src/controllers/get_orders.php');
         const data = await response.json();
         if (Array.isArray(data)) {
             showOrder(data);
@@ -758,7 +758,7 @@ function deleteOrderAdmin(orderId) {
         if (data.success) {
             toast({ title: 'Thành công', message: 'Đã xóa đơn hàng', type: 'success', duration: 3000 });
             // Đồng bộ lại đơn hàng từ server
-            fetch('get_orders.php')
+            fetch('src/controllers/get_orders.php')
                 .then(res => res.json())
                 .then(orders => {
                     localStorage.setItem('order', JSON.stringify(orders));
@@ -809,7 +809,7 @@ async function detailOrder(id) {
         const orderDetails = await getOrderDetails(id);
 
         // Lấy thông tin sản phẩm
-        const productsResponse = await fetch('get_products.php');
+        const productsResponse = await fetch('src/controllers/get_products.php');
         const products = await productsResponse.json();
 
         let spHtml = `<div class="modal-detail-left"><div class="order-item-group">`;
@@ -939,7 +939,7 @@ async function cancelOrder(orderId) {
                 console.log(`Hoàn trả ${detail.soluong} sách cho sản phẩm ${p.title}. Số lượng mới: ${p.soluong}`);
                 
                 // Gọi API cập nhật số lượng về database
-                await fetch('update_product_quantity.php', {
+                await fetch('src/controllers/update_product_quantity.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: p.id, soluong: p.soluong })
@@ -955,7 +955,7 @@ async function cancelOrder(orderId) {
             status: 4 // Status for canceled orders
         };
         
-        const response = await fetch('update_order_status.php', {
+        const response = await fetch('src/controllers/update_order_status.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1003,7 +1003,7 @@ async function togglePaymentStatus(orderId, currentStatus) {
     
     if (confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thanh toán thành "${statusText}"?`)) {
         try {
-            const response = await fetch('update_payment_status.php', {
+            const response = await fetch('src/controllers/update_payment_status.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -1060,7 +1060,7 @@ async function togglePaymentStatus(orderId, currentStatus) {
 async function thongKe(mode) {
     // Trước khi thống kê, tải dữ liệu mới nhất từ server để đảm bảo thông tin được cập nhật
     try {
-        const response = await fetch('get_orders.php');
+        const response = await fetch('src/controllers/get_orders.php');
         const data = await response.json();
         if (Array.isArray(data)) {
             // Cập nhật dữ liệu order trong localStorage
@@ -1068,7 +1068,7 @@ async function thongKe(mode) {
         }
         
         // Tải chi tiết đơn hàng
-        const detailsResponse = await fetch('get_all_order_details.php');
+        const detailsResponse = await fetch('src/controllers/get_all_order_details.php');
         const detailsData = await detailsResponse.json();
         if (Array.isArray(detailsData)) {
             localStorage.setItem("orderDetails", JSON.stringify(detailsData));
@@ -1133,9 +1133,9 @@ function showOverview(arr){
 async function fetchStatisticsData() {
     try {
         const [ordersResponse, detailsResponse, productsResponse] = await Promise.all([
-            fetch('get_orders.php'),
-            fetch('get_all_order_details.php'),
-            fetch('get_products.php')
+            fetch('src/controllers/get_orders.php'),
+            fetch('src/controllers/get_all_order_details.php'),
+            fetch('src/controllers/get_products.php')
         ]);
         const [orders, orderDetails, products] = await Promise.all([
             ordersResponse.json(),
@@ -1259,7 +1259,7 @@ function debugOrders() {
     // Xóa các lệnh console.log debug để không log ra console nữa
     /*
     console.log("Checking if showOrder element exists:", document.getElementById("showOrder"));
-    fetch('get_orders.php')
+    fetch('src/controllers/get_orders.php')
         .then(response => response.json())
         .then(data => {
             console.log("Orders data from server:", data);
@@ -1453,7 +1453,7 @@ function showUser() {
 
 // Hàm đồng bộ products từ server và hiển thị sản phẩm
 function syncProductsAndShowProduct() {
-    fetch('get_products.php')
+    fetch('src/controllers/get_products.php')
         .then(res => res.json())
         .then(products => {
             localStorage.setItem('products', JSON.stringify(products));
@@ -1512,7 +1512,7 @@ document.querySelectorAll('.add-account-e').forEach(btn => {
             toast({ title: 'Lỗi', message: 'Vui lòng nhập đầy đủ thông tin!', type: 'error', duration: 3000 });
             return;
         }
-        fetch('add_account.php', {
+        fetch('src/controllers/add_account.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fullname, phone, password, address, email, status, join, userType })
@@ -1545,7 +1545,7 @@ document.querySelectorAll('.edit-account-e').forEach(btn => {
             toast({ title: 'Lỗi', message: 'Vui lòng nhập đầy đủ thông tin!', type: 'error', duration: 3000 });
             return;
         }
-        fetch('update_account.php', {
+        fetch('src/controllers/update_account.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ fullname, phone, password, status })
@@ -1593,7 +1593,7 @@ async function changeOrderStatus(orderId, status, el, text) {
             toast({ title: 'Cảnh báo', message: 'Khách hàng chưa thanh toán online. Đã gửi mail nhắc nhở!', type: 'warning', duration: 4000 });
             return;
         }
-        const response = await fetch('update_order_status.php', {
+        const response = await fetch('src/controllers/update_order_status.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderId: orderId, status: status })

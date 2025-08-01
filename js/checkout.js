@@ -345,7 +345,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
                     if (p) {
                         p.soluong = Math.max(0, Number(p.soluong) - Number(item.soluong));
                         // Gọi API cập nhật số lượng về database
-                        await fetch('update_product_quantity.php', {
+                        await fetch('src/controllers/update_product_quantity.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ id: p.id, soluong: Number(p.soluong) })
@@ -358,7 +358,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             if (p) {
                 p.soluong = Math.max(0, Number(p.soluong) - Number(product.soluong));
                 // Gọi API cập nhật số lượng về database
-                await fetch('update_product_quantity.php', {
+                await fetch('src/controllers/update_product_quantity.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: p.id, soluong: Number(p.soluong) })
@@ -373,7 +373,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         let formData = new FormData();
         formData.append('order', JSON.stringify(donhang));
         formData.append('orderDetails', JSON.stringify(newOrderDetails));
-        const response = await fetch('add_order.php', {
+        const response = await fetch('src/controllers/add_order.php', {
             method: 'POST',
             body: formData
         });

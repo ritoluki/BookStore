@@ -3,7 +3,7 @@ function createProduct() {
     if (localStorage.getItem('products') === null) {
         // Sử dụng AJAX để lấy dữ liệu từ server
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "get_products.php", true);
+        xhr.open("GET", "src/controllers/get_products.php", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
@@ -34,7 +34,7 @@ function createProduct() {
 // Hàm cập nhật danh sách sản phẩm từ server
 function refreshProducts() {
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "get_products.php", true);
+    xhr.open("GET", "src/controllers/get_products.php", true);
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
             let products = JSON.parse(xhr.responseText);
@@ -73,7 +73,7 @@ function getProducts() {
 function createAdminAccount() {
     let accounts = localStorage.getItem("accounts");
     if (!accounts) {
-        fetch('getAccounts.php')
+        fetch('src/controllers/getAccounts.php')
             .then(response => response.json())
             .then(data => {
                 // Đảm bảo các kiểu dữ liệu được xử lý chính xác trong JavaScript
@@ -98,7 +98,7 @@ function createAdminAccount() {
 
 // Hàm cập nhật danh sách tài khoản admin từ server
 function refreshAccounts() {
-    fetch('getAccounts.php')
+    fetch('src/controllers/getAccounts.php')
         .then(response => response.json())
         .then(data => {
             data = data.map(account => {
@@ -125,7 +125,7 @@ function createOrderDetails() {
     if (localStorage.getItem('orderDetails') === null) {
         // Sử dụng AJAX để lấy dữ liệu từ server
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "get_order_details.php", true);
+        xhr.open("GET", "src/controllers/get_order_details.php", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 try {
