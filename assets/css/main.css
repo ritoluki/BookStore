@@ -824,7 +824,7 @@ header {
 }
 
 .book-info {
-    padding: 10px;
+
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -844,24 +844,22 @@ header {
     color: var(--text-color);
     font-size: 15px;
     font-weight: 600;
-    min-height: 48px; /* Thay đổi từ height cố định thành min-height */
+
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-    margin-bottom: 8px;
-    line-height: 1.5; /* Thêm line-height để cải thiện độ đọc */
+
     word-wrap: break-word; /* Cho phép từ dài được ngắt và xuống dòng */
 }
 
 .card-footer {
-    padding: 8px 10px 12px;
     margin-top: auto; /* This pushes the footer to the bottom */
+    min-height: 80px; /* Đảm bảo có đủ không gian cho price + button */
 }
 
 .product-price {
     text-align: center;
-    margin-top: 8px;
 }
 
 .product-price .current-price {
@@ -3664,4 +3662,333 @@ tbody tr td {
 }
 .btn-danhanhang:hover {
   background: #0097a7 !important;
+}
+
+/* ===== STYLES CHO SÁCH BÁN CHẠY ===== */
+
+/* Navigation tabs */
+.home-navigation {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.nav-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.nav-tab {
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    color: #666;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-tab:hover {
+    border-color: #B5292F;
+    color: #B5292F;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(181, 41, 47, 0.2);
+}
+
+.nav-tab.active {
+    background: #B5292F;
+    border-color: #B5292F;
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(181, 41, 47, 0.3);
+}
+
+/* Sách bán chạy */
+.card-product.bestseller {
+    position: relative;
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+    border: 2px solid #ff6b35;
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.15);
+}
+
+.card-product.bestseller:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 35px rgba(255, 107, 53, 0.25);
+}
+
+.bestseller-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    animation: pulse 2s infinite;
+}
+
+.bestseller-badge i {
+    margin-right: 5px;
+    color: #fff;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(255, 107, 53, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    }
+}
+
+/* Thông tin số lượng đã bán */
+.card-sales-info {
+    margin: 4px 0;
+    text-align: center;
+}
+
+.sales-quantity {
+    background: #f8f9fa;
+    color: #666;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+    border: 1px solid #e9ecef;
+}
+
+.card-product.bestseller .sales-quantity {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    color: #e65100;
+    border-color: #ffcc02;
+    font-weight: 600;
+}
+
+/* ===== RESPONSIVE CHO MOBILE ===== */
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-tab {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .bestseller-badge {
+        top: 5px;
+        right: 5px;
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .card-product.bestseller {
+        transform: scale(1.01);
+    }
+    
+    .card-product.bestseller:hover {
+        transform: scale(1.02);
+    }
+    
+    .sales-quantity {
+        font-size: 12px;
+        padding: 3px 10px;
+    }
+}
+
+/* ===== STYLES CHO SÁCH GIẢM GIÁ ===== */
+
+/* Sách giảm giá */
+.card-product.discounted {
+    position: relative;
+    transform: scale(1.01);
+    transition: all 0.3s ease;
+    border: 2px solid #dc3545;
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.15);
+}
+
+.card-product.discounted:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 30px rgba(220, 53, 69, 0.25);
+}
+
+.discounted-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    animation: discount-pulse 2s infinite;
+    z-index: 2;
+}
+
+.discounted-badge i {
+    margin-right: 5px;
+    color: #fff;
+}
+
+@keyframes discount-pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(220, 53, 69, 0.6);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+}
+
+/* Price styling cho sách giảm giá - Layout ngang */
+.price-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.original-price {
+    color: #999;
+    text-decoration: line-through;
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.discounted-price {
+    color: #dc3545;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Giá hiện tại (không giảm giá) */
+.current-price {
+    color: #333;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.discount-info {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Responsive cho mobile - price container */
+@media (max-width: 480px) {
+    .price-container {
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .original-price {
+        font-size: 11px;
+    }
+    
+    .discounted-price {
+        font-size: 14px;
+    }
+    
+    .discount-info {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+}
+
+/* CSS cho cart price */
+.cart-price-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.cart-original-price {
+    color: #999;
+    text-decoration: line-through;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.cart-discounted-price {
+    color: #dc3545;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.card-product.discounted .current-price {
+    color: #dc3545;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.card-product.discounted .card-button {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.card-product.discounted .card-button:hover {
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+    transform: translateY(-2px);
+}
+
+/* ===== RESPONSIVE CHO SÁCH GIẢM GIÁ TRÊN MOBILE ===== */
+@media (max-width: 768px) {
+    .discounted-badge {
+        top: 5px;
+        left: 5px;
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+    
+    .card-product.discounted {
+        transform: scale(1.005);
+    }
+    
+    .card-product.discounted:hover {
+        transform: scale(1.01);
+    }
+    
+    .card-product.discounted .current-price {
+        font-size: 14px;
+    }
 }

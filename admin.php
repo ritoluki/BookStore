@@ -5,10 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='./assets/img/iconlogo.jpg' rel='icon' type='image/x-icon' />
-    <link rel="stylesheet" href="assets/css/admin.css">
+    <link rel="stylesheet" href="assets/css/admin.css?v=20250819">
     <link rel="stylesheet" href="./assets/css/toast-message.css">
     <link href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="./assets/css/admin-responsive.css">
+    <link rel="stylesheet" href="./assets/css/admin-responsive.css?v=20250819">
     <title>Quản lý cửa hàng</title>
 </head>
 
@@ -58,6 +58,12 @@
                         <a href="#" class="sidebar-link">
                             <div class="sidebar-icon"><i class="fa-light fa-chart-simple"></i></div>
                             <div class="hidden-sidebar">Thống kê</div>
+                        </a>
+                    </li>
+                    <li class="sidebar-list-item tab-content">
+                        <a href="#" class="sidebar-link">
+                            <div class="sidebar-icon"><i class="fa-light fa-tags"></i></div>
+                            <div class="hidden-sidebar">Giảm giá</div>
                         </a>
                     </li>
                 </ul>
@@ -213,6 +219,8 @@
                             <option value="2">Tất cả</option>
                             <option value="0">Chưa xử lý</option>
                             <option value="1">Đã xác nhận</option>
+                            <option value="2">Đang giao hàng</option>
+                            <option value="3">Hoàn thành</option>
                             <option value="4">Đã hủy</option>
                         </select>
                         <select name="thanh-toan" id="thanh-toan" onchange="findOrder()">
@@ -341,6 +349,48 @@
                     </table>
                 </div>
             </div>
+            <!-- Discount  -->
+            <div class="section">
+                <div class="admin-control">
+                    <div class="admin-control-left">
+                        <button class="btn-add-discount" onclick="showAddDiscountModal()">
+                            <i class="fa-light fa-plus"></i>
+                            <span>Tạo chương trình giảm giá</span>
+                        </button>
+                    </div>
+                    <div class="admin-control-center">
+                        <form action="" class="form-search">
+                            <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
+                            <input id="form-search-discount" type="text" class="form-search-input" placeholder="Tìm kiếm chương trình giảm giá..." oninput="searchDiscounts()">
+                        </form>
+                    </div>
+                    <div class="admin-control-right">
+                        <select name="discount-status" id="discount-status" onchange="filterDiscounts()">
+                            <option value="all">Tất cả</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="expired">Đã hết hạn</option>
+                            <option value="inactive">Chưa kích hoạt</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table">
+                    <table width="100%">
+                        <thead>
+                            <tr>
+                                <td>Tên chương trình</td>
+                                <td>Loại giảm giá</td>
+                                <td>Giá trị</td>
+                                <td>Thời gian</td>
+                                <td>Trạng thái</td>
+                                <td>Số sản phẩm</td>
+                                <td>Thao tác</td>
+                            </tr>
+                        </thead>
+                        <tbody id="showDiscounts">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </main>
     </div>
     <div class="modal add-product">
@@ -436,7 +486,6 @@
     <div class="modal signup">
         <div class="modal-container">
             <h3 class="modal-container-title add-account-e">THÊM KHÁCH HÀNG MỚI</h3>
-            <h3 class="modal-container-title ">CHỈNH SỬA THÔNG TIN</h3>
             <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
             <div class="form-content sign-up">
                 <form action="" class="signup-form">
@@ -467,6 +516,107 @@
         </div>
     </div>
     <div id="toast"></div>
+    
+    <!-- Modal tạo/chỉnh sửa chương trình giảm giá -->
+    <div class="modal add-discount">
+        <div class="modal-container">
+            <h3 class="modal-container-title add-discount-e">TẠO CHƯƠNG TRÌNH GIẢM GIÁ</h3>
+            <h3 class="modal-container-title edit-discount-e">CHỈNH SỬA CHƯƠNG TRÌNH GIẢM GIÁ</h3>
+            <button class="modal-close discount-form"><i class="fa-regular fa-xmark"></i></button>
+            <div class="modal-content">
+                <form action="" class="add-discount-form">
+                    <div class="modal-content-left">
+                        <div class="form-group">
+                            <label for="discount-name" class="form-label">Tên chương trình</label>
+                            <input id="discount-name" name="discount-name" type="text" placeholder="VD: Giảm giá mùa hè" class="form-control">
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-description" class="form-label">Mô tả</label>
+                            <textarea id="discount-description" name="discount-description" placeholder="Mô tả chương trình giảm giá..." class="form-control"></textarea>
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-type" class="form-label">Loại giảm giá</label>
+                            <select name="discount-type" id="discount-type" class="form-control" onchange="toggleDiscountValue()">
+                                <option value="percentage">Giảm theo phần trăm (%)</option>
+                                <option value="fixed_amount">Giảm theo số tiền cố định</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-value" class="form-label">Giá trị giảm</label>
+                            <input id="discount-value" name="discount-value" type="number" min="0" placeholder="VD: 20 hoặc 50000" class="form-control">
+                            <small id="discount-value-hint">Nhập số phần trăm (VD: 20 = 20%)</small>
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="min-order-amount" class="form-label">Giá sản phẩm tối thiểu</label>
+                            <input id="min-order-amount" name="min-order-amount" type="number" min="0" placeholder="VD: 100000 (để trống = không giới hạn)" class="form-control">
+                            <small class="form-hint">Sản phẩm phải có giá tối thiểu này để được áp dụng giảm giá</small>
+                            <span class="form-message"></span>
+                        </div>
+                    </div>
+                    <div class="modal-content-right">
+                        <div class="form-group">
+                            <label for="discount-start-date" class="form-label">Ngày bắt đầu</label>
+                            <input id="discount-start-date" name="discount-start-date" type="datetime-local" class="form-control">
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-end-date" class="form-label">Ngày kết thúc</label>
+                            <input id="discount-end-date" name="discount-end-date" type="datetime-local" class="form-control">
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-max-uses" class="form-label">Số lượng tối đa</label>
+                            <input id="discount-max-uses" name="discount-max-uses" type="number" min="0" placeholder="0 = không giới hạn" class="form-control">
+                            <span class="form-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Trạng thái</label>
+                            <input type="checkbox" id="discount-status" class="switch-input">
+                            <label for="discount-status" class="switch"></label>
+                        </div>
+                        <div class="form-group">
+                            <label for="discount-apply-type" class="form-label">Áp dụng cho</label>
+                            <select name="discount-apply-type" id="discount-apply-type" class="form-control" onchange="toggleProductSelection()">
+                                <option value="specific_products">Sản phẩm cụ thể</option>
+                                <option value="category">Toàn bộ danh mục</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="category-selection" style="display: none;">
+                            <label for="discount-category" class="form-label">Chọn danh mục</label>
+                            <select name="discount-category" id="discount-category" class="form-control">
+                                <option value="">Chọn danh mục</option>
+                                <option value="Sách hay">Sách hay</option>
+                                <option value="Khoa học">Khoa học</option>
+                                <option value="Tiểu thuyết">Tiểu thuyết</option>
+                                <option value="Thiếu nhi">Thiếu nhi</option>
+                                <option value="Không phân loại">Không phân loại</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="product-selection">
+                            <label for="discount-products" class="form-label">Chọn sản phẩm</label>
+                            <div class="product-search-container">
+                                <input id="discount-product-search" type="text" placeholder="Tìm kiếm sản phẩm..." class="form-control" oninput="searchProductsForDiscount()">
+                                <div id="discount-product-results" class="product-search-results"></div>
+                            </div>
+                            <div id="selected-discount-products" class="selected-products"></div>
+                        </div>
+                        <button class="form-submit add-discount-e" id="add-discount-button">
+                            <i class="fa-regular fa-plus"></i>
+                            <span>TẠO CHƯƠNG TRÌNH</span>
+                        </button>
+                        <button class="form-submit edit-discount-e" id="update-discount-button">
+                            <i class="fa-light fa-pencil"></i>
+                            <span>LƯU THAY ĐỔI</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <script src="./js/admin.js"></script>
     <script>
       // Đảm bảo gọi showUser khi trang load (nếu có tab khách hàng)

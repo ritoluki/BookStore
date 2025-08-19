@@ -238,6 +238,12 @@ session_start();
             <div class="home-title-block" id="home-title">
                 <h2 class="home-title">Khám phá vũ trụ sách của chúng tôi</h2>
             </div>
+            <div class="home-navigation">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" onclick="showDiscountedProducts()">Sách giảm giá</button>
+                    <button class="nav-tab" onclick="showBestsellers()">Sách bán chạy</button>
+                </div>
+            </div>
             <div class="home-products" id="home-products">
             </div>
             <div class="page-nav" id="page-products">

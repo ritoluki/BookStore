@@ -45,7 +45,7 @@
     }
     
     .book-info {
-        padding: 10px;
+        padding-top: 10px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;

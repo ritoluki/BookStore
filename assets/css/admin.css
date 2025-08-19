@@ -812,9 +812,7 @@ tbody tr td {
 
 .modal-container-title {
     display: inline-block;
-    margin-top: 16px;
-    margin-left: 20px;
-    margin-bottom: 5px;
+    margin: 16px 20px 5px 20px;
     text-transform: uppercase;
 }
 
@@ -1502,4 +1500,352 @@ label a {
   font-size: 15px;
   transition: background 0.2s;
   margin-left: 10px;
+}
+
+/* ===== STYLES CHO QUẢN LÝ GIẢM GIÁ ===== */
+
+/* Nút tạo chương trình giảm giá */
+.btn-add-discount {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.btn-add-discount:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* Modal giảm giá */
+.add-discount .modal-container {
+    max-width: 1040px;
+    width: calc(100% - 48px);
+    margin: 0 auto;
+    padding-bottom: 16px;
+}
+
+/* Grid trực tiếp lên form để chia 2 cột */
+.add-discount .add-discount-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    padding: 20px;
+    align-items: start;
+}
+
+.add-discount .form-group {
+    margin-bottom: 20px;
+}
+
+/* Cột trái và phải để dàn đều chiều dọc */
+.add-discount .modal-content-left,
+.add-discount .modal-content-right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.add-discount .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.add-discount .form-control {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    transition: border-color 0.3s ease;
+}
+
+.add-discount .form-control:focus {
+    border-color: #28a745;
+    outline: none;
+}
+
+.add-discount textarea.form-control {
+    min-height: 100px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.add-discount select.form-control {
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+/* Switch cho trạng thái - copy từ switch gốc với pointer events */
+.add-discount .switch {
+    position: relative;
+    cursor: pointer;
+    width: 40px;
+    height: 20px;
+    display: inline-block;
+    margin-left: 0;
+    top: 0;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+    background: #ccc;
+    border-radius: 100rem;
+    transition: background-color 0.25s linear;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.add-discount .switch:after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 40px;
+    background-color: #fff;
+    top: 5px;
+    left: 5px;
+    transition: background-color 0.25s linear, transform 0.25s linear;
+    transform: var(--ball-transform, translateX(0px));
+}
+
+.add-discount .switch-input {
+    display: none;
+    pointer-events: auto;
+}
+
+/* Đảm bảo label có thể click */
+.add-discount label[for="discount-status"] {
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+    position: relative;
+    z-index: 20;
+}
+
+/* Đảm bảo form-group không block */
+.add-discount .form-group {
+    position: relative;
+    z-index: 1;
+}
+
+/* Override bất kỳ CSS nào có thể block */
+.add-discount .form-group * {
+    pointer-events: auto;
+}
+
+.add-discount .switch-input:checked + .switch {
+    background-color: var(--red) !important;
+    background: #dc3545 !important; /* Fallback nếu var không work */
+}
+
+.add-discount .switch-input:checked + .switch:after {
+    transform: translateX(20px) !important;
+    background-color: #fff !important;
+}
+
+/* Thêm selector backup */
+input#discount-status:checked + label.switch {
+    background-color: #dc3545 !important;
+}
+
+input#discount-status:checked + label.switch:after {
+    transform: translateX(20px) !important;
+}
+
+/* Container tìm kiếm sản phẩm */
+.product-search-container {
+    position: relative;
+}
+
+.product-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.product-search-results.show {
+    display: block;
+}
+
+.product-search-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.product-search-item:hover {
+    background-color: #f8f9fa;
+}
+
+.product-search-item:last-child {
+    border-bottom: none;
+}
+
+/* Sản phẩm đã chọn */
+.selected-products {
+    margin-top: 15px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.selected-product-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.selected-product-item:last-child {
+    margin-bottom: 0;
+}
+
+.remove-product-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-product-btn:hover {
+    background: #c82333;
+}
+
+/* Hint cho giá trị giảm giá */
+#discount-value-hint {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Form hints */
+.form-hint {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Responsive cho modal giảm giá */
+@media (max-width: 768px) {
+    .add-discount .add-discount-form {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .add-discount .modal-container {
+        max-width: 640px;
+        width: calc(100% - 24px);
+        margin: 0 12px;
+    }
+}
+
+/* Status badges cho giảm giá */
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.status-pending {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+}
+
+.status-expired {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.status-inactive {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.status-unknown {
+    background: linear-gradient(135deg, #6f42c1, #5a2d91);
+    color: white;
+    box-shadow: 0 2px 8px rgba(111, 66, 193, 0.3);
+}
+
+/* Discount value styling */
+.discount-value {
+    font-weight: 700;
+    color: #dc3545;
+}
+
+/* Button styling cho admin */
+.btn-edit, .btn-delete {
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+}
+
+.btn-edit {
+    color: #17a2b8;
+}
+
+.btn-edit:hover {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-delete {
+    color: #dc3545;
+}
+
+.btn-delete:hover {
+    background-color: #dc3545;
+    color: white;
 }

@@ -36,7 +36,8 @@ try {
                 'thoigiandat' => $row['thoigiandat'],
                 'tongtien' => $row['tongtien'],
                 'trangthai' => $row['trangthai'],
-                'payment_status' => $paymentStatus
+                'payment_status' => $paymentStatus,
+                'payment_method' => $row['payment_method'] ?? null
             ]
         ]);
     } else {

@@ -19,7 +19,16 @@ function createProduct() {
                         category: String(product.category), // Đảm bảo là chuỗi
                         price: Number(product.price),       // Chuyển đổi thành số nếu cần
                         soluong: Number(product.soluong),   // Thêm trường số lượng
-                        desc: String(product.describes) // Đảm bảo là chuỗi
+                        sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
+                        is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
+                        desc: String(product.describes), // Đảm bảo là chuỗi
+                        
+                        // Thông tin giảm giá
+                        discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
+                        discount_type: product.discount_type || null,
+                        discount_value: product.discount_value ? Number(product.discount_value) : null,
+                        min_order_amount: product.min_order_amount ? Number(product.min_order_amount) : 0,
+                        is_discounted: Boolean(product.is_discounted)
                     };
                 });
 
@@ -49,7 +58,16 @@ function refreshProducts() {
                     category: String(product.category),
                     price: Number(product.price),
                     soluong: Number(product.soluong),
-                    desc: String(product.describes)
+                    sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
+                    is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
+                    desc: String(product.describes),
+                    
+                    // Thông tin giảm giá
+                    discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
+                    discount_type: product.discount_type || null,
+                    discount_value: product.discount_value ? Number(product.discount_value) : null,
+                    min_order_amount: product.min_order_amount ? Number(product.min_order_amount) : 0,
+                    is_discounted: Boolean(product.is_discounted)
                 };
             });
 
@@ -166,7 +184,7 @@ function createOrders() {
     if (localStorage.getItem('order') === null) {
         // Sử dụng AJAX để lấy dữ liệu từ server
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "get_orders.php", true);
+        xhr.open("GET", "src/controllers/get_orders.php", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
@@ -215,7 +233,7 @@ function cancelOrder(orderId, btn) {
         bodyData.userPhone = currentUser.phone;
     }
 
-    fetch('cancel_order.php', {
+    fetch('src/controllers/cancel_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)

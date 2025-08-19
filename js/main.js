@@ -67,7 +67,17 @@ function detailProduct(index) {
         <h2 class="product-title">${infoProduct.title}</h2>
         <div class="product-control">
             <div class="priceBox">
-                <span class="current-price">${vnd(infoProduct.price)}</span>
+                ${infoProduct.is_discounted && infoProduct.discounted_price ? `
+                    <div class="price-container">
+                        <span class="original-price">${vnd(infoProduct.price)}</span>
+                        <span class="discounted-price">${vnd(infoProduct.discounted_price)}</span>
+                        <div class="discount-info">
+                            ${infoProduct.discount_type === 'percentage' ? `-${infoProduct.discount_value}%` : `-${vnd(infoProduct.price - infoProduct.discounted_price)}`}
+                        </div>
+                    </div>
+                ` : `
+                    <span class="current-price">${vnd(infoProduct.price)}</span>
+                `}
             </div>
             ${Number(infoProduct.soluong) == 0 ? `<div class="product-stock out-of-stock">Tạm hết hàng</div>` : `<div class="product-stock">Số lượng: <b>${Number(infoProduct.soluong)}</b></div>`}
             <div class="buttons_added" style="${Number(infoProduct.soluong) == 0 ? 'display:none;' : ''}">
@@ -89,7 +99,7 @@ function detailProduct(index) {
             <div class="modal-footer">
                 <div class="price-total">
                     <span class="thanhtien">Thành tiền</span>
-                    <span class="price">${vnd(infoProduct.price)}</span>
+                    <span class="price">${vnd(infoProduct.is_discounted ? infoProduct.discounted_price : infoProduct.price)}</span>
                 </div>
                 <div class="modal-footer-control">
                     <button class="button-dathangngay${Number(infoProduct.soluong) == 0 ? ' btn-disabled' : ''}" data-product="${infoProduct.id}" ${Number(infoProduct.soluong) == 0 ? 'disabled' : ''}>
@@ -142,17 +152,17 @@ function detailProduct(index) {
     document.querySelector('#product-detail-content').innerHTML = modalHtml;
     modal.classList.add('open');
     body.style.overflow = "hidden";
-    
+
     // Gắn sự kiện chọn emoji - QUAN TRỌNG: phải sau khi render HTML
     setTimeout(() => {
         document.querySelectorAll('.book-rating-option').forEach(opt => {
-            opt.addEventListener('click', function() {
+            opt.addEventListener('click', function () {
                 document.querySelectorAll('.book-rating-option').forEach(o => o.classList.remove('selected'));
                 this.classList.add('selected');
             });
         });
     }, 100);
-    
+
     //Cap nhat gia tien khi tang so luong san pham
     let tgbtn = document.querySelectorAll('.is-form');
     let qty = document.querySelector('.product-control .input-qty');
@@ -164,7 +174,7 @@ function detailProduct(index) {
         });
     });
     // Chặn nhập tay vượt quá tồn kho
-    qty.addEventListener('input', function() {
+    qty.addEventListener('input', function () {
         let max = parseInt(qty.getAttribute('max'));
         let min = parseInt(qty.getAttribute('min'));
         let val = parseInt(qty.value);
@@ -193,14 +203,14 @@ function detailProduct(index) {
 // Xóa hàm renderBookReviews trùng lặp, chỉ giữ phiên bản localStorage
 function renderBookReviews(bookId) {
     window.currentBookId = bookId;
-    
+
     // Lấy đánh giá từ localStorage trước
     let localReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
     let bookReviews = localReviews.filter(review => review.product_id == bookId);
-    
+
     // Hiển thị dữ liệu từ localStorage ngay lập tức
     displayBookReviewsFromLocal(bookReviews);
-    
+
     // Đồng thời lấy dữ liệu mới từ server để cập nhật
     syncReviewsFromServer(bookId);
 }
@@ -208,17 +218,21 @@ function renderBookReviews(bookId) {
 // Hàm hiển thị đánh giá từ localStorage
 function displayBookReviewsFromLocal(reviews) {
     let reviewsHtml = '';
-    
+
     if (reviews.length === 0) {
         reviewsHtml = `<div class="no-reviews">
             <i class="fa-light fa-comment-slash"></i>
             <p>Chưa có đánh giá nào cho sách này</p>
         </div>`;
     } else {
-        // Tính điểm trung bình từ localStorage
-        let totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        // Debug: log ra dữ liệu reviews để kiểm tra
+        console.log('Reviews data:', reviews);
+        console.log('Rating values:', reviews.map(r => ({ rating: r.rating, type: typeof r.rating })));
+
+        // Tính điểm trung bình từ localStorage - đảm bảo rating là số
+        let totalRating = reviews.reduce((sum, review) => sum + Number(review.rating), 0);
         let avgRating = (totalRating / reviews.length).toFixed(1);
-        
+
         reviewsHtml = `
             <div class="reviews-summary">
                 <div class="avg-rating">
@@ -228,7 +242,7 @@ function displayBookReviewsFromLocal(reviews) {
                 </div>
             </div>
             <div class="reviews-list">`;
-        
+
         reviews.forEach(review => {
             const reviewDate = new Date(review.created_at).toLocaleDateString('vi-VN');
             reviewsHtml += `
@@ -246,7 +260,7 @@ function displayBookReviewsFromLocal(reviews) {
         });
         reviewsHtml += `</div>`;
     }
-    
+
     // Cập nhật DOM
     const reviewContent = document.querySelector('.tab-review-content .book-review-section');
     if (reviewContent) {
@@ -266,10 +280,10 @@ function syncReviewsFromServer(bookId) {
             if (data.success) {
                 // Cập nhật localStorage với dữ liệu mới từ server
                 let allReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
-                
+
                 // Xóa các review cũ của sản phẩm này
                 allReviews = allReviews.filter(review => review.product_id != bookId);
-                
+
                 // Thêm các review mới từ server
                 data.reviews.forEach(serverReview => {
                     allReviews.push({
@@ -283,10 +297,10 @@ function syncReviewsFromServer(bookId) {
                         created_at: serverReview.created_at
                     });
                 });
-                
+
                 // Lưu lại vào localStorage
                 localStorage.setItem('bookReviews', JSON.stringify(allReviews));
-                
+
                 // Render lại nếu có sự khác biệt
                 let currentBookReviews = allReviews.filter(review => review.product_id == bookId);
                 displayBookReviewsFromLocal(currentBookReviews);
@@ -320,12 +334,12 @@ function submitBookRating() {
     const rating = ratingMap[ratingKey];
     const content = document.querySelector('.book-comment-input').value.trim();
     const currentUser = JSON.parse(localStorage.getItem('currentuser'));
-    
+
     if (!currentUser) {
         toast({ title: 'Lỗi', message: 'Vui lòng đăng nhập để đánh giá!', type: 'error', duration: 2000 });
         return;
     }
-    
+
     if (!rating) {
         toast({ title: 'Lỗi', message: 'Vui lòng chọn mức độ đánh giá!', type: 'error', duration: 2000 });
         return;
@@ -333,10 +347,10 @@ function submitBookRating() {
 
     // Kiểm tra trùng lặp trong localStorage
     let reviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
-    const existingReview = reviews.find(review => 
+    const existingReview = reviews.find(review =>
         review.product_id == window.currentBookId && review.user_name === currentUser.fullname
     );
-    
+
     if (existingReview) {
         toast({ title: 'Lỗi', message: 'Bạn đã đánh giá sách này rồi!', type: 'error', duration: 2000 });
         return;
@@ -357,15 +371,15 @@ function submitBookRating() {
     // Lưu vào localStorage ngay lập tức
     reviews.push(review);
     localStorage.setItem('bookReviews', JSON.stringify(reviews));
-    
+
     // Hiển thị ngay lập tức
     toast({ title: 'Thành công', message: 'Cảm ơn bạn đã đánh giá!', type: 'success', duration: 2000 });
-    
+
     // Reset form
     document.querySelector('.book-comment-input').value = '';
     document.querySelectorAll('.book-rating-option').forEach(opt => opt.classList.remove('selected'));
     document.querySelector('.book-rating-option[data-rating="excellent"]').classList.add('selected');
-    
+
     // Render lại reviews từ localStorage
     let bookReviews = reviews.filter(r => r.product_id == window.currentBookId);
     displayBookReviewsFromLocal(bookReviews);
@@ -384,32 +398,32 @@ function submitBookRating() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(reviewData)
         })
-        .then(res => {
-            return res.text(); // Đổi thành text để debug
-        })
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                
-                if (data.success) {
-                    syncReviewsFromServer(window.currentBookId);
-                } else {
-                    let updatedReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
-                    updatedReviews = updatedReviews.filter(r => r.id !== review.id);
-                    localStorage.setItem('bookReviews', JSON.stringify(updatedReviews));
-                    displayBookReviewsFromLocal(updatedReviews.filter(r => r.product_id == window.currentBookId));
-                    
-                    toast({ title: 'Lỗi', message: 'Không thể lưu đánh giá: ' + data.message, type: 'error', duration: 3000 });
+            .then(res => {
+                return res.text(); // Đổi thành text để debug
+            })
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+
+                    if (data.success) {
+                        syncReviewsFromServer(window.currentBookId);
+                    } else {
+                        let updatedReviews = JSON.parse(localStorage.getItem('bookReviews') || '[]');
+                        updatedReviews = updatedReviews.filter(r => r.id !== review.id);
+                        localStorage.setItem('bookReviews', JSON.stringify(updatedReviews));
+                        displayBookReviewsFromLocal(updatedReviews.filter(r => r.product_id == window.currentBookId));
+
+                        toast({ title: 'Lỗi', message: 'Không thể lưu đánh giá: ' + data.message, type: 'error', duration: 3000 });
+                    }
+                } catch (e) {
+                    console.error('src/controllers/add_book_review JSON parse error:', e);
+                    console.error('Response text:', text);
+                    toast({ title: 'Lỗi', message: 'Có lỗi khi xử lý phản hồi từ server!', type: 'error', duration: 3000 });
                 }
-            } catch (e) {
-                console.error('src/controllers/add_book_review JSON parse error:', e);
-                console.error('Response text:', text);
-                toast({ title: 'Lỗi', message: 'Có lỗi khi xử lý phản hồi từ server!', type: 'error', duration: 3000 });
-            }
-        })
-        .catch(err => {
-            toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
-        });
+            })
+            .catch(err => {
+                toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
+            });
     });
 }
 
@@ -420,38 +434,38 @@ function getUserRealId(phone) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone })
     })
-    .then(res => {
-        if (!res.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return res.text(); // Đổi thành text để debug
-    })
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            
-            if (data.success) {
-                return data.user_id;
-            } else {
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return res.text(); // Đổi thành text để debug
+        })
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+
+                if (data.success) {
+                    return data.user_id;
+                } else {
+                    return null;
+                }
+            } catch (e) {
+                console.error('getUserRealId JSON parse error:', e);
+                console.error('Response text:', text);
                 return null;
             }
-        } catch (e) {
-            console.error('getUserRealId JSON parse error:', e);
-            console.error('Response text:', text);
+        })
+        .catch(err => {
+            console.error('Error getting user ID:', err);
             return null;
-        }
-    })
-    .catch(err => {
-        console.error('Error getting user ID:', err);
-        return null;
-    });
+        });
 }
 
 function animationCart() {
     document.querySelector(".count-product-cart").style.animation = "slidein ease 1s"
-    setTimeout(()=>{
+    setTimeout(() => {
         document.querySelector(".count-product-cart").style.animation = "none"
-    },1000)
+    }, 1000)
 }
 
 // Them SP vao gio hang
@@ -498,8 +512,15 @@ function showCart() {
                     <p class="cart-item-title">
                         ${product.title}
                     </p>
-                    <span class="cart-item-price price" data-price="${product.price}">
-                    ${vnd(parseInt(product.price))}
+                    <span class="cart-item-price price" data-price="${product.is_discounted && product.discounted_price ? product.discounted_price : product.price}">
+                    ${product.is_discounted && product.discounted_price ? `
+                        <div class="cart-price-container">
+                            <span class="cart-original-price">${vnd(parseInt(product.price))}</span>
+                            <span class="cart-discounted-price">${vnd(parseInt(product.discounted_price))}</span>
+                        </div>
+                    ` : `
+                        ${vnd(parseInt(product.price))}
+                    `}
                     </span>
                 </div>
                 <p class="product-note"><i class="fa-light fa-pencil"></i><span>${product.note}</span></p>
@@ -564,7 +585,9 @@ function getCartTotal() {
     if (currentUser != null) {
         currentUser.cart.forEach(item => {
             let product = getProduct(item);
-            tongtien += (parseInt(product.soluong) * parseInt(product.price));
+            // Sử dụng giá sau giảm nếu có, không thì dùng giá gốc
+            let finalPrice = (product.is_discounted && product.discounted_price) ? product.discounted_price : product.price;
+            tongtien += (parseInt(product.soluong) * parseInt(finalPrice));
         });
     }
     return tongtien;
@@ -643,13 +666,13 @@ function closeCart() {
 }
 
 // Open Search Advanced
-document.querySelector(".filter-btn").addEventListener("click",(e) => {
+document.querySelector(".filter-btn").addEventListener("click", (e) => {
     e.preventDefault();
     document.querySelector(".advanced-search").classList.toggle("open");
     document.getElementById("home-service").scrollIntoView();
 })
 
-document.querySelector(".form-search-input").addEventListener("click",(e) => {
+document.querySelector(".form-search-input").addEventListener("click", (e) => {
     e.preventDefault();
     document.getElementById("home-service").scrollIntoView();
 })
@@ -664,7 +687,7 @@ function openSearchMb() {
     document.querySelector(".header-middle-center").style.display = "block";
     document.querySelector(".header-middle-right-item.close").style.display = "block";
     let liItem = document.querySelectorAll(".header-middle-right-item.open");
-    for(let i = 0; i < liItem.length; i++) {
+    for (let i = 0; i < liItem.length; i++) {
         liItem[i].style.setProperty("display", "none", "important")
     }
 }
@@ -675,7 +698,7 @@ function closeSearchMb() {
     document.querySelector(".header-middle-center").style.display = "none";
     document.querySelector(".header-middle-right-item.close").style.display = "none";
     let liItem = document.querySelectorAll(".header-middle-right-item.open");
-    for(let i = 0; i < liItem.length; i++) {
+    for (let i = 0; i < liItem.length; i++) {
         liItem[i].style.setProperty("display", "block", "important")
     }
 }
@@ -723,7 +746,7 @@ signupButton.addEventListener('click', () => {
     let passwordUser = document.getElementById('password').value;
     let passwordConfirmation = document.getElementById('password_confirmation').value;
     let checkSignup = document.getElementById('checkbox-signup').checked;
-    
+
     // Check validate
     let isValid = true;
 
@@ -836,7 +859,7 @@ signupButton.addEventListener('click', () => {
                 updateAmount();
                 setTimeout((e) => {
                     window.location = "http://localhost/bookstore_datn/";
-                }, 2000); 
+                }, 2000);
             } else {
                 toast({ title: 'Thất bại', message: 'Email hoặc số điện thoại đã tồn tại !', type: 'error', duration: 3000 });
             }
@@ -876,7 +899,7 @@ loginButton.addEventListener('click', () => {
         if (!user) {
             toast({ title: 'Error', message: 'Tài khoản của bạn không tồn tại', type: 'error', duration: 3000 });
         } else if (user.password == passlog) {
-            if(user.status == 0) {
+            if (user.status == 0) {
                 toast({ title: 'Warning', message: 'Tài khoản của bạn đã bị khóa', type: 'warning', duration: 3000 });
             } else {
                 localStorage.setItem('currentuser', JSON.stringify(user));
@@ -887,7 +910,7 @@ loginButton.addEventListener('click', () => {
                 updateAmount();
                 setTimeout((e) => {
                     window.location = "http://localhost/bookstore_datn/";
-                }, 2000);  
+                }, 2000);
             }
         } else {
             toast({ title: 'Warning', message: 'Sai mật khẩu', type: 'warning', duration: 3000 });
@@ -904,7 +927,7 @@ function kiemtradangnhap() {
             <span class="text-tk">${user.fullname} <i class="fa-sharp fa-solid fa-caret-down"></span>`
         document.querySelector('.header-middle-right-menu').innerHTML = `<li><a href="javascript:;" onclick="myAccount()"><i class="fa-light fa-circle-user"></i> Tài khoản của tôi</a></li>
             <li class="border"><a id="logout" href="javascript:;"><i class="fa-light fa-right-from-bracket"></i class="updateCart1"> Thoát tài khoản</a></li>`
-        document.querySelector('#logout').addEventListener('click',logOut)
+        document.querySelector('#logout').addEventListener('click', logOut)
     }
 }
 
@@ -912,13 +935,13 @@ function logOut() {
     let accounts = JSON.parse(localStorage.getItem('accounts'));
     let user = JSON.parse(localStorage.getItem('currentuser'));
     let vitri = accounts.findIndex(item => item.phone == user.phone);
-    
+
     // Cập nhật giỏ hàng trong accounts localStorage
     accounts[vitri].cart.length = 0;
     for (let i = 0; i < user.cart.length; i++) {
         accounts[vitri].cart[i] = user.cart[i];
     }
-    
+
 
     // Gửi giỏ hàng cập nhật lên server
     fetch('src/controllers/updateCart.php', {
@@ -931,7 +954,7 @@ function logOut() {
             cart: user.cart,
         })
     });
-    
+
     localStorage.setItem('accounts', JSON.stringify(accounts));
     // Xóa currentuser khỏi localStorage và chuyển hướng
     localStorage.removeItem('currentuser');
@@ -941,11 +964,11 @@ function logOut() {
 
 function checkAdmin() {
     let user = JSON.parse(localStorage.getItem('currentuser'));
-    if(user && user.userType == 1) {
+    if (user && user.userType == 1) {
         let node = document.createElement(`li`);
         node.innerHTML = `<a href="./admin.php"><i class="fa-light fa-gear"></i> Quản lý cửa hàng</a>`
         document.querySelector('.header-middle-right-menu').prepend(node);
-    } 
+    }
 }
 
 window.onload = kiemtradangnhap();
@@ -1022,33 +1045,33 @@ function changeInformation() {
     // Lưu thông tin vào localStorage
     localStorage.setItem('currentuser', JSON.stringify(user));
     localStorage.setItem('accounts', JSON.stringify(accounts));
-    
-    
+
+
     // Gửi yêu cầu AJAX tới PHP để cập nhật thông tin trong cơ sở dữ liệu
     fetch('src/controllers/update_user_info.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ 
-            phone: user.phone, 
-            fullname: user.fullname, 
-            email: user.email, 
-            address: user.address 
+        body: JSON.stringify({
+            phone: user.phone,
+            fullname: user.fullname,
+            email: user.email,
+            address: user.address
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            toast({ title: 'Success', message: 'Cập nhật thông tin thành công!', type: 'success', duration: 3000 });
-        } else {
-            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi cập nhật thông tin!', type: 'error', duration: 3000 });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Success', message: 'Cập nhật thông tin thành công!', type: 'success', duration: 3000 });
+            } else {
+                toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi cập nhật thông tin!', type: 'error', duration: 3000 });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
+        });
 
     kiemtradangnhap();
 }
@@ -1104,17 +1127,17 @@ function changePassword() {
                         },
                         body: JSON.stringify({ phone: currentUser.phone, password: currentUser.password })
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            toast({ title: 'Success', message: 'Đổi mật khẩu thành công!', type: 'success', duration: 3000 });
-                        } else {
-                            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi đổi mật khẩu!', type: 'error', duration: 3000 });
-                        }
-                    })
-                    .catch(error => {
-                        toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
-                    });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                toast({ title: 'Success', message: 'Đổi mật khẩu thành công!', type: 'success', duration: 3000 });
+                            } else {
+                                toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi khi đổi mật khẩu!', type: 'error', duration: 3000 });
+                            }
+                        })
+                        .catch(error => {
+                            toast({ title: 'Thất bại', message: 'Đã xảy ra lỗi, vui lòng thử lại sau!', type: 'error', duration: 3000 });
+                        });
                 } else {
                     document.querySelector('.password-after-comfirm-error').innerHTML = 'Mật khẩu bạn nhập không trùng khớp';
                 }
@@ -1211,7 +1234,7 @@ function getOrderDetails(madon) {
     let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
     let ctDon = [];
     orderDetails.forEach(item => {
-        if(item.madon == madon) {
+        if (item.madon == madon) {
             ctDon.push(item);
         }
     });
@@ -1221,15 +1244,15 @@ function getOrderDetails(madon) {
 // Format Date
 function formatDate(date) {
     let fm = new Date(date);
-    
+
     // Chuẩn hóa múi giờ Việt Nam (+7)
-    const options = { 
-        year: 'numeric', 
-        month: '2-digit', 
+    const options = {
+        year: 'numeric',
+        month: '2-digit',
         day: '2-digit',
-        timeZone: 'Asia/Ho_Chi_Minh' 
+        timeZone: 'Asia/Ho_Chi_Minh'
     };
-    
+
     return new Intl.DateTimeFormat('vi-VN', options).format(fm);
 }
 
@@ -1303,17 +1326,38 @@ window.addEventListener("scroll", () => {
 // Page
 function renderProducts(showProduct) {
     let productHtml = '';
-    if(showProduct.length == 0) {
+    if (showProduct.length == 0) {
         document.getElementById("home-title").style.display = "none";
         productHtml = `<div class="no-result"><div class="no-result-h">Tìm kiếm không có kết quả</div><div class="no-result-p">Xin lỗi, chúng tôi không thể tìm được kết quả hợp với tìm kiếm của bạn</div><div class="no-result-i"><i class="fa-light fa-face-sad-cry"></i></div></div>`;
     } else {
         document.getElementById("home-title").style.display = "block";
         showProduct.forEach((product) => {
+            const soldQuantity = product.sold_quantity || 0;
+            const isBestseller = product.is_bestseller || soldQuantity > 10;
+            const isDiscounted = product.is_discounted || (product.discounted_price && product.discounted_price < product.price);
+            
+            // Determine classes and badges
+            let cardClass = '';
+            let badge = '';
+            
+            if (isBestseller && isDiscounted) {
+                // Nếu vừa bán chạy vừa giảm giá, ưu tiên bán chạy
+                cardClass = 'bestseller';
+                badge = '<div class="bestseller-badge"><i class="fa-solid fa-fire"></i> Bán chạy</div>';
+            } else if (isBestseller) {
+                cardClass = 'bestseller';
+                badge = '<div class="bestseller-badge"><i class="fa-solid fa-fire"></i> Bán chạy</div>';
+            } else if (isDiscounted) {
+                cardClass = 'discounted';
+                badge = '<div class="discounted-badge"><i class="fa-solid fa-tags"></i> Giảm giá</div>';
+            }
+            
             productHtml += `<div class="col-product">
-            <article class="card-product" >
+            <article class="card-product ${cardClass}" >
                 <div align="center" class="card-header">
                     <a href="#" class="card-image-link" onclick="detailProduct(${product.id})">
                     <img  class="card-image" src="${product.img}" alt="${product.title}">
+                    ${badge}
                     </a>
                 </div>
                 <div class="book-info">
@@ -1321,10 +1365,23 @@ function renderProducts(showProduct) {
                         <div class="card-title">
                             <a href="#" class="card-title-link" onclick="detailProduct(${product.id})">${product.title}</a>
                         </div>
+                        <div class="card-sales-info">
+                            <span class="sales-quantity">Đã bán: ${soldQuantity}</span>
+                        </div>
                     </div>
                     <div class="card-footer">
                         <div class="product-price">
-                            <span class="current-price">${vnd(product.price)}</span>
+                            ${product.is_discounted && product.discounted_price ? `
+                                <div class="price-container">
+                                    <span class="original-price">${vnd(product.price)}</span>
+                                    <span class="discounted-price">${vnd(product.discounted_price)}</span>
+                                    <div class="discount-info">
+                                        ${product.discount_type === 'percentage' ? `-${product.discount_value}%` : `-${vnd(product.price - product.discounted_price)}`}
+                                    </div>
+                                </div>
+                            ` : `
+                                <span class="current-price">${vnd(product.price)}</span>
+                            `}
                         </div>
                     <div class="product-buy">
                         <button onclick="detailProduct(${product.id})" class="card-button order-item"><i class="fa-regular fa-cart-shopping-fast"></i> Đặt sách</button>
@@ -1338,14 +1395,14 @@ function renderProducts(showProduct) {
     document.getElementById('home-products').innerHTML = productHtml;
 }
 
-// Find Product
-var productAll = JSON.parse(localStorage.getItem('products')).filter(item => item.status == 1);
+// Find Product - Sửa lỗi null
+var productAll = JSON.parse(localStorage.getItem('products') || '[]').filter(item => item.status == 1);
 function searchProducts(mode) {
     let valeSearchInput = document.querySelector('.form-search-input').value;
     let valueCategory = document.getElementById("advanced-search-category-select").value;
     let minPrice = document.getElementById("min-price").value;
     let maxPrice = document.getElementById("max-price").value;
-    if(parseInt(minPrice) > parseInt(maxPrice) && minPrice != "" && maxPrice != "") {
+    if (parseInt(minPrice) > parseInt(maxPrice) && minPrice != "" && maxPrice != "") {
         alert("Giá đã nhập sai !");
     }
 
@@ -1357,16 +1414,16 @@ function searchProducts(mode) {
         return item.title.toString().toUpperCase().includes(valeSearchInput.toString().toUpperCase());
     })
 
-    if(minPrice == "" && maxPrice != "") {
+    if (minPrice == "" && maxPrice != "") {
         result = result.filter((item) => item.price <= maxPrice);
     } else if (minPrice != "" && maxPrice == "") {
         result = result.filter((item) => item.price >= minPrice);
-    } else if(minPrice != "" && maxPrice != "") {
+    } else if (minPrice != "" && maxPrice != "") {
         result = result.filter((item) => item.price <= maxPrice && item.price >= minPrice);
     }
 
     document.getElementById("home-service").scrollIntoView();
-    switch (mode){
+    switch (mode) {
         case 0:
             // Reset to original filtered productAll, not the entire products list
             result = JSON.parse(localStorage.getItem('products')).filter(item => item.status == 1);
@@ -1376,10 +1433,10 @@ function searchProducts(mode) {
             document.getElementById("max-price").value = "";
             break;
         case 1:
-            result.sort((a,b) => a.price - b.price)
+            result.sort((a, b) => a.price - b.price)
             break;
         case 2:
-            result.sort((a,b) => b.price - a.price)
+            result.sort((a, b) => b.price - a.price)
             break;
     }
     showHomeProduct(result)
@@ -1396,17 +1453,20 @@ function displayList(productAll, perPage, currentPage) {
 }
 
 function showHomeProduct(products) {
-    let productAll = products.filter(item => item.status == 1)
-    displayList(productAll, perPage, currentPage);
-    setupPagination(productAll, perPage, currentPage);
+    // products đã được filter từ trước, chỉ cần hiển thị
+    displayList(products, perPage, currentPage);
+    setupPagination(products, perPage, currentPage);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     kiemtradangnhap();
     checkAdmin();
     updateAmount();
     updateCartTotal();
-    showHomeProduct(JSON.parse(localStorage.getItem('products')));
+    // Hiển thị sản phẩm trang chủ với logic filter mới
+    const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    const categoryProducts = filterProductsByCurrentCategory(allProducts);
+    showHomeProduct(categoryProducts);
     // Gán lại các sự kiện cho nút đăng nhập/đăng ký nếu cần
     let signup = document.querySelector('.signup-link');
     let login = document.querySelector('.login-link');
@@ -1499,7 +1559,7 @@ function showCategory(category) {
     document.getElementById('tracuu').style.display = 'none';
     document.getElementById('account-user').classList.remove('open');
     document.getElementById('order-history').classList.remove('open');
-    
+
     // Xóa active class khỏi tất cả menu items và đặt active cho menu item hiện tại
     clearActiveMenuItems();
     document.querySelectorAll('.menu-list-item').forEach(item => {
@@ -1507,17 +1567,21 @@ function showCategory(category) {
             item.classList.add('active');
         }
     });
-    
-    let searchCategory = category;
-    // Lọc sản phẩm theo danh mục - Sử dụng trực tiếp từ localStorage thay vì biến productAll
+
+    // Lọc sản phẩm theo danh mục - Sử dụng trực tiếp từ localStorage
     let products = JSON.parse(localStorage.getItem('products'));
     let productSearch = products.filter(value => {
-        return value.category === searchCategory && value.status == 1; 
+        return value.category === category && value.status == 1;
     });
-    
+
     currentPage = 1; // Reset về trang đầu tiên khi chuyển category
     displayList(productSearch, perPage, currentPage);
     setupPagination(productSearch, perPage, currentPage);
+    
+    // Reset navigation tabs về trạng thái mặc định (Sách giảm giá)
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.nav-tab').classList.add('active'); // Tab đầu tiên (Sách giảm giá)
+    
     document.getElementById("home-title").scrollIntoView();
 }
 
@@ -1553,7 +1617,7 @@ function showTraCuu() {
 
     // Xóa active class khỏi tất cả menu items và đặt active cho menu Tra cứu đơn hàng
     clearActiveMenuItems();
-    document.querySelectorAll('.menu-list-item').forEach (item => {
+    document.querySelectorAll('.menu-list-item').forEach(item => {
         if (item.textContent.trim() === 'Tra cứu đơn hàng') {
             item.classList.add('active');
         }
@@ -1563,7 +1627,7 @@ function showTraCuu() {
 // Hàm hiển thị đơn hàng
 function showOrder(arr) {
     let orderHtml = "";
-    if(arr.length == 0) {
+    if (arr.length == 0) {
         orderHtml = `<td colspan="8">Không có dữ liệu</td>`;
     } else {
         arr.forEach((item) => {
@@ -1728,14 +1792,14 @@ function validateEmail(email) {
 }
 
 // Toggle password visibility
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const togglePasswordButtons = document.querySelectorAll('.toggle-password');
-    
+
     togglePasswordButtons.forEach(button => {
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
             const input = this.parentElement.querySelector('input');
             const icon = this.querySelector('i');
-            
+
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');
@@ -1750,40 +1814,40 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Form validation
-document.querySelector('.signup-form').addEventListener('submit', function(e) {
+document.querySelector('.signup-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    
+
     const email = document.getElementById('email');
     const emailError = document.querySelector('.form-message-email');
-    
+
     if (!email.value) {
         emailError.textContent = 'Vui lòng nhập email';
         email.classList.add('invalid');
         return;
     }
-    
+
     if (!validateEmail(email.value)) {
         emailError.textContent = 'Email không hợp lệ';
         email.classList.add('invalid');
         return;
     }
-    
+
     emailError.textContent = '';
     email.classList.remove('invalid');
-    
+
     // Continue with form submission
     this.submit();
 });
 
 // Clear error when user starts typing
-document.getElementById('email').addEventListener('input', function() {
+document.getElementById('email').addEventListener('input', function () {
     const emailError = document.querySelector('.form-message-email');
     emailError.textContent = '';
     this.classList.remove('invalid');
 });
 
 // Thiết lập Trang chủ là active khi trang được tải
-window.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('DOMContentLoaded', function () {
     // Kích hoạt menu Trang chủ mặc định
     document.querySelectorAll('.menu-list-item').forEach(item => {
         if (item.textContent.trim() === 'Trang chủ') {
@@ -1801,7 +1865,7 @@ function showTrangChu() {
     document.getElementById('order-history').classList.remove('open');
     document.getElementById('home-products').classList.remove('hide');
     document.getElementById('home-title').classList.remove('hide');
-    
+
     // Xóa active class khỏi tất cả menu items và đặt active cho menu Trang chủ
     clearActiveMenuItems();
     document.querySelectorAll('.menu-list-item').forEach(item => {
@@ -1809,12 +1873,17 @@ function showTrangChu() {
             item.classList.add('active');
         }
     });
-    
+
     // Hiển thị tất cả sản phẩm - Lấy dữ liệu mới từ localStorage
-    let allProducts = JSON.parse(localStorage.getItem('products')).filter(item => item.status == 1);
+    let allProducts = JSON.parse(localStorage.getItem('products'));
+    let categoryProducts = filterProductsByCurrentCategory(allProducts);
     currentPage = 1;
-    displayList(allProducts, perPage, currentPage);
-    setupPagination(allProducts, perPage, currentPage);
+    displayList(categoryProducts, perPage, currentPage);
+    setupPagination(categoryProducts, perPage, currentPage);
+    
+    // Reset navigation tabs về trạng thái mặc định (Sách giảm giá)
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+    document.querySelector('.nav-tab').classList.add('active'); // Tab đầu tiên (Sách giảm giá)
 }
 
 // Thêm hàm hủy đơn hàng chuẩn phân quyền
@@ -1840,25 +1909,25 @@ function cancelOrder(orderId, btn) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
-            fetch('src/controllers/get_orders.php')
-                .then(res => res.json())
-                .then(orders => {
-                    localStorage.setItem('order', JSON.stringify(orders));
-                    renderOrderProduct && renderOrderProduct();
-                });
-            refreshProducts(); // Đồng bộ lại sản phẩm từ server
-            document.querySelector('.modal.detail-order')?.classList.remove('open');
-        } else {
-            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
-        }
-    })
-    .catch(err => {
-        toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
-    });
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
+                fetch('src/controllers/get_orders.php')
+                    .then(res => res.json())
+                    .then(orders => {
+                        localStorage.setItem('order', JSON.stringify(orders));
+                        renderOrderProduct && renderOrderProduct();
+                    });
+                refreshProducts(); // Đồng bộ lại sản phẩm từ server
+                document.querySelector('.modal.detail-order')?.classList.remove('open');
+            } else {
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 2000 });
+            }
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Có lỗi khi kết nối server!', type: 'error', duration: 2000 });
+        });
 }
 
 function switchBookTab(tab) {
@@ -1869,7 +1938,7 @@ function switchBookTab(tab) {
     const buyContent = document.querySelector('.tab-buy-content');
     const reviewContent = document.querySelector('.tab-review-content');
 
-    if(tab === 'buy') {
+    if (tab === 'buy') {
         document.getElementById('tab-buy').classList.add('active');
         buyContent.classList.remove('tab-hidden');
         reviewContent.classList.add('tab-hidden');
@@ -1922,22 +1991,165 @@ function confirmReceived(orderId) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, status: 3 })
     })
-    .then(res => res.json())
-    .then(data => {
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Thành công', message: 'Cảm ơn bạn đã xác nhận!', type: 'success', duration: 2000 });
+                fetch('src/controllers/get_orders.php')
+                    .then(res => res.json())
+                    .then(orders => {
+                        localStorage.setItem('order', JSON.stringify(orders));
+                        renderOrderProduct && renderOrderProduct();
+                    });
+                document.querySelector('.modal.detail-order')?.classList.remove('open');
+            } else {
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+            }
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
+        });
+}
+
+// ===== CHỨC NĂNG SÁCH GIẢM GIÁ VÀ SÁCH BÁN CHẠY =====
+
+// Lấy category hiện tại đang được chọn
+function getCurrentCategory() {
+    const activeMenuItem = document.querySelector('.menu-list-item.active');
+    if (activeMenuItem) {
+        const categoryText = activeMenuItem.textContent.trim();
+        // Map tên menu thành category trong database
+        const categoryMap = {
+            'Trang chủ': null, // null = tất cả category
+            'Sách hay': 'Sách hay',
+            'Khoa học': 'Khoa học', 
+            'Tiểu thuyết': 'Tiểu thuyết'
+        };
+        return categoryMap[categoryText] || null;
+    }
+    return null;
+}
+
+// Lọc sản phẩm theo category hiện tại
+function filterProductsByCurrentCategory(products) {
+    const currentCategory = getCurrentCategory();
+    if (!currentCategory) {
+        // Nếu là Trang chủ, hiển thị tất cả sản phẩm
+        return products.filter(item => item.status == 1);
+    } else {
+        // Nếu là category cụ thể, chỉ hiển thị sản phẩm thuộc category đó
+        return products.filter(item => item.status == 1 && item.category === currentCategory);
+    }
+}
+
+// Hiển thị sách giảm giá
+async function showDiscountedProducts() {
+    try {
+        // Cập nhật trạng thái tab
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Lấy category hiện tại để filter
+        const currentCategory = getCurrentCategory();
+        const url = currentCategory ? 
+            `/Bookstore_DATN/src/controllers/get_discounted_products.php?category=${encodeURIComponent(currentCategory)}` :
+            '/Bookstore_DATN/src/controllers/get_discounted_products.php';
+        
+        // Lấy danh sách sách giảm giá từ server
+        const response = await fetch(url);
+        const data = await response.json();
+        
         if (data.success) {
-            toast({ title: 'Thành công', message: 'Cảm ơn bạn đã xác nhận!', type: 'success', duration: 2000 });
-            fetch('src/controllers/get_orders.php')
-                .then(res => res.json())
-                .then(orders => {
-                    localStorage.setItem('order', JSON.stringify(orders));
-                    renderOrderProduct && renderOrderProduct();
-                });
-            document.querySelector('.modal.detail-order')?.classList.remove('open');
+            if (data.discounted_products.length > 0) {
+                showHomeProduct(data.discounted_products);
+            } else {
+                // Nếu không có sách giảm giá, hiển thị thông báo
+                const currentCategory = getCurrentCategory();
+                const categoryText = currentCategory ? `trong danh mục "${currentCategory}"` : '';
+                document.getElementById('home-products').innerHTML = `
+                    <div class="no-result">
+                        <div class="no-result-h">Chưa có sách giảm giá ${categoryText}</div>
+                        <div class="no-result-p">Hiện tại chưa có chương trình giảm giá nào đang hoạt động ${categoryText}</div>
+                        <div class="no-result-i"><i class="fa-light fa-tags"></i></div>
+                    </div>`;
+            }
         } else {
-            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+            throw new Error(data.message || 'Không thể lấy danh sách sách giảm giá');
         }
-    })
-    .catch(err => {
-        toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
-    });
+    } catch (error) {
+        console.error('Lỗi khi lấy sách giảm giá:', error);
+        // Fallback: hiển thị thông báo lỗi
+        document.getElementById('home-products').innerHTML = `
+            <div class="no-result">
+                <div class="no-result-h">Lỗi khi tải dữ liệu</div>
+                <div class="no-result-p">Không thể kết nối server để lấy danh sách sách giảm giá</div>
+                <div class="no-result-i"><i class="fa-light fa-exclamation-triangle"></i></div>
+            </div>
+        `;
+    }
+}
+
+// Hiển thị sách bán chạy
+async function showBestsellers() {
+    try {
+        // Cập nhật trạng thái tab
+        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Lấy danh sách sách bán chạy từ server
+        const response = await fetch('/Bookstore_DATN/src/controllers/get_bestsellers.php');
+        const data = await response.json();
+        
+        if (data.success) {
+            // Lọc chỉ lấy sách có số lượng bán > 10
+            let bestsellers = data.bestsellers.filter(book => book.sold_quantity > 10);
+            
+            // Lọc theo category hiện tại
+            bestsellers = filterProductsByCurrentCategory(bestsellers);
+            
+            if (bestsellers.length > 0) {
+                showHomeProduct(bestsellers);
+            } else {
+                // Nếu không có sách bán chạy trong category hiện tại, hiển thị thông báo
+                const currentCategory = getCurrentCategory();
+                const categoryText = currentCategory ? `trong danh mục "${currentCategory}"` : '';
+                document.getElementById('home-products').innerHTML = `
+                    <div class="no-result">
+                        <div class="no-result-h">Chưa có sách bán chạy ${categoryText}</div>
+                        <div class="no-result-p">Hiện tại chưa có sách nào đạt tiêu chí bán chạy (số lượng bán > 10) ${categoryText}</div>
+                        <div class="no-result-i"><i class="fa-light fa-book-open"></i></div>
+                    </div>`;
+            }
+        } else {
+            console.error('Lỗi khi lấy sách bán chạy:', data.message);
+            // Fallback: sử dụng dữ liệu local
+            const products = JSON.parse(localStorage.getItem('products') || '[]');
+            let bestsellers = products.filter(item => (item.sold_quantity || 0) > 10);
+            bestsellers = filterProductsByCurrentCategory(bestsellers);
+            showHomeProduct(bestsellers);
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy sách bán chạy:', error);
+        // Fallback: sử dụng dữ liệu local
+        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        let bestsellers = products.filter(item => (item.sold_quantity || 0) > 10);
+        bestsellers = filterProductsByCurrentCategory(bestsellers);
+        showHomeProduct(bestsellers);
+    }
+}
+
+// Cập nhật số lượng đã bán trong localStorage khi có đơn hàng mới
+function updateProductSales(productId, quantity) {
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const productIndex = products.findIndex(p => p.id == productId);
+    
+    if (productIndex !== -1) {
+        if (!products[productIndex].sold_quantity) {
+            products[productIndex].sold_quantity = 0;
+        }
+        products[productIndex].sold_quantity += parseInt(quantity);
+        products[productIndex].is_bestseller = products[productIndex].sold_quantity > 10;
+        
+        localStorage.setItem('products', JSON.stringify(products));
+    }
 }

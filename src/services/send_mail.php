@@ -1,6 +1,6 @@
 <?php
 // Nạp autoloader của Composer
-require 'vendor/autoload.php';
+require '../../vendor/autoload.php';
 
 // Import các lớp cần thiết
 use PHPMailer\PHPMailer\PHPMailer;
@@ -13,19 +13,19 @@ $mail = new PHPMailer(true); // true kích hoạt exceptions
 try {
     // Cấu hình server
     $mail->isSMTP();                                      // Sử dụng SMTP
-    $mail->Host       = 'smtp.gmail.com';                 // Server SMTP của Gmail
-    $mail->SMTPAuth   = true;                             // Bật xác thực SMTP
-    $mail->Username   = 'bookshopdatn@gmail.com';         // Email của bạn
-    
+    $mail->Host = 'smtp.gmail.com';                 // Server SMTP của Gmail
+    $mail->SMTPAuth = true;                             // Bật xác thực SMTP
+    $mail->Username = 'bookshopdatn@gmail.com';         // Email của bạn
 
-    $mail->Password   = 'kvec wxoz ptjx utif';            // Thay bằng App Password thực của bạn
-    
+
+    $mail->Password = 'kvec wxoz ptjx utif';            // Thay bằng App Password thực của bạn
+
     // Cấu hình bảo mật
     $mail->SMTPSecure = 'ssl';                            // Sử dụng SSL
-    $mail->Port       = 465;                              // Cổng SSL
-    
+    $mail->Port = 465;                              // Cổng SSL
+
     // Cấu hình bổ sung
-    $mail->CharSet    = 'UTF-8';                          // Hỗ trợ tiếng Việt
+    $mail->CharSet = 'UTF-8';                          // Hỗ trợ tiếng Việt
     $mail->SMTPOptions = array(
         'ssl' => array(
             'verify_peer' => false,
@@ -36,10 +36,10 @@ try {
 
     // Bật chế độ debug
     $mail->SMTPDebug = 0;                                 // 0 = tắt debug, 1 = client, 2 = client và server
-    
+
     // Cấu hình email
     $mail->isHTML(true);                                  // Gửi email dạng HTML
-    
+
 } catch (Exception $e) {
     error_log("Lỗi cấu hình PHPMailer: {$e->getMessage()}");
     echo "Không thể cấu hình PHPMailer. Lỗi: {$e->getMessage()}";
@@ -55,26 +55,27 @@ try {
  * @param string $from_name Tên người gửi (mặc định là BOOK SHOP)
  * @return bool Trả về true nếu gửi thành công, false nếu thất bại
  */
-function sendEmail($to, $subject, $body, $from_email = 'bookshopdatn@gmail.com', $from_name = 'BOOK SHOP') {
+function sendEmail($to, $subject, $body, $from_email = 'bookshopdatn@gmail.com', $from_name = 'BOOK SHOP')
+{
     global $mail;
-    
+
     try {
         // Reset recipients
         $mail->clearAddresses();
         $mail->clearReplyTos();
-        
+
         // Cấu hình người gửi và người nhận
         $mail->setFrom($from_email, $from_name);
         $mail->addAddress($to);
-        
+
         // Cấu hình tiêu đề và nội dung
         $mail->Subject = $subject;
         $mail->Body = $body;
         $mail->AltBody = strip_tags($body);
-        
+
         // Ghi log
         error_log("Chuẩn bị gửi email đến: $to - Tiêu đề: $subject");
-        
+
         // Gửi email
         $mail->send();
         error_log("Đã gửi email thành công đến: $to");
@@ -86,13 +87,14 @@ function sendEmail($to, $subject, $body, $from_email = 'bookshopdatn@gmail.com',
 }
 
 // Hàm kiểm tra cấu hình SMTP
-function testSMTPConnection() {
+function testSMTPConnection()
+{
     global $mail;
-    
+
     try {
         $smtp = new SMTP;
         $smtp->connect($mail->Host, $mail->Port);
-        
+
         if ($smtp->hello(gethostname())) {
             if ($smtp->authenticate($mail->Username, $mail->Password)) {
                 $result = "Kết nối SMTP thành công!";
@@ -109,7 +111,8 @@ function testSMTPConnection() {
     }
 }
 
-function sendPaymentReminderMail($order) {
+function sendPaymentReminderMail($order)
+{
     $to = $order['email'];
     $orderId = htmlspecialchars($order['id']);
     $customerName = htmlspecialchars($order['tenguoinhan']);

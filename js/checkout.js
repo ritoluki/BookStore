@@ -367,6 +367,17 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         }
         localStorage.setItem('products', JSON.stringify(products));
 
+        // Cập nhật số lượng đã bán cho sản phẩm
+        if(product == undefined) {
+            if (currentUser && currentUser.cart) {
+                currentUser.cart.forEach(item => {
+                    updateProductSales(item.id, item.soluong);
+                });
+            }
+        } else {
+            updateProductSales(product.id, product.soluong);
+        }
+
         toast({ title: 'Thành công', message: 'Đặt hàng thành công !', type: 'success', duration: 1000 });
         
         // Gửi dữ liệu đơn hàng và chi tiết đơn hàng đến server để lưu vào database
@@ -395,7 +406,8 @@ function getpriceProduct(id) {
     let sp = products.find(item => {
         return item.id == id;
     })
-    return sp.price;
+    // Sử dụng giá sau giảm nếu có, không thì dùng giá gốc
+    return (sp.is_discounted && sp.discounted_price) ? sp.discounted_price : sp.price;
 }
 
 // Thêm sự kiện cho nút VNPay
