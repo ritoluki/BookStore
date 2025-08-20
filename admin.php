@@ -365,7 +365,7 @@
                         </form>
                     </div>
                     <div class="admin-control-right">
-                        <select name="discount-status" id="discount-status" onchange="filterDiscounts()">
+                        <select name="discount-status-filter" id="discount-status-filter" onchange="filterDiscounts()">
                             <option value="all">Tất cả</option>
                             <option value="active">Đang hoạt động</option>
                             <option value="expired">Đã hết hạn</option>

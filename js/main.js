@@ -167,9 +167,12 @@ function detailProduct(index) {
     let tgbtn = document.querySelectorAll('.is-form');
     let qty = document.querySelector('.product-control .input-qty');
     let priceText = document.querySelector('.price');
+    // Sử dụng giá sau giảm nếu có, không thì dùng giá gốc
+    let finalPrice = (infoProduct.is_discounted && infoProduct.discounted_price) ? infoProduct.discounted_price : infoProduct.price;
+    
     tgbtn.forEach(element => {
         element.addEventListener('click', () => {
-            let price = infoProduct.price * parseInt(qty.value);
+            let price = finalPrice * parseInt(qty.value);
             priceText.innerHTML = vnd(price);
         });
     });
@@ -183,7 +186,7 @@ function detailProduct(index) {
             qty.value = max;
             toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 2000 });
         }
-        priceText.innerHTML = vnd(infoProduct.price * parseInt(qty.value));
+        priceText.innerHTML = vnd(finalPrice * parseInt(qty.value));
     });
     // Them san pham vao gio hang
     let productbtn = document.querySelector('.button-dat');
@@ -1188,7 +1191,7 @@ function renderOrderProduct() {
                     </div>
                     <div class="order-history-right">
                         <div class="order-history-price">
-                            <span class="order-history-current-price">${vnd(sp.price)}</span>
+                            <span class="order-history-current-price">${vnd(sp.is_discounted && sp.discounted_price ? sp.discounted_price : sp.price)}</span>
                         </div>                         
                     </div>
                 </div>`;
@@ -1553,7 +1556,7 @@ function clearActiveMenuItems() {
 }
 
 // Hiển thị chuyên mục
-function showCategory(category) {
+async function showCategory(category) {
     document.getElementById('trangchu').classList.remove('hide');
     document.getElementById('gioithieu').style.display = 'none';
     document.getElementById('tracuu').style.display = 'none';
@@ -1568,7 +1571,10 @@ function showCategory(category) {
         }
     });
 
-    // Lọc sản phẩm theo danh mục - Sử dụng trực tiếp từ localStorage
+    // Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
+    await updateProductsWithDiscounts();
+
+    // Lọc sản phẩm theo danh mục - Sử dụng dữ liệu đã cập nhật từ localStorage
     let products = JSON.parse(localStorage.getItem('products'));
     let productSearch = products.filter(value => {
         return value.category === category && value.status == 1;
@@ -1694,7 +1700,7 @@ function detailOrder(id) {
                 </div>
                 <div class="order-product-right">
                     <div class="order-product-price">
-                        <span class="order-product-current-price">${vnd(item.price)}</span>
+                        <span class="order-product-current-price">${vnd(item.is_discounted && item.discounted_price ? item.discounted_price : item.price)}</span>
                     </div>                         
                 </div>
             </div>`;
@@ -1857,7 +1863,7 @@ window.addEventListener('DOMContentLoaded', function () {
 });
 
 // Hiển thị trang chủ
-function showTrangChu() {
+async function showTrangChu() {
     document.getElementById('trangchu').classList.remove('hide');
     document.getElementById('gioithieu').style.display = 'none';
     document.getElementById('tracuu').style.display = 'none';
@@ -1874,6 +1880,9 @@ function showTrangChu() {
         }
     });
 
+    // Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
+    await updateProductsWithDiscounts();
+    
     // Hiển thị tất cả sản phẩm - Lấy dữ liệu mới từ localStorage
     let allProducts = JSON.parse(localStorage.getItem('products'));
     let categoryProducts = filterProductsByCurrentCategory(allProducts);
@@ -2041,6 +2050,26 @@ function filterProductsByCurrentCategory(products) {
         return products.filter(item => item.status == 1 && item.category === currentCategory);
     }
 }
+
+// Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
+async function updateProductsWithDiscounts() {
+    try {
+        const response = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
+        const productsWithDiscounts = await response.json();
+        
+        if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
+            // Cập nhật localStorage với dữ liệu mới bao gồm thông tin giảm giá
+            localStorage.setItem('products', JSON.stringify(productsWithDiscounts));
+            console.log('Đã cập nhật dữ liệu sản phẩm với thông tin giảm giá');
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật thông tin giảm giá:', error);
+        // Nếu có lỗi, vẫn sử dụng dữ liệu hiện tại trong localStorage
+    }
+}
+
+// Làm cho hàm có thể truy cập global
+window.updateProductsWithDiscounts = updateProductsWithDiscounts;
 
 // Hiển thị sách giảm giá
 async function showDiscountedProducts() {

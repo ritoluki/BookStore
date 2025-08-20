@@ -1856,7 +1856,7 @@ async function createDiscount() {
         products: []
     };
     
-    console.log('Form data:', formData);
+
     
     // Kiểm tra xem có đang edit không
     const isEditing = window.currentEditingDiscountId;
@@ -1871,6 +1871,29 @@ async function createDiscount() {
         console.log('Validation failed');
         toast({ title: 'Lỗi', message: 'Vui lòng nhập đầy đủ thông tin bắt buộc!', type: 'error', duration: 3000 });
         return;
+    }
+    
+    // Validate ngày tháng
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    const now = new Date();
+    
+    if (endDate <= startDate) {
+        toast({ title: 'Lỗi', message: 'Ngày kết thúc phải sau ngày bắt đầu!', type: 'error', duration: 3000 });
+        return;
+    }
+    
+    if (endDate <= now) {
+        toast({ title: 'Lỗi', message: 'Ngày kết thúc không được trong quá khứ! Vui lòng chọn ngày kết thúc trong tương lai.', type: 'error', duration: 3000 });
+        return;
+    }
+    
+    // Cảnh báo nếu ngày bắt đầu trong quá khứ (nhưng vẫn cho phép)
+    if (startDate < now && !isEditing) {
+        const confirmPastStart = confirm('Ngày bắt đầu đã chọn trong quá khứ. Chương trình giảm giá sẽ có hiệu lực ngay lập tức. Bạn có muốn tiếp tục?');
+        if (!confirmPastStart) {
+            return;
+        }
     }
     
     // Validate logic giảm giá
@@ -1929,7 +1952,20 @@ async function createDiscount() {
             toast({ title: 'Thành công', message: successMessage, type: 'success', duration: 2000 });
             document.querySelector('.add-discount').classList.remove('open');
             resetDiscountForm();
-            loadDiscounts();
+            
+
+            // Đợi một chút để đảm bảo database đã commit
+            setTimeout(() => {
+                loadDiscounts();
+            }, 500);
+            
+            // Cập nhật dữ liệu sản phẩm với thông tin giảm giá mới
+            if (typeof updateProductsWithDiscounts === 'function') {
+                updateProductsWithDiscounts();
+            } else {
+                // Fallback: refresh localStorage products
+                refreshProducts();
+            }
             
             // Reset editing state
             window.currentEditingDiscountId = null;
@@ -1942,10 +1978,29 @@ async function createDiscount() {
     }
 }
 
+// Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
+async function updateProductsWithDiscounts() {
+    try {
+        const response = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
+        const productsWithDiscounts = await response.json();
+        
+        if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
+            // Cập nhật localStorage với dữ liệu mới bao gồm thông tin giảm giá
+            localStorage.setItem('products', JSON.stringify(productsWithDiscounts));
+            console.log('Đã cập nhật dữ liệu sản phẩm với thông tin giảm giá mới');
+        }
+    } catch (error) {
+        console.error('Lỗi khi cập nhật thông tin giảm giá:', error);
+        // Nếu có lỗi, vẫn sử dụng dữ liệu hiện tại trong localStorage
+    }
+}
+
 // Load danh sách giảm giá
 async function loadDiscounts() {
     try {
-        const response = await fetch('/Bookstore_DATN/src/controllers/get_discounts.php');
+        // Thêm timestamp để tránh cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/Bookstore_DATN/src/controllers/get_discounts.php?t=${timestamp}`);
         const data = await response.json();
         
         if (data.success) {
@@ -1955,6 +2010,59 @@ async function loadDiscounts() {
         }
     } catch (error) {
         console.error('Lỗi khi load giảm giá:', error);
+    }
+}
+
+// Kiểm tra xem discount có áp dụng cho toàn bộ category không
+async function checkIfCategoryDiscount(discountId) {
+    try {
+        // Lấy tất cả sản phẩm trong discount
+        const response = await fetch(`/Bookstore_DATN/src/controllers/get_discount_detail.php?id=${discountId}`);
+        const data = await response.json();
+        
+        if (data.success && data.discount.products.length > 0) {
+            // Lấy danh sách tất cả sản phẩm để so sánh
+            const allProductsResponse = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
+            const allProducts = await allProductsResponse.json();
+            
+            if (allProducts && Array.isArray(allProducts)) {
+                // Nhóm sản phẩm theo category
+                const categoryCounts = {};
+                const discountProductIds = data.discount.products.map(p => p.id);
+                
+                allProducts.forEach(product => {
+                    if (!categoryCounts[product.category]) {
+                        categoryCounts[product.category] = { total: 0, inDiscount: 0 };
+                    }
+                    categoryCounts[product.category].total++;
+                    if (discountProductIds.includes(product.id)) {
+                        categoryCounts[product.category].inDiscount++;
+                    }
+                });
+                
+                // Kiểm tra xem có category nào có tất cả sản phẩm trong discount không
+                for (const [category, counts] of Object.entries(categoryCounts)) {
+                    if (counts.total > 0 && counts.inDiscount === counts.total && counts.total === discountProductIds.length) {
+                        // Tất cả sản phẩm trong category này đều có trong discount
+                        // và discount chỉ có sản phẩm từ category này
+                        document.getElementById('discount-apply-type').value = 'category';
+                        document.getElementById('discount-category').value = category;
+                        toggleProductSelection();
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // Nếu không phải category discount, giữ nguyên chế độ sản phẩm cụ thể
+        document.getElementById('discount-apply-type').value = 'specific_products';
+        toggleProductSelection();
+        
+    } catch (error) {
+        console.error('Lỗi khi kiểm tra category discount:', error);
+        // Fallback về chế độ sản phẩm cụ thể
+        document.getElementById('discount-apply-type').value = 'specific_products';
+        toggleProductSelection();
     }
 }
 
@@ -1979,10 +2087,35 @@ async function editDiscount(discountId) {
             document.getElementById('discount-start-date').value = discount.start_date || '';
             document.getElementById('discount-end-date').value = discount.end_date || '';
             document.getElementById('discount-max-uses').value = discount.max_uses || '';
-            document.getElementById('discount-status').checked = discount.status == 1;
             
-            // Cập nhật UI
+            // Cập nhật UI trước
             toggleDiscountValue();
+            
+            // Xử lý hiển thị sản phẩm đã chọn
+            if (discount.products && discount.products.length > 0) {
+                // Nếu có sản phẩm cụ thể, đặt về chế độ "Sản phẩm cụ thể"
+                document.getElementById('discount-apply-type').value = 'specific_products';
+                toggleProductSelection();
+                
+                // Hiển thị các sản phẩm đã chọn
+                const selectedProductsContainer = document.getElementById('selected-discount-products');
+                let productsHtml = '';
+                discount.products.forEach(product => {
+                    productsHtml += `
+                        <div class="selected-product-item" data-product-id="${product.id}">
+                            <span class="product-name">${product.title}</span>
+                            <button type="button" class="remove-product" onclick="removeSelectedProduct(${product.id})">
+                                <i class="fa-light fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                selectedProductsContainer.innerHTML = productsHtml;
+            } else {
+                // Kiểm tra xem có phải áp dụng cho category không
+                // Lấy danh sách tất cả sản phẩm trong các category để xác định
+                checkIfCategoryDiscount(discountId);
+            }
             
             // Đổi modal sang chế độ edit - sửa selector và thêm button
             const addTitle = document.querySelector('.add-discount .add-discount-e');
@@ -2003,6 +2136,19 @@ async function editDiscount(discountId) {
             
             // Mở modal
             document.querySelector('.add-discount').classList.add('open');
+            
+            // Set status cuối cùng sau tất cả UI operations để tránh bị override
+            setTimeout(() => {
+                const checkbox = document.getElementById('discount-status');
+                console.log('=== EDIT FORM CHECKBOX DEBUG ===');
+                console.log('Checkbox element:', checkbox);
+                console.log('Element type:', checkbox.type);
+                console.log('Element tagName:', checkbox.tagName);
+                console.log('Setting status to:', discount.status == 1);
+                
+                checkbox.checked = discount.status == 1;
+                console.log('Final checkbox checked:', checkbox.checked);
+            }, 200);
             
         } else {
             toast({ title: 'Lỗi', message: data.message || 'Không thể lấy thông tin giảm giá!', type: 'error', duration: 3000 });
@@ -2033,6 +2179,14 @@ async function deleteDiscount(discountId) {
         if (data.success) {
             toast({ title: 'Thành công', message: 'Xóa chương trình giảm giá thành công!', type: 'success', duration: 3000 });
             loadDiscounts(); // Reload danh sách
+            
+            // Cập nhật dữ liệu sản phẩm với thông tin giảm giá mới
+            if (typeof updateProductsWithDiscounts === 'function') {
+                updateProductsWithDiscounts();
+            } else {
+                // Fallback: refresh localStorage products
+                refreshProducts();
+            }
         } else {
             toast({ title: 'Lỗi', message: data.message || 'Không thể xóa chương trình giảm giá!', type: 'error', duration: 3000 });
         }
@@ -2044,6 +2198,8 @@ async function deleteDiscount(discountId) {
 
 // Hiển thị danh sách giảm giá
 function displayDiscounts(discounts) {
+
+    
     const tbody = document.getElementById('showDiscounts');
     
     if (discounts.length === 0) {
@@ -2051,9 +2207,11 @@ function displayDiscounts(discounts) {
         return;
     }
     
-    tbody.innerHTML = discounts.map(discount => {
+    tbody.innerHTML = discounts.map((discount, index) => {
         const statusClass = getDiscountStatusClass(discount.current_status);
         const statusText = getDiscountStatusText(discount.current_status);
+        
+
         const discountValueText = discount.discount_type === 'percentage' 
             ? `${discount.discount_value}%` 
             : `${discount.discount_value.toLocaleString()} VND`;
@@ -2132,7 +2290,7 @@ function searchDiscounts() {
 
 // Filter giảm giá theo trạng thái
 function filterDiscounts() {
-    const status = document.getElementById('discount-status').value;
+    const status = document.getElementById('discount-status-filter').value;
     const rows = document.querySelectorAll('#showDiscounts tr');
     
     rows.forEach(row => {

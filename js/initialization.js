@@ -263,4 +263,19 @@ window.onload = function () {
     createOrderDetails();
     refreshProducts();  // Cập nhật sản phẩm sau khi tải lại trang
     refreshAccounts();  // Cập nhật tài khoản sau khi tải lại trang
+    
+    // Cập nhật dữ liệu sản phẩm với thông tin giảm giá khi focus lại trang
+    // (người dùng có thể đã thay đổi khuyến mãi ở tab khác)
+    window.addEventListener('focus', async () => {
+        if (typeof window.updateProductsWithDiscounts === 'function') {
+            await window.updateProductsWithDiscounts();
+        }
+    });
+    
+    // Cập nhật dữ liệu định kỳ nhưng ít thường xuyên hơn (mỗi 5 phút)
+    setInterval(async () => {
+        if (typeof window.updateProductsWithDiscounts === 'function') {
+            await window.updateProductsWithDiscounts();
+        }
+    }, 300000); // 5 phút
 };

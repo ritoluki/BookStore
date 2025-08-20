@@ -5,6 +5,23 @@
 @font-face {font-family: "SFProDisplay";src: url("../font/SFPRODISPLAY/SFProDisplay-Semibold.ttf") format("truetype");font-weight: 600;font-display: fallback;}
 @font-face {font-family: "SFProDisplay";src: url("../font/SFPRODISPLAY/SFProDisplay-Heavy.ttf") format("truetype");font-weight: 800;font-display: fallback;}
 
+/* Form help text styles */
+.form-help {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.4;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.form-help strong {
+    color: #495057;
+}
+
 *,
 *::before,
 *::after {
