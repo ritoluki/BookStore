@@ -347,7 +347,153 @@ session_start();
         </div>
         <div class="container" id="gioithieu" style="display: none; overflow: hidden; scroll-behavior: auto;">
             <div class="introduction-container">
-               <p>Chào mừng đến với trang web của chúng tôi</p>
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h1 class="hero-title">Chào mừng đến với <span class="highlight">Book Shop</span></h1>
+                        <p class="hero-subtitle">Nơi khám phá tri thức và nuôi dưỡng tâm hồn qua từng trang sách</p>
+                        <div class="hero-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">63+</span>
+                                <span class="stat-label">Sách đa dạng</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">1000+</span>
+                                <span class="stat-label">Khách hàng tin tưởng</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">5+</span>
+                                <span class="stat-label">Năm kinh nghiệm</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-image">
+                        <img src="./assets/img/admin/bookshop.jpg" alt="Book Shop" class="hero-img">
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="about-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Về chúng tôi</h2>
+                        <div class="title-underline"></div>
+                    </div>
+                    <div class="about-content">
+                        <div class="about-text">
+                            <p>Book Shop được thành lập với sứ mệnh mang đến cho bạn những cuốn sách chất lượng, đa dạng về thể loại và phù hợp với mọi lứa tuổi. Chúng tôi tin rằng mỗi cuốn sách đều chứa đựng một thế giới mới, một góc nhìn mới về cuộc sống.</p>
+                            <p>Từ những tác phẩm văn học kinh điển đến những cuốn sách kỹ năng sống hiện đại, từ sách thiếu nhi đến sách chuyên ngành, Book Shop cam kết cung cấp cho bạn những lựa chọn tốt nhất.</p>
+                        </div>
+                        <div class="about-features">
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fa-light fa-book-open"></i>
+                                </div>
+                                <h3>Đa dạng thể loại</h3>
+                                <p>Sách văn học, kỹ năng sống, khoa học, thiếu nhi và nhiều thể loại khác</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fa-light fa-truck"></i>
+                                </div>
+                                <h3>Giao hàng nhanh chóng</h3>
+                                <p>Dịch vụ giao hàng tận nơi với thời gian linh hoạt theo yêu cầu</p>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">
+                                    <i class="fa-light fa-shield-check"></i>
+                                </div>
+                                <h3>Chất lượng đảm bảo</h3>
+                                <p>Cam kết về chất lượng sách và dịch vụ khách hàng tốt nhất</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services Section -->
+                <div class="services-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Dịch vụ của chúng tôi</h2>
+                        <div class="title-underline"></div>
+                    </div>
+                    <div class="services-grid">
+                        <div class="service-card">
+                            <div class="service-icon">
+                                <i class="fa-light fa-shopping-cart"></i>
+                            </div>
+                            <h3>Mua sắm trực tuyến</h3>
+                            <p>Trải nghiệm mua sắm thuận tiện với giao diện thân thiện và thanh toán an toàn</p>
+                        </div>
+                        <div class="service-card">
+                            <div class="service-icon">
+                                <i class="fa-light fa-search"></i>
+                            </div>
+                            <h3>Tra cứu đơn hàng</h3>
+                            <p>Theo dõi trạng thái đơn hàng và lịch sử mua sắm một cách dễ dàng</p>
+                        </div>
+                        <div class="service-card">
+                            <div class="service-icon">
+                                <i class="fa-light fa-headset"></i>
+                            </div>
+                            <h3>Hỗ trợ khách hàng</h3>
+                            <p>Đội ngũ tư vấn chuyên nghiệp sẵn sàng hỗ trợ mọi thắc mắc của bạn</p>
+                        </div>
+                        <div class="service-card">
+                            <div class="service-icon">
+                                <i class="fa-light fa-gift"></i>
+                            </div>
+                            <h3>Ưu đãi đặc biệt</h3>
+                            <p>Giảm giá và khuyến mãi hấp dẫn dành cho khách hàng thân thiết</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="contact-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Liên hệ với chúng tôi</h2>
+                        <div class="title-underline"></div>
+                    </div>
+                    <div class="contact-content">
+                        <div class="contact-info">
+                            <div class="intro-contact-item">
+                                <div class="intro-contact-icon">
+                                    <i class="fa-light fa-phone"></i>
+                                </div>
+                                <div class="intro-contact-details">
+                                    <h4>Điện thoại</h4>
+                                    <p>0123 456 789</p>
+                                </div>
+                            </div>
+                            <div class="intro-contact-item">
+                                <div class="intro-contact-icon">
+                                    <i class="fa-light fa-envelope"></i>
+                                </div>
+                                <div class="intro-contact-details">
+                                    <h4>Email</h4>
+                                    <p>info@bookshop.com</p>
+                                </div>
+                            </div>
+                            <div class="intro-contact-item">
+                                <div class="intro-contact-icon">
+                                    <i class="fa-light fa-location-dot"></i>
+                                </div>
+                                <div class="intro-contact-details">
+                                    <h4>Địa chỉ</h4>
+                                    <p>62 Hậu Ái, Hoài Đức, Hà Nội</p>
+                                </div>
+                            </div>
+                            <div class="intro-contact-item">
+                                <div class="intro-contact-icon">
+                                    <i class="fa-light fa-clock"></i>
+                                </div>
+                                <div class="intro-contact-details">
+                                    <h4>Giờ làm việc</h4>
+                                    <p>8:00 - 22:00 (Thứ 2 - Chủ nhật)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="container" id="tracuu" style="display: none; overflow: hidden; scroll-behavior: auto;">
