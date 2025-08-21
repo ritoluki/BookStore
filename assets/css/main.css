@@ -3955,6 +3955,27 @@ tbody tr td {
     font-weight: 600;
 }
 
+/* Mixed pricing styles */
+.cart-mixed-price {
+    text-align: right;
+}
+
+.price-breakdown {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+.price-breakdown small {
+    display: block;
+}
+
+.total-price {
+    font-weight: 600;
+    color: #333;
+}
+
 .card-product.discounted .current-price {
     color: #dc3545;
     font-weight: 700;

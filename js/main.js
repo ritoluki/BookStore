@@ -228,9 +228,7 @@ function displayBookReviewsFromLocal(reviews) {
             <p>Chưa có đánh giá nào cho sách này</p>
         </div>`;
     } else {
-        // Debug: log ra dữ liệu reviews để kiểm tra
-        console.log('Reviews data:', reviews);
-        console.log('Rating values:', reviews.map(r => ({ rating: r.rating, type: typeof r.rating })));
+
 
         // Tính điểm trung bình từ localStorage - đảm bảo rating là số
         let totalRating = reviews.reduce((sum, review) => sum + Number(review.rating), 0);
@@ -277,7 +275,7 @@ function displayBookReviewsFromLocal(reviews) {
 
 // Hàm đồng bộ đánh giá từ server (chạy ngầm)
 function syncReviewsFromServer(bookId) {
-    fetch(`get_book_reviews.php?product_id=${bookId}`)
+    fetch(`src/controllers/get_book_reviews.php?product_id=${bookId}`)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -310,7 +308,10 @@ function syncReviewsFromServer(bookId) {
             }
         })
         .catch(err => {
-            console.error('Lỗi đồng bộ đánh giá:', err);
+            // Chỉ log lỗi nếu không phải lỗi 404 hoặc lỗi parsing JSON từ HTML
+            if (!err.message.includes('Unexpected token') && !err.message.includes('404')) {
+                console.error('Lỗi đồng bộ đánh giá:', err);
+            }
         });
 }
 
@@ -472,7 +473,7 @@ function animationCart() {
 }
 
 // Them SP vao gio hang
-function addCart(index) {
+async function addCart(index) {
     let currentuser = localStorage.getItem('currentuser') ? JSON.parse(localStorage.getItem('currentuser')) : [];
     let soluong = document.querySelector('.input-qty').value;
     let popupDetailNote = document.querySelector('#popup-detail-note').value;
@@ -486,14 +487,92 @@ function addCart(index) {
     let products = JSON.parse(localStorage.getItem('products'));
     let infoProduct = products.find(sp => sp.id == index);
     let currentQtyInCart = vitri !== -1 ? parseInt(currentuser.cart[vitri].soluong) : 0;
-    if (parseInt(productcart.soluong) + currentQtyInCart > infoProduct.soluong) {
+    let totalRequestedQty = parseInt(productcart.soluong) + currentQtyInCart;
+    
+    // Kiểm tra số lượng tồn kho
+    if (totalRequestedQty > infoProduct.soluong) {
         toast({ title: 'Lỗi', message: 'Số lượng đặt vượt quá số lượng còn lại!', type: 'error', duration: 3000 });
         return;
     }
+    
+    // Kiểm tra giới hạn giảm giá nếu sản phẩm có giảm giá
+    if (infoProduct.is_discounted) {
+        try {
+            const response = await fetch('/Bookstore_DATN/src/controllers/check_discount_availability.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    product_id: index,
+                    quantity: totalRequestedQty
+                })
+            });
+            
+            const discountCheck = await response.json();
+            
+            if (discountCheck.success && discountCheck.has_discount) {
+                // Lưu thông tin giảm giá chi tiết vào productcart
+                productcart.discount_info = {
+                    applicable_quantity: discountCheck.applicable_quantity,
+                    remaining_quantity: discountCheck.remaining_quantity,
+                    discounted_price: discountCheck.discount_info?.discounted_price || infoProduct.discounted_price,
+                    original_price: discountCheck.discount_info?.original_price || infoProduct.price
+                };
+                
+                if (!discountCheck.can_apply_full_discount) {
+                    const maxDiscountQty = discountCheck.applicable_quantity;
+                    const remainingQty = discountCheck.remaining_quantity;
+                    
+                    if (maxDiscountQty === 0) {
+                        toast({ 
+                            title: 'Thông báo', 
+                            message: 'Chương trình giảm giá đã hết lượt sử dụng! Sản phẩm sẽ được bán với giá gốc.', 
+                            type: 'warning', 
+                            duration: 4000 
+                        });
+                        // Đặt lại thông tin không có giảm giá
+                        productcart.discount_info = {
+                            applicable_quantity: 0,
+                            remaining_quantity: totalRequestedQty,
+                            discounted_price: infoProduct.price,
+                            original_price: infoProduct.price
+                        };
+                    } else {
+                        const confirmMsg = `Chương trình giảm giá chỉ còn ${maxDiscountQty} lượt sử dụng.\n` +
+                                         `${maxDiscountQty} sản phẩm sẽ được giảm giá, ${remainingQty} sản phẩm còn lại sẽ có giá gốc.\n` +
+                                         `Bạn có muốn tiếp tục?`;
+                        
+                        if (!confirm(confirmMsg)) {
+                            return;
+                        }
+                    }
+                } else {
+                    // Tất cả đều được giảm giá
+                    productcart.discount_info = {
+                        applicable_quantity: totalRequestedQty,
+                        remaining_quantity: 0,
+                        discounted_price: discountCheck.discount_info?.discounted_price || infoProduct.discounted_price,
+                        original_price: discountCheck.discount_info?.original_price || infoProduct.price
+                    };
+                }
+            } else {
+                // Không có giảm giá
+                productcart.discount_info = {
+                    applicable_quantity: 0,
+                    remaining_quantity: totalRequestedQty,
+                    discounted_price: infoProduct.price,
+                    original_price: infoProduct.price
+                };
+            }
+        } catch (error) {
+            console.error('Lỗi kiểm tra giảm giá:', error);
+            // Vẫn cho phép thêm vào giỏ nếu API lỗi
+        }
+    }
+    
     if (vitri == -1) {
         currentuser.cart.push(productcart);
     } else {
-        currentuser.cart[vitri].soluong = parseInt(currentuser.cart[vitri].soluong) + parseInt(productcart.soluong);
+        currentuser.cart[vitri].soluong = totalRequestedQty;
     }
     localStorage.setItem('currentuser', JSON.stringify(currentuser));
     updateAmount();
@@ -515,8 +594,16 @@ function showCart() {
                     <p class="cart-item-title">
                         ${product.title}
                     </p>
-                    <span class="cart-item-price price" data-price="${product.is_discounted && product.discounted_price ? product.discounted_price : product.price}">
-                    ${product.is_discounted && product.discounted_price ? `
+                    <span class="cart-item-price price">
+                    ${product.has_mixed_pricing ? `
+                        <div class="cart-mixed-price">
+                            <div class="price-breakdown">
+                                <small>${product.discount_quantity}x ${vnd(parseInt(product.discount_info.discounted_price))}</small>
+                                <small>${product.regular_quantity}x ${vnd(parseInt(product.discount_info.original_price))}</small>
+                            </div>
+                            <div class="total-price">${vnd(parseInt(product.mixed_total))}</div>
+                        </div>
+                    ` : product.is_discounted && product.discounted_price ? `
                         <div class="cart-price-container">
                             <span class="cart-original-price">${vnd(parseInt(product.price))}</span>
                             <span class="cart-discounted-price">${vnd(parseInt(product.discounted_price))}</span>
@@ -531,7 +618,7 @@ function showCart() {
                     <button class="cart-item-delete" onclick="deleteCartItem(${product.id},this)">Xóa</button>
                     <div class="buttons_added">
                         <input class="minus is-form" type="button" value="-" onclick="decreasingNumber(this)">
-                        <input class="input-qty" max="${product.soluong}" min="1" name="" type="number" value="${product.soluong}">
+                        <input class="input-qty" max="${product.soluong_tonkho}" min="1" name="" type="number" value="${product.soluong}">
                         <input class="plus is-form" type="button" value="+" onclick="increasingNumber(this)">
                     </div>
                 </div>
@@ -588,9 +675,15 @@ function getCartTotal() {
     if (currentUser != null) {
         currentUser.cart.forEach(item => {
             let product = getProduct(item);
-            // Sử dụng giá sau giảm nếu có, không thì dùng giá gốc
-            let finalPrice = (product.is_discounted && product.discounted_price) ? product.discounted_price : product.price;
-            tongtien += (parseInt(product.soluong) * parseInt(finalPrice));
+            
+            // Sử dụng giá hỗn hợp nếu có thông tin chi tiết
+            if (product.mixed_total !== undefined) {
+                tongtien += product.mixed_total;
+            } else {
+                // Fallback: sử dụng logic cũ
+                let finalPrice = (product.is_discounted && product.discounted_price) ? product.discounted_price : product.price;
+                tongtien += (parseInt(product.soluong) * parseInt(finalPrice));
+            }
         });
     }
     return tongtien;
@@ -602,8 +695,25 @@ function getProduct(item) {
     let infoProductCart = products.find(sp => item.id == sp.id)
     let product = {
         ...infoProductCart,
-        ...item
+        ...item,
+        soluong_tonkho: infoProductCart.soluong, // Giữ số lượng tồn kho
+        soluong: item.soluong // Số lượng trong giỏ hàng
     }
+    
+    // Tính giá hỗn hợp nếu có thông tin giảm giá chi tiết
+    if (item.discount_info) {
+        const discountQty = item.discount_info.applicable_quantity;
+        const regularQty = item.discount_info.remaining_quantity;
+        const discountedPrice = item.discount_info.discounted_price;
+        const originalPrice = item.discount_info.original_price;
+        
+        // Tính tổng tiền hỗn hợp
+        product.mixed_total = (discountQty * discountedPrice) + (regularQty * originalPrice);
+        product.has_mixed_pricing = discountQty > 0 && regularQty > 0;
+        product.discount_quantity = discountQty;
+        product.regular_quantity = regularQty;
+    }
+    
     return product;
 }
 
@@ -631,27 +741,58 @@ function updateAmount() {
 
 // Save Cart Info
 function saveAmountCart() {
-    let cartAmountbtn = document.querySelectorAll(".cart-item-control .is-form");
     let listProduct = document.querySelectorAll('.cart-item');
     let currentUser = JSON.parse(localStorage.getItem('currentuser'));
-    cartAmountbtn.forEach((btn, index) => {
-        btn.addEventListener('click', () => {
-            let id = listProduct[parseInt(index / 2)].getAttribute("data-id");
-            let productId = currentUser.cart.find(item => {
-                return item.id == id;
-            });
-            let products = JSON.parse(localStorage.getItem('products'));
-            let infoProduct = products.find(sp => sp.id == id);
-            let newQty = parseInt(listProduct[parseInt(index / 2)].querySelector(".input-qty").value);
-            if (newQty > infoProduct.soluong) {
-                toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 3000 });
-                listProduct[parseInt(index / 2)].querySelector(".input-qty").value = infoProduct.soluong;
-                return;
-            }
-            productId.soluong = newQty;
-            localStorage.setItem('currentuser', JSON.stringify(currentUser));
-            updateCartTotal();
-        })
+    
+    listProduct.forEach((cartItem) => {
+        let id = cartItem.getAttribute("data-id");
+        let cartAmountBtns = cartItem.querySelectorAll(".cart-item-control .is-form");
+        let qtyInput = cartItem.querySelector(".input-qty");
+        
+        cartAmountBtns.forEach((btn) => {
+            // Remove existing event listeners to avoid duplicates
+            btn.removeEventListener('click', btn.cartClickHandler);
+            
+            // Create new event handler with debounce
+            btn.cartClickHandler = () => {
+                // Clear existing timeout
+                if (btn.updateTimeout) {
+                    clearTimeout(btn.updateTimeout);
+                }
+                
+                btn.updateTimeout = setTimeout(() => {
+                    // Refresh currentUser to get latest data
+                    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+                    let productInCart = currentUser.cart.find(item => item.id == id);
+                    let products = JSON.parse(localStorage.getItem('products'));
+                    let infoProduct = products.find(sp => sp.id == id);
+                    let newQty = parseInt(qtyInput.value);
+                    let maxStock = infoProduct.soluong; // Số lượng tồn kho thực tế
+                    
+                    // Validate quantity
+                    if (isNaN(newQty) || newQty < 1) {
+                        qtyInput.value = 1;
+                        newQty = 1;
+                    }
+                    
+                    if (newQty > maxStock) {
+                        toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 3000 });
+                        qtyInput.value = maxStock;
+                        newQty = maxStock;
+                    }
+                    
+                    // Only update if value actually changed
+                    if (productInCart && productInCart.soluong !== newQty) {
+                        productInCart.soluong = newQty;
+                        localStorage.setItem('currentuser', JSON.stringify(currentUser));
+                        updateCartTotal();
+                    }
+                }, 100);
+            };
+            
+            // Add new event listener
+            btn.addEventListener('click', btn.cartClickHandler);
+        });
     });
 }
 
@@ -1233,15 +1374,37 @@ function renderOrderProduct() {
 }
 
 // Get Order Details
-function getOrderDetails(madon) {
-    let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
-    let ctDon = [];
-    orderDetails.forEach(item => {
-        if (item.madon == madon) {
-            ctDon.push(item);
+async function getOrderDetails(madon) {
+    try {
+        // Gọi API để lấy chi tiết đơn hàng mới nhất
+        const response = await fetch(`/Bookstore_DATN/src/controllers/get_order_details.php?order_id=${madon}`);
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.orderDetails)) {
+            return data.orderDetails;
+        } else {
+            // Fallback: lấy từ localStorage nếu API không hoạt động
+            let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
+            let ctDon = [];
+            orderDetails.forEach(item => {
+                if (item.madon == madon) {
+                    ctDon.push(item);
+                }
+            });
+            return ctDon;
         }
-    });
-    return ctDon;
+    } catch (error) {
+        console.error('Error fetching order details:', error);
+        // Fallback: lấy từ localStorage nếu có lỗi
+        let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
+        let ctDon = [];
+        orderDetails.forEach(item => {
+            if (item.madon == madon) {
+                ctDon.push(item);
+            }
+        });
+        return ctDon;
+    }
 }
 
 // Format Date
@@ -1679,15 +1842,16 @@ function showOrder(arr) {
 //window.onload = () => showOrder(orders);
 
 // Show Order Detail
-function detailOrder(id) {
+async function detailOrder(id) {
     document.querySelector(".modal.detail-order").classList.add("open");
     let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
     let products = localStorage.getItem("products") ? JSON.parse(localStorage.getItem("products")) : [];
     let order = orders.find((item) => item.id == id);
-    let ctDon = getOrderDetails(id);
+    let ctDon = await getOrderDetails(id);
     let spHtml = `<div class="modal-detail-left"><div class="order-item-group">`;
     ctDon.forEach((item) => {
-        let detaiSP = products.find(product => product.id == item.id);
+        // Sử dụng product_id từ orderdetails để tìm sản phẩm
+        let detaiSP = products.find(product => product.id == (item.product_id || item.id));
         if (detaiSP) {
             spHtml += `<div class="order-product">
                 <div class="order-product-left">
@@ -1695,12 +1859,29 @@ function detailOrder(id) {
                     <div class="order-product-info">
                         <h4>${detaiSP.title}</h4>
                         <p class="order-product-note"><i class="fa-light fa-pen"></i> ${item.note || ''}</p>
-                        <p class="order-product-quantity">SL: ${item.soluong}<p>
+                        <p class="order-product-quantity">SL: ${item.quantity || item.soluong || 0}<p>
                     </div>
                 </div>
                 <div class="order-product-right">
                     <div class="order-product-price">
                         <span class="order-product-current-price">${vnd(item.is_discounted && item.discounted_price ? item.discounted_price : item.price)}</span>
+                    </div>                         
+                </div>
+            </div>`;
+        } else {
+            // Hiển thị thông tin cơ bản ngay cả khi không tìm thấy sản phẩm
+            spHtml += `<div class="order-product">
+                <div class="order-product-left">
+                    <img src="./assets/img/products/default/6829a9e9d4d11_b52563ef21622f2e.png" alt="Product not found">
+                    <div class="order-product-info">
+                        <h4>Sản phẩm không tìm thấy (ID: ${item.product_id || item.id})</h4>
+                        <p class="order-product-note"><i class="fa-light fa-pen"></i> ${item.note || ''}</p>
+                        <p class="order-product-quantity">SL: ${item.quantity || item.soluong || 0}<p>
+                    </div>
+                </div>
+                <div class="order-product-right">
+                    <div class="order-product-price">
+                        <span class="order-product-current-price">${vnd(item.price)}</span>
                     </div>                         
                 </div>
             </div>`;
@@ -2060,7 +2241,6 @@ async function updateProductsWithDiscounts() {
         if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
             // Cập nhật localStorage với dữ liệu mới bao gồm thông tin giảm giá
             localStorage.setItem('products', JSON.stringify(productsWithDiscounts));
-            console.log('Đã cập nhật dữ liệu sản phẩm với thông tin giảm giá');
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật thông tin giảm giá:', error);

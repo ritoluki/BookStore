@@ -262,11 +262,11 @@ session_start();
                         <form action="" class="info-user">
                             <div class="form-group">
                                 <label for="infoname" class="form-label">Họ và tên</label>
-                                <input class="form-control" type="text" name="infoname" id="infoname" placeholder="">
+                                <input class="form-control" type="text" name="infoname" id="infoname" placeholder="" autocomplete="name">
                             </div>
                             <div class="form-group">
                                 <label for="infophone" class="form-label">Số điện thoại</label>
-                                <input class="form-control" type="text" name="infophone" id="infophone" disabled="true"
+                                <input class="form-control" type="text" name="infophone" id="infophone" disabled="true" autocomplete="tel"
                                     placeholder="">
                             </div>
                             <div class="form-group">
@@ -277,7 +277,7 @@ session_start();
                             </div>
                             <div class="form-group">
                                 <label for="infoaddress" class="form-label">Địa chỉ</label>
-                                <input class="form-control" type="text" name="infoaddress" id="infoaddress"
+                                <input class="form-control" type="text" name="infoaddress" id="infoaddress" autocomplete="street-address"
                                     placeholder="Thêm địa chỉ giao hàng của bạn">
                             </div>
                         </form>
@@ -432,7 +432,7 @@ session_start();
                     <form action="" class="signup-form">
                         <div class="form-group">
                             <label for="fullname" class="form-label">Tên đầy đủ </label>
-                            <input id="fullname" name="fullname" type="text" placeholder="Nhập họ và tên"
+                            <input id="fullname" name="fullname" type="text" placeholder="Nhập họ và tên" autocomplete="name"
                                 class="form-control" required>
                             <span class="form-message-name form-message"></span>
                         </div>
@@ -444,7 +444,7 @@ session_start();
                         </div>
                         <div class="form-group">
                             <label for="phone" class="form-label">Số điện thoại </label>
-                            <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại"
+                            <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại" autocomplete="tel"
                                 class="form-control" required>
                             <span class="form-message-phone form-message"></span>
                         </div>
@@ -495,7 +495,7 @@ session_start();
                     <form action="" class="login-form">
                         <div class="form-group">
                             <label for="phone" class="form-label">Số điện thoại</label>
-                            <input id="phone-login" name="phone" type="text" placeholder="Nhập số điện thoại"
+                            <input id="phone-login" name="phone" type="text" placeholder="Nhập số điện thoại" autocomplete="tel"
                                 class="form-control">
                             <span class="form-message phonelog"></span>
                         </div>
@@ -803,17 +803,17 @@ session_start();
                         <div class="content-group">
                             <form action="" class="info-nhan-hang">
                                 <div class="form-group">
-                                    <input id="tennguoinhan" name="tennguoinhan" type="text"
+                                    <input id="tennguoinhan" name="tennguoinhan" type="text" autocomplete="name"
                                         placeholder="Tên người nhận" class="form-control">
                                     <span class="form-message"></span>
                                 </div>
                                 <div class="form-group">
-                                    <input id="sdtnhan" name="sdtnhan" type="text" placeholder="Số điện thoại nhận hàng"
+                                    <input id="sdtnhan" name="sdtnhan" type="text" placeholder="Số điện thoại nhận hàng" autocomplete="tel"
                                         class="form-control">
                                     <span class="form-message"></span>
                                 </div>
                                 <div class="form-group">
-                                    <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng"
+                                    <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng" autocomplete="street-address"
                                         class="form-control chk-ship">
                                     <span class="form-message"></span>
                                 </div>

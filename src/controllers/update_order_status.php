@@ -39,12 +39,19 @@ try {
         throw new Exception('Chuyển trạng thái không hợp lệ!');
     }
 
-    // Trước khi cho phép chuyển trạng thái, kiểm tra nếu là online và chưa thanh toán thì chặn và gửi mail nhắc nhở
+    // Kiểm tra logic thanh toán trước khi chuyển trạng thái
+    
+    // 1. Đối với đơn hàng ONLINE: phải thanh toán trước khi giao hàng hoặc hoàn thành
     if (in_array((int) $status, [2, 3]) && ($order['payment_method'] == 'online' || $order['payment_method'] == 1) && $order['payment_status'] != 1) {
         // Gửi mail nhắc nhở thanh toán
         require_once '../services/send_mail.php';
         sendPaymentReminderMail($order);
         throw new Exception('Khách hàng chưa thanh toán online. Đã gửi mail nhắc nhở!');
+    }
+    
+    // 2. Đối với đơn hàng COD: chỉ cho phép hoàn thành khi đã thanh toán
+    if ((int) $status == 3 && ($order['payment_method'] == 'COD' || $order['payment_method'] == 0) && $order['payment_status'] != 1) {
+        throw new Exception('Đơn hàng COD chưa thanh toán! Vui lòng cập nhật trạng thái thanh toán trước khi hoàn thành đơn hàng.');
     }
 
     // Cập nhật trạng thái đơn hàng

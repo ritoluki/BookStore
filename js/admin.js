@@ -76,15 +76,14 @@ function getMoney() {
                     let orders = JSON.parse(localStorage.getItem("order")) || [];
                     let orderDetails = JSON.parse(localStorage.getItem("orderDetails")) || [];
 
-                    // Tính tổng doanh thu từ tất cả đơn hàng, loại trừ đơn hàng đã bị hủy (trangthai = 4)
-                    // và chỉ tính doanh thu của đơn hàng đã thanh toán (payment_status = 1)
+                    // Tính tổng doanh thu từ đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
                     orderDetails.forEach(detail => {
                         // Tìm đơn hàng tương ứng với chi tiết này
                         const order = orders.find(o => o.id === detail.madon);
 
-                        // Chỉ tính doanh thu nếu đơn hàng tồn tại, không bị hủy (trangthai khác 4) và đã thanh toán (payment_status = 1)
-                        if (order && parseInt(order.trangthai) !== 4 && parseInt(order.payment_status) === 1) {
-                            tongtien += detail.price * detail.soluong;
+                        // Chỉ tính doanh thu nếu đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
+                        if (order && parseInt(order.trangthai) === 3 && parseInt(order.payment_status) === 1) {
+                            tongtien += detail.price * detail.quantity;
                         }
                     });
 
@@ -110,15 +109,14 @@ function calculateRevenueFromLocalStorage() {
     let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
     let orderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
 
-    // Tính tổng doanh thu từ tất cả đơn hàng, loại trừ đơn hàng đã bị hủy (trangthai = 4)
-    // và chỉ tính doanh thu của đơn hàng đã thanh toán (payment_status = 1)
+    // Tính tổng doanh thu từ đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
     orderDetails.forEach(detail => {
         // Tìm đơn hàng tương ứng với chi tiết này
         const order = orders.find(o => o.id === detail.madon);
 
-        // Chỉ tính doanh thu nếu đơn hàng tồn tại, không bị hủy (trangthai khác 4) và đã thanh toán (payment_status = 1)
-        if (order && parseInt(order.trangthai) !== 4 && parseInt(order.payment_status) === 1) {
-            tongtien += detail.price * detail.soluong;
+        // Chỉ tính doanh thu nếu đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
+        if (order && parseInt(order.trangthai) === 3 && parseInt(order.payment_status) === 1) {
+            tongtien += detail.price * detail.quantity;
         }
     });
 
@@ -133,6 +131,9 @@ async function updateStatisticsDisplay() {
     // Get revenue asynchronously
     const revenue = await getMoney();
     document.getElementById("doanh-thu").innerHTML = vnd(revenue);
+    
+    // Log để debug
+    console.log('Revenue displayed on overview page:', revenue);
 }
 
 // Call this function when the page loads
@@ -144,6 +145,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Doi sang dinh dang tien VND
 function vnd(price) {
+    if (price === undefined || price === null || isNaN(price)) {
+        return '0 ₫';
+    }
     return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 }
 
@@ -643,6 +647,8 @@ async function loadOrdersFromDatabase() {
         const response = await fetch('/Bookstore_DATN/src/controllers/get_orders.php');
         const data = await response.json();
         if (Array.isArray(data)) {
+            // Cập nhật localStorage với dữ liệu mới từ database
+            localStorage.setItem('order', JSON.stringify(data));
             showOrder(data);
         } else {
             throw new Error('Invalid data format');
@@ -724,9 +730,22 @@ function showOrder(arr) {
                 paymentStatus = `<span class="status-no-complete">Chưa thanh toán</span>`;
             }
             let date = formatDate(item.thoigiandat);
+            // Tạo button hủy đơn - luôn hiển thị nhưng disabled cho đơn đã hoàn thành/hủy
+            let cancelButton = '';
+            if (trangThai !== 3 && trangThai !== 4) {
+                cancelButton = `<button class="btn-cancel" title="Hủy đơn hàng" onclick="showCancelOrderModal('${item.id}')"><i class="fa-regular fa-ban"></i></button>`;
+            } else {
+                // Button mờ cho đơn đã hoàn thành/hủy
+                const tooltipText = trangThai === 3 ? "Đơn hàng đã hoàn thành" : "Đơn hàng đã bị hủy";
+                cancelButton = `<button class="btn-cancel btn-disabled" title="${tooltipText}" disabled><i class="fa-regular fa-ban"></i></button>`;
+            }
+            
             actionButtons = `
-                <button class="btn-detail" title="Chi tiết" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i></button>
-                <button class="btn-delete" title="Xóa đơn hàng" onclick="deleteOrderAdmin('${item.id}')"><i class="fa-regular fa-trash"></i></button>
+                <div class="action-buttons-group">
+                    <button class="btn-detail" title="Chi tiết" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i></button>
+                    ${cancelButton}
+                    <button class="btn-delete" title="Xóa đơn hàng" onclick="deleteOrderAdmin('${item.id}')"><i class="fa-regular fa-trash"></i></button>
+                </div>
             `;
             let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' ? 'Online' : 'COD') : 'COD';
             orderHtml += `
@@ -816,31 +835,154 @@ async function detailOrder(id) {
 
         // Lấy chi tiết đơn hàng
         const orderDetails = await getOrderDetails(id);
+        console.log('Order details:', orderDetails);
 
         // Lấy thông tin sản phẩm
-        const productsResponse = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
-        const products = await productsResponse.json();
+        const productsResponse = await fetch('/Bookstore_DATN/src/controllers/get_all_products_simple.php');
+        const productsData = await productsResponse.json();
+        const products = productsData.success ? productsData.products : [];
+        console.log('Products:', products);
+        
+        // Kiểm tra xem có sản phẩm nào không
+        if (!products || products.length === 0) {
+            console.error('No products found!');
+            toast({ title: 'Lỗi', message: 'Không thể tải danh sách sản phẩm!', type: 'error', duration: 3000 });
+            return;
+        }
+        
+        console.log('Total products loaded:', products.length);
+        console.log('Product IDs available:', products.map(p => p.id));
 
         let spHtml = `<div class="modal-detail-left"><div class="order-item-group">`;
+        let totalMixedPrice = 0;
+        
         for (const item of orderDetails) {
-            const product = products.find(p => p.id == (item.product_id || item.id));
+            console.log('Processing order detail item:', item);
+            // Sử dụng product_id từ orderdetails để tìm sản phẩm chính xác
+            const product = products.find(p => p.id == item.product_id);
+            console.log('Found product:', product, 'for product_id:', item.product_id);
+            
             if (product) {
                 let imgPath = findProductImagePath(product.img);
+                
+                // Kiểm tra xem sản phẩm có discount_info không
+                let priceDisplay = vnd(item.price || 0);
+                let hasDiscount = false;
+                
+                console.log('Processing item with discount_info:', item.discount_info);
+                
+                if (item.discount_info) {
+                    console.log('Found discount info:', item.discount_info);
+                    // Tính giá sau discount
+                    const originalPrice = item.original_price || item.price || 0;
+                    const discountValue = item.discount_info.discount_value || 0;
+                    const discountType = item.discount_info.discount_type || 'percentage';
+                    
+                    let discountedPrice = originalPrice;
+                    if (discountType === 'percentage') {
+                        discountedPrice = originalPrice * (1 - discountValue / 100);
+                    } else if (discountType === 'fixed_amount') {
+                        discountedPrice = Math.max(0, originalPrice - discountValue);
+                    }
+                    
+                    console.log('Original price:', originalPrice, 'Discounted price:', discountedPrice);
+                    
+                    // Kiểm tra max_uses
+                    const maxUses = item.discount_info.max_uses || 0;
+                    const currentUses = item.discount_info.current_uses || 0;
+                    const orderedQuantity = item.quantity || 0;
+                    
+                    if (maxUses > 0 && currentUses > maxUses) {
+                        // Discount đã hết hạn hoàn toàn
+                        priceDisplay = vnd(originalPrice);
+                        totalMixedPrice += originalPrice * orderedQuantity;
+                        console.log('Discount completely expired, using original price');
+                    } else {
+                        // Áp dụng discount
+                        const remainingUses = maxUses > 0 ? maxUses - currentUses : orderedQuantity;
+                        const discountQty = Math.min(orderedQuantity, remainingUses);
+                        const regularQty = orderedQuantity - discountQty;
+                        
+                        console.log('Max uses:', maxUses, 'Current uses:', currentUses, 'Remaining uses:', remainingUses);
+                        console.log('Ordered quantity:', orderedQuantity, 'Discount qty:', discountQty, 'Regular qty:', regularQty);
+                        
+                        if (discountQty > 0 && regularQty > 0) {
+                            // Giá hỗn hợp
+                            priceDisplay = `<div class="mixed-pricing-info">
+                                <div class="price-breakdown">
+                                    <small>${discountQty}x ${vnd(discountedPrice)}</small>
+                                    <small>${regularQty}x ${vnd(originalPrice)}</small>
+                                </div>
+                                <div class="total-price">${vnd((discountQty * discountedPrice) + (regularQty * originalPrice))}</div>
+                            </div>`;
+                            totalMixedPrice += (discountQty * discountedPrice) + (regularQty * originalPrice);
+                        } else if (discountQty > 0) {
+                            // Tất cả đều giảm giá
+                            priceDisplay = `<span class="discounted-price">${vnd(discountedPrice)}</span>`;
+                            totalMixedPrice += discountQty * discountedPrice;
+                        } else {
+                            // Không có giảm giá (discount đã hết)
+                            priceDisplay = `<div class="mixed-pricing-info">
+                                <div class="price-breakdown">
+                                    <small>Giá gốc: ${vnd(originalPrice)}</small>
+                                    <small>Discount: ${vnd(discountedPrice)} (${discountValue}%)</small>
+                                    <small>Trạng thái: Đã hết hạn</small>
+                                </div>
+                                <div class="total-price">${vnd(originalPrice * orderedQuantity)}</div>
+                            </div>`;
+                            totalMixedPrice += regularQty * originalPrice;
+                        }
+                    }
+                } else {
+                    console.log('No discount info, using database price:', item.price);
+                    // Không có thông tin discount, sử dụng giá từ database
+                    // Nhưng vẫn hiển thị giá gốc nếu có
+                    if (item.original_price && item.original_price !== item.price) {
+                        priceDisplay = `<div class="mixed-pricing-info">
+                            <div class="price-breakdown">
+                                <small>Giá gốc: ${vnd(item.original_price)}</small>
+                                <small>Giá đã giảm: ${vnd(item.price)}</small>
+                            </div>
+                            <div class="total-price">${vnd(item.price * item.quantity)}</div>
+                        </div>`;
+                    }
+                    totalMixedPrice += (item.price || 0) * (item.quantity || 0);
+                }
+                
                 spHtml += `<div class="order-product">
                     <div class="order-product-left">
                         <img src="${imgPath}" alt="">
                         <div class="order-product-info">
                             <h4>${product.title}</h4>
                             <p class="order-product-note">${item.note || ''}</p>
-                            <p class="order-product-quantity">SL: ${item.quantity || item.soluong || 0}</p>
+                            <p class="order-product-quantity">SL: ${item.quantity || 0}</p>
                         </div>
                     </div>
                     <div class="order-product-right">
                         <div class="order-product-price">
-                            <span class="order-product-current-price">${vnd(item.price)}</span>
+                            ${priceDisplay}
                         </div>                         
                     </div>
                 </div>`;
+            } else {
+                console.error('Product not found for product_id:', item.product_id);
+                // Hiển thị thông tin cơ bản ngay cả khi không tìm thấy sản phẩm
+                spHtml += `<div class="order-product">
+                    <div class="order-product-left">
+                        <img src="./assets/img/products/default/6829a9e9d4d11_b52563ef21622f2e.png" alt="Product not found">
+                        <div class="order-product-info">
+                            <h4>Sản phẩm không tìm thấy (ID: ${item.product_id})</h4>
+                            <p class="order-product-note">${item.note || ''}</p>
+                            <p class="order-product-quantity">SL: ${item.quantity || 0}</p>
+                        </div>
+                    </div>
+                    <div class="order-product-right">
+                        <div class="order-product-price">
+                            ${vnd(item.price || 0)}
+                        </div>                         
+                    </div>
+                </div>`;
+                totalMixedPrice += (item.price || 0) * (item.quantity || 0);
             }
         }
         spHtml += `</div></div>`;
@@ -887,44 +1029,31 @@ async function detailOrder(id) {
             const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
             const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 1);
             
-                    console.log('Order payment check:', {
-            orderId: order.id,
-            paymentStatus: paymentStatus,
-            paymentMethod: order.payment_method,
-            paymentMethodType: typeof order.payment_method,
-            isOnlineOrder: isOnlineOrder,
-            canShip: paymentStatus === 1 || !isOnlineOrder
-        });
+
             
             if (paymentStatus === 1 || !isOnlineOrder) {
                 // Cho phép nếu đã thanh toán hoặc là đơn COD
                 statusButton = `<button class="modal-detail-btn btn-shipping" onclick="changeStatusShipping('${order.id}', this)">Chuyển sang đang giao hàng</button>`;
-                console.log('Button enabled: Chuyển sang đang giao hàng');
             } else {
                 statusButton = `<button class="modal-detail-btn btn-warning" disabled title="Đơn hàng online cần thanh toán trước khi chuyển sang đang giao hàng">Chưa thể giao hàng (chưa thanh toán online)</button>`;
-                console.log('Button disabled: Chưa thể giao hàng (chưa thanh toán online)');
             }
         } else if (order.trangthai == 2) {
             // Kiểm tra thanh toán trước khi cho phép hoàn thành (chỉ áp dụng cho đơn online)
             const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
             const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 1);
             
-            console.log('Order completion check:', {
-                orderId: order.id,
-                paymentStatus: paymentStatus,
-                paymentMethod: order.payment_method,
-                paymentMethodType: typeof order.payment_method,
-                isOnlineOrder: isOnlineOrder,
-                canComplete: paymentStatus === 1 || !isOnlineOrder
-            });
+
             
-            if (paymentStatus === 1 || !isOnlineOrder) {
-                // Cho phép nếu đã thanh toán hoặc là đơn COD
+            // Kiểm tra logic hoàn thành cho cả Online và COD
+            if (paymentStatus === 1) {
+                // Cho phép hoàn thành nếu đã thanh toán (áp dụng cho cả Online và COD)
                 statusButton = `<button class="modal-detail-btn btn-complete" onclick="changeStatusComplete('${order.id}', this)">Hoàn thành đơn</button>`;
-                console.log('Button enabled: Hoàn thành đơn');
-            } else {
+            } else if (isOnlineOrder) {
+                // Đơn online chưa thanh toán
                 statusButton = `<button class="modal-detail-btn btn-warning" disabled title="Đơn hàng online cần thanh toán trước khi hoàn thành">Chưa thể hoàn thành (chưa thanh toán online)</button>`;
-                console.log('Button disabled: Chưa thể hoàn thành (chưa thanh toán online)');
+            } else {
+                // Đơn COD chưa thanh toán
+                statusButton = `<button class="modal-detail-btn btn-warning" disabled title="Đơn hàng COD cần thanh toán trước khi hoàn thành">Chưa thể hoàn thành (COD chưa thanh toán)</button>`;
             }
         } else if (order.trangthai == 3) {
             statusButton = ``; // Ẩn button khi đã hoàn thành
@@ -945,11 +1074,21 @@ async function detailOrder(id) {
                 </button>`;
             }
         }
+        // Tính tiền ship (cố định 30.000₫)
+        const shippingFee = 30000;
+        const finalTotal = totalMixedPrice > 0 ? totalMixedPrice + shippingFee : order.tongtien + shippingFee;
+        
         document.querySelector(".modal-detail-bottom").innerHTML = `
             <div class="modal-detail-bottom-left">
                 <div class="price-total">
-                    <span class="thanhtien">Thành tiền</span>
-                    <span class="price">${vnd(order.tongtien)}</span>
+                    <div class="price-breakdown">
+                        <small>Tổng tiền hàng: ${totalMixedPrice > 0 ? vnd(totalMixedPrice) : vnd(order.tongtien)}</small>
+                        <small>Phí vận chuyển: ${vnd(shippingFee)}</small>
+                    </div>
+                    <div class="final-total">
+                        <span class="thanhtien">Tổng cộng:</span>
+                        <span class="price">${vnd(finalTotal)}</span>
+                    </div>
                 </div>
             </div>
             <div class="modal-detail-bottom-right">
@@ -982,12 +1121,12 @@ async function cancelOrder(orderId) {
 
         // Hoàn trả số lượng sách về kho
         details.forEach(async detail => {
-            // Sử dụng detail.id thay vì detail.product_id để khớp với localStorage
-            let p = products.find(sp => sp.id == detail.id);
+            // Sử dụng detail.product_id để khớp với cấu trúc mới
+            let p = products.find(sp => sp.id == detail.product_id);
             if (p) {
-                // Sử dụng detail.soluong để khớp với cấu trúc trong localStorage
-                p.soluong += parseInt(detail.soluong);
-                console.log(`Hoàn trả ${detail.soluong} sách cho sản phẩm ${p.title}. Số lượng mới: ${p.soluong}`);
+                // Sử dụng detail.quantity để khớp với cấu trúc mới
+                p.soluong += parseInt(detail.quantity);
+                console.log(`Hoàn trả ${detail.quantity} sách cho sản phẩm ${p.title}. Số lượng mới: ${p.soluong}`);
 
                 // Gọi API cập nhật số lượng về database
                 await fetch('/Bookstore_DATN/src/controllers/update_product_quantity.php', {
@@ -1175,9 +1314,21 @@ async function thongKe(mode) {
 
 // Show số lượng sp, số lượng đơn bán, doanh thu
 function showOverview(arr) {
-    document.getElementById("quantity-product").innerText = arr.length;
-    document.getElementById("quantity-order").innerText = arr.reduce((sum, cur) => (sum + parseInt(cur.quantity)), 0);
-    document.getElementById("quantity-sale").innerText = vnd(arr.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)), 0));
+    const productCount = arr.length;
+    const totalQuantity = arr.reduce((sum, cur) => (sum + parseInt(cur.quantity || 0)), 0);
+    const totalRevenue = arr.reduce((sum, cur) => (sum + parseInt(cur.doanhthu || 0)), 0);
+    
+    document.getElementById("quantity-product").innerText = productCount;
+    document.getElementById("quantity-order").innerText = totalQuantity;
+    document.getElementById("quantity-sale").innerText = vnd(totalRevenue);
+    
+    // Log để debug
+    console.log('showOverview called with:', {
+        productCount,
+        totalQuantity,
+        totalRevenue,
+        rawData: arr
+    });
 }
 
 // Hàm fetch dữ liệu thống kê, chỉ gọi khi load trang hoặc cần làm mới
@@ -1186,13 +1337,16 @@ async function fetchStatisticsData() {
         const [ordersResponse, detailsResponse, productsResponse] = await Promise.all([
             fetch('/Bookstore_DATN/src/controllers/get_orders.php'),
             fetch('/Bookstore_DATN/src/controllers/get_all_order_details.php'),
-            fetch('/Bookstore_DATN/src/controllers/get_products.php')
+            fetch('/Bookstore_DATN/src/controllers/get_all_products_simple.php')
         ]);
-        const [orders, orderDetails, products] = await Promise.all([
+        const [orders, orderDetails, productsData] = await Promise.all([
             ordersResponse.json(),
             detailsResponse.json(),
             productsResponse.json()
         ]);
+        
+        // Xử lý response từ API mới
+        const products = productsData.success ? productsData.products : [];
         // Ghi đè dữ liệu, không push thêm
         localStorage.setItem("order", JSON.stringify(orders));
         localStorage.setItem("orderDetails", JSON.stringify(orderDetails));
@@ -1208,34 +1362,52 @@ async function createObj() {
     let products = JSON.parse(localStorage.getItem("products") || "[]");
     let orderDetails = JSON.parse(localStorage.getItem("orderDetails") || "[]");
     let result = [];
-    // Lọc ra các đơn hàng đã thanh toán và chưa bị hủy
-    const validOrders = orders.filter(order => parseInt(order.trangthai) !== 4 && parseInt(order.payment_status) === 1);
+    // Lọc ra các đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
+    const validOrders = orders.filter(order => parseInt(order.trangthai) === 3 && parseInt(order.payment_status) === 1);
     const validOrderIds = validOrders.map(order => order.id);
+    console.log('Valid orders:', validOrders);
+    console.log('Valid order IDs:', validOrderIds);
+    console.log('Order details:', orderDetails);
+    console.log('Products:', products);
+    
     orderDetails.forEach(item => {
+        console.log('Processing order detail item:', item);
         if (validOrderIds.includes(item.madon)) {
-            let prod = products.find(product => product.id == item.id);
+            // Kiểm tra cấu trúc dữ liệu
+            const productId = item.product_id || item.id;
+            console.log('Using product ID:', productId, 'from item:', item);
+            
+            // Sử dụng product_id từ orderdetails để tìm sản phẩm
+            let prod = products.find(product => product.id == productId);
             if (prod) {
                 let obj = {
-                    id: item.id,
+                    id: productId, // Sử dụng product_id thay vì item.id
                     madon: item.madon,
                     price: item.price,
-                    quantity: item.soluong,
+                    quantity: item.quantity,
                     category: prod.category,
                     title: prod.title,
                     img: prod.img,
                     time: validOrders.find(o => o.id === item.madon).thoigiandat
                 };
                 result.push(obj);
+                console.log('Added product to result:', obj);
+            } else {
+                console.warn('Product not found for product_id:', productId, 'Item:', item);
             }
         }
     });
+    
+    console.log('Final result:', result);
     return result;
 }
 
 // Reset bảng thống kê trước khi render
 async function showThongKe(arr, mode) {
+    console.log('showThongKe called with arr:', arr);
     let orderHtml = "";
     let mergeObj = mergeObjThongKe(arr);
+    console.log('After mergeObjThongKe:', mergeObj);
     showOverview(mergeObj);
 
     // Reset bảng trước khi render
@@ -1268,7 +1440,11 @@ async function showThongKe(arr, mode) {
     }
 
     if (totalRevenueElement) {
-        totalRevenueElement.textContent = vnd(mergeObj.reduce((sum, cur) => (sum + parseInt(cur.doanhthu)), 0));
+        const totalRevenue = mergeObj.reduce((sum, cur) => {
+            const revenue = parseInt(cur.doanhthu || 0);
+            return sum + (isNaN(revenue) ? 0 : revenue);
+        }, 0);
+        totalRevenueElement.textContent = vnd(totalRevenue);
     }
 
     for (let i = 0; i < mergeObj.length; i++) {
@@ -1278,8 +1454,8 @@ async function showThongKe(arr, mode) {
         <tr>
         <td>${i + 1}</td>
         <td><div class="prod-img-title"><img class="prd-img-tbl" src="${imgPath}" alt=""><p>${mergeObj[i].title}</p></div></td>
-        <td>${mergeObj[i].quantity}</td>
-        <td>${vnd(mergeObj[i].doanhthu)}</td>
+        <td>${parseInt(mergeObj[i].quantity || 0)}</td>
+        <td>${vnd(parseInt(mergeObj[i].doanhthu || 0))}</td>
         <td><button class="btn-detail product-order-detail" data-id="${mergeObj[i].id}"><i class="fa-regular fa-eye"></i> Chi tiết</button></td>
         </tr>      
         `;
@@ -1296,9 +1472,12 @@ async function showThongKe(arr, mode) {
 
 // Khởi tạo thống kê chỉ fetch dữ liệu 1 lần khi load trang
 (async function initializeStatistics() {
+    console.log('Initializing statistics...');
     await fetchStatisticsData(); // Chỉ fetch 1 lần khi load trang
     try {
+        console.log('Fetching statistics data completed, now creating objects...');
         const objData = await createObj();
+        console.log('Object data created:', objData);
         await showThongKe(objData);
     } catch (error) {
         console.error("Lỗi khi hiển thị thống kê:", error);
@@ -1405,18 +1584,30 @@ window.addEventListener('DOMContentLoaded', syncAccountsAndShowUser);
 
 // Merge các sản phẩm thống kê theo id, cộng dồn số lượng và doanh thu
 function mergeObjThongKe(arr) {
+    console.log('mergeObjThongKe called with arr:', arr);
     let result = [];
     arr.forEach(item => {
+        // Đảm bảo dữ liệu hợp lệ
+        if (!item || !item.id || !item.price || !item.quantity) {
+            console.warn('Invalid item data:', item);
+            return;
+        }
+        
         let check = result.find(i => i.id == item.id);
         if (check) {
-            check.quantity = parseInt(check.quantity) + parseInt(item.quantity);
-            check.doanhthu += parseInt(item.price) * parseInt(item.quantity);
+            check.quantity = parseInt(check.quantity || 0) + parseInt(item.quantity || 0);
+            check.doanhthu = parseInt(check.doanhthu || 0) + (parseInt(item.price || 0) * parseInt(item.quantity || 0));
+            console.log('Updated existing item:', check);
         } else {
             const newItem = { ...item };
+            newItem.quantity = parseInt(item.quantity || 0);
+            newItem.price = parseInt(item.price || 0);
             newItem.doanhthu = newItem.price * newItem.quantity;
             result.push(newItem);
+            console.log('Added new item:', newItem);
         }
     });
+    console.log('Final merged result:', result);
     return result;
 }
 
@@ -1441,7 +1632,7 @@ function detailOrderProduct(arr, id) {
             if (order && parseInt(order.trangthai) !== 4) {
                 orderHtml += `<tr>
                 <td>${item.madon}</td>
-                <td>${item.quantity || item.soluong || 0}</td>
+                                        <td>${item.quantity || 0}</td>
                 <td>${vnd(item.price)}</td>
                 <td>${formatDate(item.time)}</td>
                 </tr>`;
@@ -1504,9 +1695,10 @@ function showUser() {
 
 // Hàm đồng bộ products từ server và hiển thị sản phẩm
 function syncProductsAndShowProduct() {
-            fetch('/Bookstore_DATN/src/controllers/get_products.php')
+            fetch('/Bookstore_DATN/src/controllers/get_all_products_simple.php')
         .then(res => res.json())
-        .then(products => {
+        .then(productsData => {
+            const products = productsData.success ? productsData.products : [];
             localStorage.setItem('products', JSON.stringify(products));
             showProduct();
         });
@@ -1711,6 +1903,103 @@ function showAddDiscountModal() {
     if (addBtn) addBtn.style.display = 'inline-flex';
     if (updateBtn) updateBtn.style.display = 'none';
     resetDiscountForm();
+}
+
+// Đóng tất cả modal
+function closeAllModals() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.remove('open');
+    });
+    
+    // Reset body overflow
+    document.body.style.overflow = '';
+}
+
+// Hiển thị modal hủy đơn hàng
+function showCancelOrderModal(orderId) {
+    document.getElementById('cancel-order-id').textContent = orderId;
+    document.querySelector('.cancel-order-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    
+    // Reset form
+    document.getElementById('cancel-reason-select').value = '';
+    document.getElementById('cancel-reason-custom').value = '';
+    document.getElementById('custom-reason-group').style.display = 'none';
+    
+    // Lưu orderId để sử dụng khi confirm
+    window.currentCancelOrderId = orderId;
+}
+
+// Đóng modal hủy đơn hàng
+function closeCancelOrderModal() {
+    document.querySelector('.cancel-order-modal').classList.remove('open');
+    document.body.style.overflow = '';
+    window.currentCancelOrderId = null;
+}
+
+// Toggle hiển thị textarea cho lý do tùy chỉnh
+function toggleCustomReason() {
+    const select = document.getElementById('cancel-reason-select');
+    const customGroup = document.getElementById('custom-reason-group');
+    
+    if (select.value === 'Khác') {
+        customGroup.style.display = 'block';
+    } else {
+        customGroup.style.display = 'none';
+        document.getElementById('cancel-reason-custom').value = '';
+    }
+}
+
+// Xác nhận hủy đơn hàng
+async function confirmCancelOrder() {
+    const orderId = window.currentCancelOrderId;
+    const reasonSelect = document.getElementById('cancel-reason-select').value;
+    const reasonCustom = document.getElementById('cancel-reason-custom').value.trim();
+    
+    if (!orderId) {
+        toast({ title: 'Lỗi', message: 'Không tìm thấy mã đơn hàng!', type: 'error', duration: 3000 });
+        return;
+    }
+    
+    if (!reasonSelect) {
+        toast({ title: 'Lỗi', message: 'Vui lòng chọn lý do hủy đơn!', type: 'error', duration: 3000 });
+        return;
+    }
+    
+    let finalReason = reasonSelect;
+    if (reasonSelect === 'Khác') {
+        if (!reasonCustom) {
+            toast({ title: 'Lỗi', message: 'Vui lòng nhập lý do cụ thể!', type: 'error', duration: 3000 });
+            return;
+        }
+        finalReason = reasonCustom;
+    }
+    
+    try {
+        const response = await fetch('/Bookstore_DATN/src/controllers/cancel_order_admin.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                orderId: orderId,
+                reason: finalReason,
+                isAdmin: true
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            toast({ title: 'Thành công', message: 'Đã hủy đơn hàng và gửi email thông báo!', type: 'success', duration: 3000 });
+            closeCancelOrderModal();
+            // Cập nhật dữ liệu từ database và refresh giao diện
+            await loadOrdersFromDatabase();
+        } else {
+            toast({ title: 'Lỗi', message: data.message || 'Không thể hủy đơn hàng!', type: 'error', duration: 3000 });
+        }
+    } catch (error) {
+        console.error('Lỗi khi hủy đơn hàng:', error);
+        toast({ title: 'Lỗi', message: 'Lỗi kết nối server!', type: 'error', duration: 3000 });
+    }
 }
 
 // Reset form giảm giá
@@ -1981,13 +2270,13 @@ async function createDiscount() {
 // Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
 async function updateProductsWithDiscounts() {
     try {
-        const response = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
-        const productsWithDiscounts = await response.json();
+        const response = await fetch('/Bookstore_DATN/src/controllers/get_all_products_simple.php');
+        const productsData = await response.json();
+        const productsWithDiscounts = productsData.success ? productsData.products : [];
         
         if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
             // Cập nhật localStorage với dữ liệu mới bao gồm thông tin giảm giá
             localStorage.setItem('products', JSON.stringify(productsWithDiscounts));
-            console.log('Đã cập nhật dữ liệu sản phẩm với thông tin giảm giá mới');
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật thông tin giảm giá:', error);
@@ -2022,8 +2311,9 @@ async function checkIfCategoryDiscount(discountId) {
         
         if (data.success && data.discount.products.length > 0) {
             // Lấy danh sách tất cả sản phẩm để so sánh
-            const allProductsResponse = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
-            const allProducts = await allProductsResponse.json();
+            const allProductsResponse = await fetch('/Bookstore_DATN/src/controllers/get_all_products_simple.php');
+            const allProductsData = await allProductsResponse.json();
+            const allProducts = allProductsData.success ? allProductsData.products : [];
             
             if (allProducts && Array.isArray(allProducts)) {
                 // Nhóm sản phẩm theo category
@@ -2140,14 +2430,7 @@ async function editDiscount(discountId) {
             // Set status cuối cùng sau tất cả UI operations để tránh bị override
             setTimeout(() => {
                 const checkbox = document.getElementById('discount-status');
-                console.log('=== EDIT FORM CHECKBOX DEBUG ===');
-                console.log('Checkbox element:', checkbox);
-                console.log('Element type:', checkbox.type);
-                console.log('Element tagName:', checkbox.tagName);
-                console.log('Setting status to:', discount.status == 1);
-                
                 checkbox.checked = discount.status == 1;
-                console.log('Final checkbox checked:', checkbox.checked);
             }, 200);
             
         } else {
@@ -2299,15 +2582,34 @@ function filterDiscounts() {
         } else {
             const statusCell = row.querySelector('.status-badge');
             if (statusCell) {
-                const rowStatus = statusCell.className.includes(status) ? status : '';
-                row.style.display = rowStatus === status ? '' : 'none';
+                // Sử dụng classList.contains thay vì includes để match chính xác
+                const hasStatusClass = statusCell.classList.contains(`status-${status}`);
+                row.style.display = hasStatusClass ? '' : 'none';
             }
         }
     });
 }
 
-// Đóng modal giảm giá
+// Đóng tất cả modal khi tải trang
 document.addEventListener('DOMContentLoaded', function() {
+    // Đảm bảo tất cả modal được đóng
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.remove('open');
+    });
+    
+    // Đóng modal giảm giá cụ thể
+    const discountModal = document.querySelector('.add-discount');
+    if (discountModal) {
+        discountModal.classList.remove('open');
+        
+        // Thêm event listener để đóng modal khi click outside
+        discountModal.addEventListener('click', function(e) {
+            if (e.target === discountModal) {
+                discountModal.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+    }
     // Close modal giảm giá
     const closeDiscountModal = document.querySelector('.add-discount .modal-close');
     if (closeDiscountModal) {
@@ -2391,7 +2693,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Test bằng cách force toggle
-        console.log('Initial switch state:', discountStatusSwitch.checked);
         
         // Thêm function để manual toggle (để test)
         window.testDiscountSwitch = function() {
@@ -2415,7 +2716,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
-        console.log('Added window.testDiscountSwitch() function for testing');
+
         
         // Thêm function debug chi tiết
         window.debugDiscountSwitch = function() {
@@ -2451,7 +2752,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
-        console.log('Added window.debugDiscountSwitch() function');
+
         
     } else {
         console.log('Discount switch element not found!');
@@ -2459,4 +2760,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load giảm giá khi trang load
     loadDiscounts();
+    
+    // Đảm bảo không có modal nào bị hiển thị
+    setTimeout(() => {
+        closeAllModals();
+    }, 100);
 });

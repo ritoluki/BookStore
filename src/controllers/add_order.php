@@ -74,7 +74,7 @@ if ($stmtOrder->execute()) {
     // Gửi email thông báo đặt hàng thành công
     if (!empty($user_email)) {
         error_log("Chuẩn bị gửi email xác nhận đơn hàng đến: " . $user_email);
-        require_once 'order_mail_helper.php';
+        require_once '../services/order_mail_helper.php';
         // Lấy lại chi tiết đơn hàng vừa đặt từ database
         $sqlGetOrderDetails = "SELECT * FROM orderDetails WHERE madon = ?";
         $stmtGetOrderDetails = $conn->prepare($sqlGetOrderDetails);
@@ -93,10 +93,74 @@ if ($stmtOrder->execute()) {
         }
         $stmtGetOrderDetails->close();
 
-        $emailResult = sendOrderConfirmationEmail($order, $orderDetailsForMail, $user_email, $conn);
-        error_log("Kết quả gửi email: " . ($emailResult ? "Thành công" : "Thất bại"));
+        try {
+            $emailResult = sendOrderConfirmationEmail($order, $orderDetailsForMail, $user_email, $conn);
+            error_log("Kết quả gửi email: " . ($emailResult ? "Thành công" : "Thất bại"));
+        } catch (Exception $e) {
+            error_log("Lỗi gửi email: " . $e->getMessage());
+            // Không để lỗi email làm fail đơn hàng
+        }
+        
+        // Cập nhật số lượng sử dụng discount
+        updateDiscountUsage($order['id'], $conn);
     } else {
         error_log("Không tìm thấy email của người dùng ID: " . $order['khachhang']);
+    }
+}
+
+// Hàm cập nhật số lượng sử dụng discount
+function updateDiscountUsage($orderId, $conn) {
+    try {
+        // Lấy chi tiết đơn hàng và discount áp dụng
+        $sql = "SELECT od.product_id, od.soluong, d.id as discount_id, d.max_uses, d.current_uses
+                FROM orderDetails od
+                JOIN products p ON od.product_id = p.id
+                JOIN discount_products dp ON p.id = dp.product_id
+                JOIN discounts d ON dp.discount_id = d.id
+                WHERE od.madon = ?
+                  AND d.status = 1
+                  AND NOW() BETWEEN d.start_date AND d.end_date
+                  AND (d.max_uses = 0 OR d.current_uses < d.max_uses)";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $orderId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $updatedDiscounts = [];
+        while ($row = $result->fetch_assoc()) {
+            $discountId = $row['discount_id'];
+            $maxUses = (int)$row['max_uses'];
+            $currentUses = (int)$row['current_uses'];
+            $orderedQuantity = (int)$row['soluong'];
+            
+            // Tính số lượng có thể áp dụng giảm giá
+            $incrementAmount = $orderedQuantity;
+            if ($maxUses > 0) {
+                $remainingUses = $maxUses - $currentUses;
+                $incrementAmount = min($orderedQuantity, $remainingUses);
+            }
+            
+            if ($incrementAmount > 0) {
+                // Cập nhật current_uses cho discount
+                $sqlUpdate = "UPDATE discounts SET current_uses = current_uses + ? WHERE id = ?";
+                $stmtUpdate = $conn->prepare($sqlUpdate);
+                $stmtUpdate->bind_param("ii", $incrementAmount, $discountId);
+                if (!$stmtUpdate->execute()) {
+                    error_log("Không thể cập nhật current_uses cho discount ID: " . $discountId);
+                }
+                $stmtUpdate->close();
+                $updatedDiscounts[$discountId] = ($updatedDiscounts[$discountId] ?? 0) + $incrementAmount;
+            }
+        }
+        $stmt->close();
+        
+        if (!empty($updatedDiscounts)) {
+            error_log("Đã cập nhật discount usage: " . json_encode($updatedDiscounts));
+        }
+        
+    } catch (Exception $e) {
+        error_log("Lỗi cập nhật discount usage: " . $e->getMessage());
     }
 }
 
@@ -108,7 +172,8 @@ $conn->close();
 header('Content-Type: application/json');
 echo json_encode([
     "success" => true,
-    "message" => "Đặt hàng thành công!"
+    "message" => "Đặt hàng thành công!",
+    "orderId" => $order['id']
 ]);
 exit;
 ?>

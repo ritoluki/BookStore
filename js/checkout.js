@@ -60,13 +60,28 @@ function thanhtoanpage(option,product) {
             // Hien thi san pham
             showProductBuyNow(product);
             // Tinh tien
+            // Tính giá hỗn hợp nếu có thông tin chi tiết
+            let totalProductPrice;
+            if (product.discount_info) {
+                const discountQty = product.discount_info.applicable_quantity;
+                const regularQty = product.discount_info.remaining_quantity;
+                const discountedPrice = product.discount_info.discounted_price;
+                const originalPrice = product.discount_info.original_price;
+                
+                totalProductPrice = (discountQty * discountedPrice) + (regularQty * originalPrice);
+            } else {
+                // Fallback: sử dụng giá sau giảm nếu có
+                const finalPrice = (product.is_discounted && product.discounted_price) ? product.discounted_price : product.price;
+                totalProductPrice = product.soluong * finalPrice;
+            }
+            
             totalBillOrderHtml = `<div class="priceFlx">
                 <div class="text">
                     Tiền hàng 
                     <span class="count">${product.soluong} sách</span>
                 </div>
                 <div class="price-detail">
-                    <span id="checkout-cart-total">${vnd(product.soluong * product.price)}</span>
+                    <span id="checkout-cart-total">${vnd(totalProductPrice)}</span>
                 </div>
             </div>
             <div class="priceFlx chk-ship">
@@ -76,7 +91,7 @@ function thanhtoanpage(option,product) {
                 </div>
             </div>`
             // Tong tien
-            priceFinal.innerText = vnd((product.soluong * product.price) + PHIVANCHUYEN);
+            priceFinal.innerText = vnd(totalProductPrice + PHIVANCHUYEN);
             window.productBuyNow = product; // Lưu sản phẩm mua ngay vào biến toàn cục
             break;
     }
@@ -194,21 +209,82 @@ nutthanhtoan.addEventListener('click', () => {
 function dathangngay() {
     let productInfo = document.getElementById("product-detail-content");
     let datHangNgayBtn = productInfo.querySelector(".button-dathangngay");
-    datHangNgayBtn.onclick = () => {
+    datHangNgayBtn.onclick = async () => {
         let productId = datHangNgayBtn.getAttribute("data-product");
         let soluong = parseInt(productInfo.querySelector(".buttons_added .input-qty").value);
         let products = JSON.parse(localStorage.getItem('products'));
         let infoProduct = products.find(item => item.id == productId);
+        
         if (soluong > infoProduct.soluong) {
             toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 2000 });
             productInfo.querySelector(".buttons_added .input-qty").value = infoProduct.soluong;
             return;
         }
+        
+        // Kiểm tra giới hạn giảm giá nếu sản phẩm có giảm giá
+        let discountCheck = null;
+        if (infoProduct.is_discounted) {
+            try {
+                const response = await fetch('/Bookstore_DATN/src/controllers/check_discount_availability.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        quantity: soluong
+                    })
+                });
+                
+                discountCheck = await response.json();
+                
+                if (discountCheck.success && discountCheck.has_discount) {
+                    if (!discountCheck.can_apply_full_discount) {
+                        const maxDiscountQty = discountCheck.applicable_quantity;
+                        const remainingQty = discountCheck.remaining_quantity;
+                        
+                        if (maxDiscountQty === 0) {
+                            toast({ 
+                                title: 'Thông báo', 
+                                message: 'Chương trình giảm giá đã hết lượt sử dụng! Sản phẩm sẽ được bán với giá gốc.', 
+                                type: 'warning', 
+                                duration: 4000 
+                            });
+                        } else {
+                            const confirmMsg = `Chương trình giảm giá chỉ còn ${maxDiscountQty} lượt sử dụng.\n` +
+                                             `${maxDiscountQty} sản phẩm sẽ được giảm giá, ${remainingQty} sản phẩm còn lại sẽ có giá gốc.\n` +
+                                             `Bạn có muốn tiếp tục?`;
+                            
+                            if (!confirm(confirmMsg)) {
+                                return;
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Lỗi kiểm tra giảm giá:', error);
+                // Vẫn cho phép đặt hàng nếu API lỗi
+            }
+        }
+        
         let notevalue = productInfo.querySelector("#popup-detail-note").value;
         let ghichu = notevalue == "" ? "Không có ghi chú" : notevalue;
-        let a = products.find(item => item.id == productId);
-        a.soluong = parseInt(soluong);
-        a.note = ghichu;
+        let originalProduct = products.find(item => item.id == productId);
+        
+        // Tạo bản copy đầy đủ thông tin sản phẩm bao gồm thông tin giảm giá
+        let a = {
+            ...originalProduct,
+            soluong: parseInt(soluong),
+            note: ghichu
+        };
+        
+        // Thêm thông tin giảm giá chi tiết nếu có
+        if (infoProduct.is_discounted && discountCheck && discountCheck.success && discountCheck.has_discount) {
+            a.discount_info = {
+                applicable_quantity: discountCheck.applicable_quantity,
+                remaining_quantity: discountCheck.remaining_quantity,
+                discounted_price: discountCheck.discount_info?.discounted_price || infoProduct.discounted_price,
+                original_price: discountCheck.discount_info?.original_price || infoProduct.price
+            };
+        }
         checkoutpage.classList.add('active');
         thanhtoanpage(2,a);
         autofillReceiverInfo(); // Tự động điền thông tin người nhận khi đặt hàng ngay
@@ -388,9 +464,24 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             method: 'POST',
             body: formData
         });
+        
+        const result = await response.json();
+        
+        // Nếu đặt hàng thành công, cập nhật số lượng sử dụng giảm giá
+        if (result.success && result.orderId) {
+            try {
+                await fetch('/Bookstore_DATN/src/controllers/update_discount_usage.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: result.orderId })
+                });
+            } catch (error) {
+                console.error('Lỗi cập nhật discount usage:', error);
+            }
+        }
 
-        setTimeout((e) => {
-            window.location = "http://localhost/bookstore_datn/";
+        setTimeout(() => {
+            window.location.href = "/Bookstore_DATN/";
         }, 2000);  
     }
 

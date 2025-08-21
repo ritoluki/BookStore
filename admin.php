@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href='./assets/img/iconlogo.jpg' rel='icon' type='image/x-icon' />
+    <link href='./assets/img/iconlogos.jpg' rel='icon' type='image/x-icon' />
     <link rel="stylesheet" href="assets/css/admin.css?v=20250819">
     <link rel="stylesheet" href="./assets/css/toast-message.css">
     <link href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css" rel="stylesheet" type="text/css" />
@@ -149,7 +149,7 @@
                     <div class="admin-control-center">
                         <form action="" class="form-search">
                             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-                            <input id="form-search-product" type="text" class="form-search-input" placeholder="Tìm kiếm sách..." oninput="showProduct()">
+                            <input id="form-search-product" type="text" class="form-search-input" placeholder="Tìm kiếm sách..." oninput="showProduct()" autocomplete="off">
                         </form>
                     </div>
                     <div class="admin-control-right">
@@ -176,7 +176,7 @@
                     <div class="admin-control-center">
                         <form action="" class="form-search">
                             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-                            <input id="form-search-user" type="text" class="form-search-input" placeholder="Tìm kiếm khách hàng..." oninput="showUser()">
+                            <input id="form-search-user" type="text" class="form-search-input" placeholder="Tìm kiếm khách hàng..." oninput="showUser()" autocomplete="off">
                         </form>
                     </div>
                     <div class="admin-control-right">
@@ -232,7 +232,7 @@
                     <div class="admin-control-center">
                         <form action="" class="form-search">
                             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-                            <input id="form-search-order" type="text" class="form-search-input" placeholder="Tìm kiếm mã đơn, khách hàng..." oninput="findOrder()">
+                            <input id="form-search-order" type="text" class="form-search-input" placeholder="Tìm kiếm mã đơn, khách hàng..." oninput="findOrder()" autocomplete="off">
                         </form>
                     </div>
                     <div class="admin-control-right">
@@ -282,7 +282,7 @@
                     <div class="admin-control-center">
                         <form action="" class="form-search">
                             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-                            <input id="form-search-tk" type="text" class="form-search-input" placeholder="Tìm kiếm sách..." oninput="thongKe()">
+                            <input id="form-search-tk" type="text" class="form-search-input" placeholder="Tìm kiếm sách..." oninput="thongKe()" autocomplete="off">
                         </form>
                     </div>
                     <div class="admin-control-right">
@@ -361,15 +361,16 @@
                     <div class="admin-control-center">
                         <form action="" class="form-search">
                             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-                            <input id="form-search-discount" type="text" class="form-search-input" placeholder="Tìm kiếm chương trình giảm giá..." oninput="searchDiscounts()">
+                            <input id="form-search-discount" type="text" class="form-search-input" placeholder="Tìm kiếm chương trình giảm giá..." oninput="searchDiscounts()" autocomplete="off">
                         </form>
                     </div>
                     <div class="admin-control-right">
                         <select name="discount-status-filter" id="discount-status-filter" onchange="filterDiscounts()">
                             <option value="all">Tất cả</option>
                             <option value="active">Đang hoạt động</option>
+                            <option value="pending">Chưa kích hoạt</option>
                             <option value="expired">Đã hết hạn</option>
-                            <option value="inactive">Chưa kích hoạt</option>
+                            <option value="inactive">Không hoạt động</option>
                         </select>
                     </div>
                 </div>
@@ -410,8 +411,8 @@
                     <div class="modal-content-right">
                         <div class="form-group">
                             <label for="ten-sach" class="form-label">Tên sách</label>
-                            <input id="ten-sach" name="ten-sach" type="text" placeholder="Nhập tên sách"
-                                class="form-control">
+                            <input id="ten-sach" name="ten-sach" type="text" placeholder="Nhập tên sách" autocomplete="off"
+                                class="form-control" autocomplete="off">
                             <span class="form-message"></span>
                         </div>
                         <div class="form-group">
@@ -491,17 +492,17 @@
                 <form action="" class="signup-form">
                     <div class="form-group">
                         <label for="fullname" class="form-label">Tên đầy đủ</label>
-                        <input id="fullname" name="fullname" type="text" placeholder="VD: Phan Nhật Tân" class="form-control">
+                        <input id="fullname" name="fullname" type="text" placeholder="VD: Phan Nhật Tân" class="form-control" autocomplete="name">
                         <span class="form-message-name form-message"></span>
                     </div>
                     <div class="form-group">
                         <label for="phone" class="form-label">Số điện thoại</label>
-                        <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại" class="form-control">
+                        <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại" class="form-control" autocomplete="tel">
                         <span class="form-message-phone form-message"></span>
                     </div>
                     <div class="form-group">
                         <label for="password" class="form-label">Mật khẩu</label>
-                        <input id="password" name="password" type="text" placeholder="Nhập mật khẩu" class="form-control">
+                        <input id="password" name="password" type="password" placeholder="Nhập mật khẩu" class="form-control" autocomplete="new-password">
                         <span class="form-message-password form-message"></span>
                     </div>   
                     <div class="form-group">
@@ -515,6 +516,42 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal hủy đơn hàng -->
+    <div class="modal cancel-order-modal">
+        <div class="modal-container">
+            <h3 class="modal-container-title">HỦY ĐƠN HÀNG</h3>
+            <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
+            <div class="cancel-order-content">
+                <p>Bạn có chắc chắn muốn hủy đơn hàng <strong id="cancel-order-id"></strong>?</p>
+                <div class="form-group">
+                    <label for="cancel-reason-select" class="form-label">Lý do hủy đơn</label>
+                    <select id="cancel-reason-select" class="form-control" onchange="toggleCustomReason()">
+                        <option value="">Chọn lý do hủy đơn</option>
+                        <option value="Khách hàng yêu cầu hủy">Khách hàng yêu cầu hủy</option>
+                        <option value="Sản phẩm hết hàng">Sản phẩm hết hàng</option>
+                        <option value="Thông tin giao hàng không chính xác">Thông tin giao hàng không chính xác</option>
+                        <option value="Đơn hàng bị trùng lặp">Đơn hàng bị trùng lặp</option>
+                        <option value="Vấn đề về thanh toán">Vấn đề về thanh toán</option>
+                        <option value="Khác">Lý do khác</option>
+                    </select>
+                </div>
+                <div class="form-group" id="custom-reason-group" style="display: none;">
+                    <label for="cancel-reason-custom" class="form-label">Nhập lý do cụ thể</label>
+                    <textarea id="cancel-reason-custom" class="form-control" placeholder="Nhập lý do hủy đơn..." rows="3"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-cancel-confirm" onclick="confirmCancelOrder()">
+                        <i class="fa-regular fa-ban"></i> Xác nhận hủy
+                    </button>
+                    <button class="btn-cancel-close" onclick="closeCancelOrderModal()">
+                        <i class="fa-regular fa-times"></i> Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div id="toast"></div>
     
     <!-- Modal tạo/chỉnh sửa chương trình giảm giá -->
@@ -528,7 +565,7 @@
                     <div class="modal-content-left">
                         <div class="form-group">
                             <label for="discount-name" class="form-label">Tên chương trình</label>
-                            <input id="discount-name" name="discount-name" type="text" placeholder="VD: Giảm giá mùa hè" class="form-control">
+                            <input id="discount-name" name="discount-name" type="text" placeholder="VD: Giảm giá mùa hè" class="form-control" autocomplete="off">
                             <span class="form-message"></span>
                         </div>
                         <div class="form-group">
@@ -598,7 +635,7 @@
                         <div class="form-group" id="product-selection">
                             <label for="discount-products" class="form-label">Chọn sản phẩm</label>
                             <div class="product-search-container">
-                                <input id="discount-product-search" type="text" placeholder="Tìm kiếm sản phẩm..." class="form-control" oninput="searchProductsForDiscount()">
+                                <input id="discount-product-search" type="text" placeholder="Tìm kiếm sản phẩm..." class="form-control" oninput="searchProductsForDiscount()" autocomplete="off">
                                 <div id="discount-product-results" class="product-search-results"></div>
                             </div>
                             <div id="selected-discount-products" class="selected-products"></div>

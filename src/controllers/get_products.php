@@ -28,7 +28,7 @@ $sql = "SELECT DISTINCT
             END as discounted_price
             
         FROM products p
-        LEFT JOIN orderDetails od ON p.id = od.product_id
+        LEFT JOIN orderdetails od ON p.id = od.product_id
         LEFT JOIN `order` o ON od.madon = o.id
         LEFT JOIN (
             -- Subquery để lấy discount tốt nhất cho mỗi sản phẩm

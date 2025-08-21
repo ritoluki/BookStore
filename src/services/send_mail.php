@@ -18,7 +18,7 @@ try {
     $mail->Username = 'bookshopdatn@gmail.com';         // Email của bạn
 
 
-    $mail->Password = 'kvec wxoz ptjx utif';            // Thay bằng App Password thực của bạn
+    $mail->Password = 'rzzw cojk nbri zgpn';            // App Password mới
 
     // Cấu hình bảo mật
     $mail->SMTPSecure = 'ssl';                            // Sử dụng SSL

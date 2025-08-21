@@ -1,5 +1,5 @@
 <?php
-require_once 'send_mail.php';
+require_once __DIR__ . '/send_mail.php';
 
 /**
  * Gửi email xác nhận đơn hàng
@@ -593,5 +593,101 @@ function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelRea
     }
     // Không gửi mail cho trạng thái 2 hoặc trạng thái không xác định
     return false;
+}
+
+/**
+ * Gửi email thông báo hủy đơn hàng bởi admin với lý do cụ thể
+ * @param array $order Thông tin đơn hàng
+ * @param string $email Email người nhận
+ * @param string $reason Lý do hủy đơn hàng
+ * @param bool $isAdmin Có phải admin hủy không
+ * @return bool Kết quả gửi email
+ */
+function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin = true) {
+    global $conn;
+    
+    // Lấy chi tiết sản phẩm đã mua
+    $products = [];
+    $total = 0;
+    if (isset($conn) && $conn) {
+        $sql = "SELECT od.product_id, od.soluong, od.product_price, p.title FROM orderDetails od JOIN products p ON od.product_id = p.id WHERE od.madon = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("s", $order['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $products[] = $row;
+            $total += $row['soluong'] * $row['product_price'];
+        }
+        $stmt->close();
+    }
+    
+    $cancelledBy = $isAdmin ? 'quản trị viên' : 'khách hàng';
+    
+    $subject = "Thông báo hủy đơn hàng #{$order['id']} - Book Shop";
+    
+    $body = "
+    <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
+        <div style='text-align: center; margin-bottom: 30px;'>
+            <h2 style='color: #dc3545; margin: 0;'>Thông báo hủy đơn hàng</h2>
+            <p style='color: #666; margin: 10px 0 0 0;'>Đơn hàng #{$order['id']} đã bị hủy</p>
+        </div>
+        
+        <div style='background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>
+            <h3 style='color: #dc3545; margin-top: 0;'>Lý do hủy đơn hàng:</h3>
+            <p style='font-size: 16px; color: #333; margin: 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #dc3545;'>{$reason}</p>
+            <p style='font-size: 14px; color: #666; margin-top: 10px;'>Đơn hàng được hủy bởi: {$cancelledBy}</p>
+        </div>
+        
+        <div style='margin-bottom: 20px;'>
+            <h3 style='color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;'>Thông tin đơn hàng đã hủy:</h3>
+            <p><strong>Mã đơn hàng:</strong> {$order['id']}</p>
+            <p><strong>Ngày đặt:</strong> " . date('d/m/Y H:i', strtotime($order['thoigiandat'])) . "</p>
+            <p><strong>Tổng tiền:</strong> " . number_format($total, 0, ',', '.') . " VNĐ</p>
+        </div>";
+    
+    if (!empty($products)) {
+        $body .= "
+        <div style='margin-bottom: 20px;'>
+            <h3 style='color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;'>Sản phẩm trong đơn hàng:</h3>
+            <table style='width: 100%; border-collapse: collapse;'>
+                <thead>
+                    <tr style='background-color: #f8f9fa;'>
+                        <th style='padding: 12px; text-align: left; border: 1px solid #ddd;'>Sản phẩm</th>
+                        <th style='padding: 12px; text-align: center; border: 1px solid #ddd;'>Số lượng</th>
+                        <th style='padding: 12px; text-align: right; border: 1px solid #ddd;'>Đơn giá</th>
+                    </tr>
+                </thead>
+                <tbody>";
+        
+        foreach ($products as $product) {
+            $body .= "
+                    <tr>
+                        <td style='padding: 12px; border: 1px solid #ddd;'>{$product['title']}</td>
+                        <td style='padding: 12px; text-align: center; border: 1px solid #ddd;'>{$product['soluong']}</td>
+                        <td style='padding: 12px; text-align: right; border: 1px solid #ddd;'>" . number_format($product['product_price'], 0, ',', '.') . " VNĐ</td>
+                    </tr>";
+        }
+        
+        $body .= "
+                </tbody>
+            </table>
+        </div>";
+    }
+    
+    $body .= "
+        <div style='background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;'>
+            <h4 style='color: #856404; margin-top: 0;'>Xin lỗi vì sự bất tiện!</h4>
+            <p style='color: #856404; margin: 0;'>Chúng tôi rất xin lỗi vì sự bất tiện này. Nếu đơn hàng đã được thanh toán, chúng tôi sẽ hoàn tiền trong vòng 3-5 ngày làm việc.</p>
+        </div>
+        
+        <div style='text-align: center; padding: 20px; background-color: #f8f9fa; border-radius: 8px;'>
+            <p style='margin: 0; color: #666;'>Cảm ơn bạn đã tin tưởng Book Shop!</p>
+            <p style='margin: 5px 0 0 0; color: #666;'>Hotline hỗ trợ: <strong>0123 456 789</strong></p>
+        </div>
+    </div>";
+    
+    return sendEmail($email, $subject, $body);
 }
 ?> 

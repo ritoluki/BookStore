@@ -14,10 +14,11 @@ try {
     $orderDetails = array();
     while ($row = mysqli_fetch_assoc($result)) {
         $orderDetails[] = array(
-            'id' => $row['product_id'],
+            'id' => $row['id'], // ID của orderdetail
+            'product_id' => $row['product_id'], // ID của sản phẩm
             'madon' => $row['madon'],
             'price' => (int)$row['product_price'],
-            'soluong' => (int)$row['soluong'],
+            'quantity' => (int)$row['soluong'], // Đổi tên từ soluong thành quantity
             'note' => isset($row['note']) ? $row['note'] : ''
         );
     }

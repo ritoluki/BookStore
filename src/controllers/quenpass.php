@@ -9,7 +9,7 @@ if (isset($_POST['btn1'])) {
         $thongbao = "Email không đúng";
         $status = "error";
     } else {
-    require_once 'php/config.php';
+    require_once '../../config/config.php';
         // Sửa: Sử dụng prepared statement để tránh SQL injection
         $sql = "SELECT id, phone, fullname FROM users WHERE email = ?";
         $stmt = $conn->prepare($sql);
@@ -42,7 +42,7 @@ if (isset($_POST['btn1'])) {
                 $reset_link = "http://localhost/bookstore_datn/reset_password.php?email=" . urlencode($email) . "&token=" . $token;
 
                 // Gửi email chứa link đổi mật khẩu
-                require 'send_mail.php';
+                require '../services/send_mail.php';
                 
                 $mail->setFrom('bookshopdatn@gmail.com', 'BOOK SHOP');
                 $mail->addAddress($email);
