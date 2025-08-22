@@ -1063,14 +1063,24 @@ async function detailOrder(id) {
         // Trạng thái thanh toán - chỉ hiển thị khi đơn hàng chưa hoàn thành hoặc chưa hủy
         const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
         let paymentStatusButton = '';
+        
+        // Kiểm tra xem có phải đơn hàng COD không
+        const isCOD = order.hinhthucgiao && order.hinhthucgiao.toLowerCase().includes('cod');
+        
         if (order.trangthai != 3 && order.trangthai != 4) { // Chỉ hiển thị khi chưa hoàn thành và chưa hủy
             if (paymentStatus === 1) {
                 paymentStatusButton = `<button class="modal-detail-btn btn-dathanhtoan payment-status-btn" onclick="togglePaymentStatus('${order.id}', 1)">
                     <i class="fa-regular "></i> Đã thanh toán
                 </button>`;
+            } else if (!isCOD) {
+                // Chỉ hiển thị button "Gửi nhắc nhở" cho đơn hàng không phải COD
+                paymentStatusButton = `<button class="modal-detail-btn btn-chuathanhtoan payment-status-btn payment-reminder" onclick="sendPaymentReminder('${order.id}')">
+                    <i class="fa-regular fa-envelope"></i> Gửi nhắc nhở
+                </button>`;
             } else {
+                // Đối với đơn hàng COD, hiển thị button "Cập nhật thanh toán"
                 paymentStatusButton = `<button class="modal-detail-btn btn-chuathanhtoan payment-status-btn" onclick="togglePaymentStatus('${order.id}', 0)">
-                    <i class="fa-regular"></i> Chưa thanh toán
+                    <i class="fa-solid fa-money-bill-wave"></i> Cập nhật thanh toán
                 </button>`;
             }
         }
@@ -2766,3 +2776,89 @@ document.addEventListener('DOMContentLoaded', function() {
         closeAllModals();
     }, 100);
 });
+
+// Gửi email nhắc nhở thanh toán
+async function sendPaymentReminder(orderId) {
+    try {
+        // Hiển thị loading
+        const button = document.querySelector(`button[onclick="sendPaymentReminder('${orderId}')"]`);
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+        button.disabled = true;
+        button.classList.add('loading');
+
+        // Lấy thông tin đơn hàng và chi tiết
+        const orders = JSON.parse(localStorage.getItem("order") || "[]");
+        const orderDetails = JSON.parse(localStorage.getItem("orderDetails") || "[]");
+        
+        const order = orders.find(o => o.id === orderId);
+        if (!order) {
+            throw new Error("Không tìm thấy đơn hàng");
+        }
+
+        const details = orderDetails.filter(d => d.madon === orderId);
+        if (details.length === 0) {
+            throw new Error("Không tìm thấy chi tiết đơn hàng");
+        }
+
+        // Chuẩn bị dữ liệu để gửi email
+        const emailData = {
+            order: order,
+            orderDetails: details
+        };
+
+        // Gọi API gửi email nhắc nhở thanh toán
+        const response = await fetch('/Bookstore_DATN/src/controllers/send_payment_reminder.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            toast({
+                title: "Thành công",
+                message: "Đã gửi email nhắc nhở thanh toán thành công!",
+                type: "success",
+                duration: 3000
+            });
+            
+            // Thay đổi button thành "Đã gửi nhắc nhở"
+            button.innerHTML = '<i class="fa-solid fa-check"></i> Đã gửi nhắc nhở';
+            button.classList.remove('btn-chuathanhtoan', 'loading', 'payment-reminder');
+            button.classList.add('btn-dathanhtoan');
+            button.style.background = '#28a745';
+            
+            // Khôi phục button sau 5 giây
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('btn-dathanhtoan');
+                button.classList.add('btn-chuathanhtoan', 'payment-reminder');
+                button.style.background = '';
+                button.disabled = false;
+            }, 5000);
+            
+        } else {
+            throw new Error(result.message || "Không thể gửi email nhắc nhở");
+        }
+
+    } catch (error) {
+        console.error('Lỗi gửi email nhắc nhở:', error);
+        
+        // Khôi phục button
+        const button = document.querySelector(`button[onclick="sendPaymentReminder('${orderId}')"]`);
+        button.innerHTML = '<i class="fa-regular fa-envelope"></i> Gửi nhắc nhở';
+        button.disabled = false;
+        button.classList.remove('loading');
+        
+        toast({
+            title: "Lỗi",
+            message: "Không thể gửi email nhắc nhở: " + error.message,
+            type: "error",
+            duration: 3000
+        });
+    }
+}

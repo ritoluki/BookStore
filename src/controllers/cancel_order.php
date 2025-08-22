@@ -75,7 +75,7 @@ try {
     
     if ($affected > 0) {
         // Hoàn trả số lượng về kho
-        $sqlDetails = "SELECT product_id, soluong FROM orderDetails WHERE madon = ?";
+        $sqlDetails = "SELECT product_id, soluong FROM orderdetails WHERE madon = ?";
         $stmtDetails = $conn->prepare($sqlDetails);
         $stmtDetails->bind_param("s", $orderId);
         $stmtDetails->execute();

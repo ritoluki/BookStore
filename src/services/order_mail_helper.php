@@ -2,14 +2,15 @@
 require_once __DIR__ . '/send_mail.php';
 
 /**
- * Gửi email xác nhận đơn hàng
- *
+ * Gửi email xác nhận đơn hàng - ĐÃ BỎ (thay bằng trang thành công)
+ * 
  * @param array $order Thông tin đơn hàng
  * @param array $orderDetails Chi tiết sản phẩm trong đơn hàng
  * @param string $email Email người nhận
  * @param mysqli $conn Kết nối database
  * @return bool Kết quả gửi email
  */
+/*
 function sendOrderConfirmationEmail($order, $orderDetails, $email, $conn) {
     // Lấy chi tiết sản phẩm đã mua
         $products = [];
@@ -45,7 +46,7 @@ function sendOrderConfirmationEmail($order, $orderDetails, $email, $conn) {
         foreach ($products as $product) {
             $productTable .= "<tr>
                 <td style='border:1px solid #ddd;padding:10px;'>" . htmlspecialchars($product['title']) . "</td>
-                <td style='border:1px solid #ddd;padding:10px;text-align:center;'>" . $product['quantity'] . "</td>
+                <td style='border:10px;text-align:center;'>" . $product['quantity'] . "</td>
                 <td style='border:1px solid #ddd;padding:10px;text-align:right;'>" . number_format($product['price']) . " đ</td>
                 <td style='border:1px solid #ddd;padding:10px;text-align:right;'>" . number_format($product['subtotal']) . " đ</td>
             </tr>";
@@ -98,6 +99,7 @@ function sendOrderConfirmationEmail($order, $orderDetails, $email, $conn) {
     }
     return true;
 }
+*/
 
 /**
  * Gửi email thông báo hủy đơn hàng
@@ -689,5 +691,279 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
     </div>";
     
     return sendEmail($email, $subject, $body);
+}
+
+/**
+ * Gửi email nhắc nhở thanh toán
+ * 
+ * @param array $order Thông tin đơn hàng
+ * @param array $orderDetails Chi tiết sản phẩm trong đơn hàng
+ * @param string $email Email người nhận
+ * @param mysqli $conn Kết nối database
+ * @return bool Kết quả gửi email
+ */
+function sendPaymentReminderEmail($order, $orderDetails, $email, $conn) {
+    try {
+        // Lấy thông tin sản phẩm
+        $products = [];
+        foreach ($orderDetails as $detail) {
+            $sql = "SELECT title, img, category FROM products WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("i", $detail['product_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $product = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($product) {
+                $products[] = [
+                    'title' => $product['title'],
+                    'img' => $product['img'],
+                    'category' => $product['category'],
+                    'price' => $detail['price'],
+                    'quantity' => $detail['quantity']
+                ];
+            }
+        }
+        
+        // Tạo nội dung email
+        $subject = 'Nhắc nhở thanh toán đơn hàng #' . $order['id'] . ' - BOOK SHOP';
+        $body = createPaymentReminderEmailHTML($order, $products);
+        $altBody = createPaymentReminderEmailText($order, $products);
+        
+        return sendEmail($email, $subject, $body);
+    } catch (Exception $e) {
+        error_log("Lỗi gửi email nhắc nhở thanh toán: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Tạo HTML cho email nhắc nhở thanh toán
+ */
+function createPaymentReminderEmailHTML($order, $products) {
+    $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
+    $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
+    $orderTotal = number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.');
+    
+    $html = '
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nhắc nhở thanh toán</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc3545; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+            .product-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #dc3545; }
+            .total { background: #dc3545; color: white; padding: 20px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; }
+            .cta-button { display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>⚠️ Nhắc nhở thanh toán</h1>
+                <p>Đơn hàng #' . $order['id'] . ' của bạn đang chờ thanh toán</p>
+            </div>
+            <div class="content">
+                <p>Xin chào <strong>' . htmlspecialchars($order['tenguoinhan']) . '</strong>,</p>
+                <p>Chúng tôi nhận thấy đơn hàng #' . $order['id'] . ' của bạn đã được đặt thành công nhưng chưa được thanh toán.</p>
+                
+                <h3>Chi tiết đơn hàng:</h3>';
+    
+    foreach ($products as $product) {
+        $html .= '
+                <div class="product-item">
+                    <strong>' . htmlspecialchars($product['title']) . '</strong><br>
+                    <small>Thể loại: ' . htmlspecialchars($product['category']) . '</small><br>
+                    <small>Số lượng: ' . $product['quantity'] . ' x ' . number_format($product['price'], 0, ',', '.') . ' ₫</small>
+                </div>';
+    }
+    
+    $html .= '
+                <div class="total">
+                    Tổng cộng: ' . $orderTotal . ' ₫
+                </div>
+                
+                <p><strong>Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý đơn hàng của bạn.</strong></p>
+                
+                                 <div style="text-align: center;">
+                     <a href="http://localhost/Bookstore_DATN/index.php?page=checkout&order_id=' . $order['id'] . '" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); transition: all 0.3s ease;">
+                         💳 Thanh toán ngay
+                     </a>
+                 </div>
+                
+                <p><small>Nếu bạn đã thanh toán, vui lòng bỏ qua email này. Liên hệ với chúng tôi nếu cần hỗ trợ.</small></p>
+            </div>
+        </div>
+    </body>
+    </html>';
+    
+    return $html;
+}
+
+/**
+ * Tạo text cho email nhắc nhở thanh toán
+ */
+function createPaymentReminderEmailText($order, $products) {
+    $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
+    $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
+    
+    $text = "Nhắc nhở thanh toán đơn hàng #" . $order['id'] . "\n\n";
+    $text .= "Xin chào " . $order['tenguoinhan'] . ",\n\n";
+    $text .= "Chúng tôi nhận thấy đơn hàng #" . $order['id'] . " của bạn đã được đặt thành công nhưng chưa được thanh toán.\n\n";
+    
+    $text .= "Chi tiết đơn hàng:\n";
+    foreach ($products as $product) {
+        $text .= "- " . $product['title'] . " (" . $product['category'] . ") x" . $product['quantity'] . " - " . number_format($product['price'], 0, ',', '.') . " ₫\n";
+    }
+    
+    $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " ₫\n\n";
+    $text .= "Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý đơn hàng của bạn.\n\n";
+    $text .= "Thanh toán tại: http://localhost/Bookstore_DATN/index.php?page=checkout&order_id=" . $order['id'] . "\n\n";
+    $text .= "Nếu bạn đã thanh toán, vui lòng bỏ qua email này.";
+    
+    return $text;
+}
+
+/**
+ * Gửi email thông báo giao hàng thành công
+ * 
+ * @param array $order Thông tin đơn hàng
+ * @param array $orderDetails Chi tiết sản phẩm trong đơn hàng
+ * @param string $email Email người nhận
+ * @param mysqli $conn Kết nối database
+ * @return bool Kết quả gửi email
+ */
+function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn) {
+    try {
+        // Lấy thông tin sản phẩm
+        $products = [];
+        foreach ($orderDetails as $detail) {
+            $sql = "SELECT title, img, category FROM products WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("i", $detail['product_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $product = $result->fetch_assoc();
+            $stmt->close();
+            
+            if ($product) {
+                $products[] = [
+                    'title' => $product['title'],
+                    'img' => $product['img'],
+                    'category' => $product['category'],
+                    'price' => $detail['price'],
+                    'quantity' => $detail['quantity']
+                ];
+            }
+        }
+        
+        // Tạo nội dung email
+        $subject = 'Giao hàng thành công đơn hàng #' . $order['id'] . ' - BOOK SHOP';
+        $body = createDeliverySuccessEmailHTML($order, $products);
+        $altBody = createDeliverySuccessEmailText($order, $products);
+        
+        return sendEmail($email, $subject, $body);
+    } catch (Exception $e) {
+        error_log("Lỗi gửi email thông báo giao hàng thành công: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Tạo HTML cho email thông báo giao hàng thành công
+ */
+function createDeliverySuccessEmailHTML($order, $products) {
+    $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
+    $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
+    $orderTotal = number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.');
+    
+    return '
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Giao hàng thành công</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #28a745; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+            .product-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #28a745; }
+            .total { background: #28a745; color: white; padding: 20px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; }
+            .cta-button { display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; margin: 20px 0; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎉 Giao hàng thành công!</h1>
+                <p>Đơn hàng #' . $order['id'] . ' đã được giao đến bạn</p>
+            </div>
+            <div class="content">
+                <p>Xin chào <strong>' . htmlspecialchars($order['tenguoinhan']) . '</strong>,</p>
+                <p>Chúc mừng! Đơn hàng #' . $order['id'] . ' của bạn đã được giao thành công.</p>
+                
+                <h3>Chi tiết đơn hàng đã giao:</h3>';
+    
+    foreach ($products as $product) {
+        $html .= '
+                <div class="product-item">
+                    <strong>' . htmlspecialchars($product['title']) . '</strong><br>
+                    <small>Thể loại: ' . htmlspecialchars($product['category']) . '</small><br>
+                    <small>Số lượng: ' . $product['quantity'] . ' x ' . number_format($product['price'], 0, ',', '.') . ' ₫</small>
+                </div>';
+    }
+    
+    $html .= '
+                <div class="total">
+                    Tổng cộng: ' . $orderTotal . ' ₫
+                </div>
+                
+                <p><strong>Cảm ơn bạn đã tin tưởng BOOK SHOP!</strong></p>
+                
+                <div style="text-align: center;">
+                    <a href="http://localhost/Bookstore_DATN/" class="cta-button">
+                        Tiếp tục mua sắm
+                    </a>
+                </div>
+                
+                <p><small>Nếu có vấn đề gì với đơn hàng, vui lòng liên hệ với chúng tôi để được hỗ trợ.</small></p>
+            </div>
+        </div>
+    </body>
+    </html>';
+    
+    return $html;
+}
+
+/**
+ * Tạo text cho email thông báo giao hàng thành công
+ */
+function createDeliverySuccessEmailText($order, $products) {
+    $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
+    $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
+    
+    $text = "Giao hàng thành công đơn hàng #" . $order['id'] . "\n\n";
+    $text .= "Xin chào " . $order['tenguoinhan'] . ",\n\n";
+    $text .= "Chúc mừng! Đơn hàng #" . $order['id'] . " của bạn đã được giao thành công.\n\n";
+    
+    $text .= "Chi tiết đơn hàng đã giao:\n";
+    foreach ($products as $product) {
+        $text .= "- " . $product['title'] . " (" . $product['category'] . ") x" . $product['quantity'] . " - " . number_format($product['price'], 0, ',', '.') . " ₫\n";
+    }
+    
+    $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " ₫\n\n";
+    $text .= "Cảm ơn bạn đã tin tưởng BOOK SHOP!\n\n";
+    $text .= "Tiếp tục mua sắm tại: http://localhost/Bookstore_DATN/\n\n";
+    $text .= "Nếu có vấn đề gì với đơn hàng, vui lòng liên hệ với chúng tôi để được hỗ trợ.";
+    
+    return $text;
 }
 ?> 

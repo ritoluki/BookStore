@@ -23,7 +23,7 @@ try {
                 FROM products p 
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
-                LEFT JOIN orderDetails od ON p.id = od.product_id 
+                LEFT JOIN orderdetails od ON p.id = od.product_id 
                 LEFT JOIN `order` o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1
@@ -47,7 +47,7 @@ try {
                 FROM products p 
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
-                LEFT JOIN orderDetails od ON p.id = od.product_id 
+                LEFT JOIN orderdetails od ON p.id = od.product_id 
                 LEFT JOIN `order` o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1

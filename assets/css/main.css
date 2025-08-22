@@ -3716,6 +3716,22 @@ tbody tr td {
   background: #0097a7 !important;
 }
 
+/* Nút đã thanh toán bằng tiền mặt (khách) */
+.btn-thanhtoan-cod {
+  background: #17a2b8 !important;
+  color: #fff !important;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.2s;
+  margin-left: 10px;
+}
+.btn-thanhtoan-cod:hover {
+  background: #138496 !important;
+}
+
 /* ===== STYLES CHO SÁCH BÁN CHẠY ===== */
 
 /* Navigation tabs */

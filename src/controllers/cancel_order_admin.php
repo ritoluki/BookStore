@@ -54,7 +54,7 @@ try {
         $stmt->close();
         
         // Hoàn trả số lượng sản phẩm
-        $sql = "SELECT od.product_id, od.soluong FROM orderDetails od WHERE od.madon = ?";
+        $sql = "SELECT od.product_id, od.soluong FROM orderdetails od WHERE od.madon = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("s", $orderId);
         $stmt->execute();

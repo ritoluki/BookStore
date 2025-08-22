@@ -1358,7 +1358,12 @@ function renderOrderProduct() {
                 <div class="order-history-status">
                     <span class="order-history-status-sp ${classCompl}">${textCompl}</span>
                     <button id="order-history-detail" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Xem chi tiết</button>
-                    ${item.trangthai == 2 ? `<button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>` : ''}
+                    ${item.trangthai == 2 ? `
+                        <button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>
+                        ${item.payment_method && item.payment_method.toLowerCase() === 'cod' ? 
+                            `<button class="btn-thanhtoan-cod" onclick="confirmPaidCOD('${item.id}')">Đã thanh toán bằng tiền mặt</button>` : ''
+                        }
+                    ` : ''}
                 </div>
                 <div class="order-history-total">
                     <span class="order-history-total-desc">Tổng tiền: </span>
@@ -1829,7 +1834,12 @@ function showOrder(arr) {
             <td>${paymentMethod}</td>
             <td class="control">
             <button class="btn-detail" id="" onclick="detailOrder('${item.id}')"><i class="fa-regular fa-eye"></i> Chi tiết</button>
-            ${item.trangthai == 2 ? `<button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>` : ''}
+            ${item.trangthai == 2 ? `
+                <button class="btn-danhanhang" onclick="confirmReceived('${item.id}')">Đã nhận được hàng</button>
+                ${item.payment_method && item.payment_method.toLowerCase() === 'cod' ? 
+                    `<button class="btn-thanhtoan-cod" onclick="confirmPaidCOD('${item.id}')">Đã thanh toán bằng tiền mặt</button>` : ''
+                }
+            ` : ''}
             </td>
             </tr>      
             `;
@@ -1946,7 +1956,15 @@ async function detailOrder(id) {
         classDetailBtn = "btn-shipping";
         textDetailBtn = "Đang giao hàng";
         actionDetailBtn = '';
-        extraBtns = `<button class=\"btn-danhanhang\" onclick=\"confirmReceived('${order.id}')\">Đã nhận được hàng</button>`;
+        // Hiển thị button "Đã nhận được hàng" và "Đã thanh toán bằng tiền mặt" cho đơn COD
+        if (order.payment_method && order.payment_method.toLowerCase() === 'cod') {
+            extraBtns = `
+                <button class="btn-danhanhang" onclick="confirmReceived('${order.id}')">Đã nhận được hàng</button>
+                <button class="btn-thanhtoan-cod" onclick="confirmPaidCOD('${order.id}')">Đã thanh toán bằng tiền mặt</button>
+            `;
+        } else {
+            extraBtns = `<button class="btn-danhanhang" onclick="confirmReceived('${order.id}')">Đã nhận được hàng</button>`;
+        }
     } else if (trangThai === 3) {
         classDetailBtn = "btn-complete";
         textDetailBtn = "Hoàn thành";
@@ -2192,6 +2210,44 @@ function confirmReceived(orderId) {
                         renderOrderProduct && renderOrderProduct();
                     });
                 document.querySelector('.modal.detail-order')?.classList.remove('open');
+            } else {
+                toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+            }
+        })
+        .catch(err => {
+            toast({ title: 'Lỗi', message: 'Không thể kết nối tới server!', type: 'error', duration: 3000 });
+        });
+}
+
+// --- confirmPaidCOD ---
+function confirmPaidCOD(orderId) {
+    if (!confirm('Bạn xác nhận đã thanh toán bằng tiền mặt?')) return;
+    fetch('src/controllers/update_payment_status.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: orderId, paymentStatus: 1 })
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                toast({ title: 'Thành công', message: 'Đã cập nhật trạng thái thanh toán!', type: 'success', duration: 2000 });
+                // Refresh dữ liệu đơn hàng
+                fetch('src/controllers/get_orders.php')
+                    .then(res => res.json())
+                    .then(orders => {
+                        localStorage.setItem('order', JSON.stringify(orders));
+                        renderOrderProduct && renderOrderProduct();
+                        // Refresh modal chi tiết đơn hàng nếu đang mở
+                        const modal = document.querySelector('.modal.detail-order');
+                        if (modal && modal.classList.contains('open')) {
+                            // Tìm đơn hàng hiện tại và refresh modal
+                            const currentOrder = orders.find(order => order.id == orderId);
+                            if (currentOrder) {
+                                // Refresh modal với dữ liệu mới
+                                detailOrder(orderId);
+                            }
+                        }
+                    });
             } else {
                 toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
             }

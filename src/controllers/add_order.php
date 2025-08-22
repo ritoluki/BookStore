@@ -45,8 +45,8 @@ $stmtOrder->bind_param("ssssssssssiis", $order['id'], $order['khachhang'], $orde
 
 // Thực thi câu lệnh SQL để thêm đơn hàng
 if ($stmtOrder->execute()) {
-    // Chuẩn bị câu lệnh SQL để thêm chi tiết đơn hàng vào bảng 'orderDetails'
-    $sqlOrderDetails = "INSERT INTO orderDetails (madon, product_id, note, product_price, soluong) VALUES (?, ?, ?, ?, ?)";
+    // Chuẩn bị câu lệnh SQL để thêm chi tiết đơn hàng vào bảng 'orderdetails'
+    $sqlOrderDetails = "INSERT INTO orderdetails (madon, product_id, note, product_price, soluong) VALUES (?, ?, ?, ?, ?)";
     $stmtOrderDetails = $conn->prepare($sqlOrderDetails);
     
     // Loại bỏ duplicate theo product_id + madon
@@ -71,41 +71,8 @@ if ($stmtOrder->execute()) {
         $stmtOrderDetails->execute();
     }
 
-    // Gửi email thông báo đặt hàng thành công
-    if (!empty($user_email)) {
-        error_log("Chuẩn bị gửi email xác nhận đơn hàng đến: " . $user_email);
-        require_once '../services/order_mail_helper.php';
-        // Lấy lại chi tiết đơn hàng vừa đặt từ database
-        $sqlGetOrderDetails = "SELECT * FROM orderDetails WHERE madon = ?";
-        $stmtGetOrderDetails = $conn->prepare($sqlGetOrderDetails);
-        $stmtGetOrderDetails->bind_param("s", $order['id']);
-        $stmtGetOrderDetails->execute();
-        $resultOrderDetails = $stmtGetOrderDetails->get_result();
-        $orderDetailsForMail = [];
-        while ($row = $resultOrderDetails->fetch_assoc()) {
-            $orderDetailsForMail[] = [
-                'id' => $row['product_id'],
-                'soluong' => $row['soluong'],
-                'price' => $row['product_price'],
-                'note' => $row['note'],
-                'madon' => $row['madon']
-            ];
-        }
-        $stmtGetOrderDetails->close();
-
-        try {
-            $emailResult = sendOrderConfirmationEmail($order, $orderDetailsForMail, $user_email, $conn);
-            error_log("Kết quả gửi email: " . ($emailResult ? "Thành công" : "Thất bại"));
-        } catch (Exception $e) {
-            error_log("Lỗi gửi email: " . $e->getMessage());
-            // Không để lỗi email làm fail đơn hàng
-        }
-        
-        // Cập nhật số lượng sử dụng discount
-        updateDiscountUsage($order['id'], $conn);
-    } else {
-        error_log("Không tìm thấy email của người dùng ID: " . $order['khachhang']);
-    }
+    // Cập nhật số lượng sử dụng discount
+    updateDiscountUsage($order['id'], $conn);
 }
 
 // Hàm cập nhật số lượng sử dụng discount
@@ -113,7 +80,7 @@ function updateDiscountUsage($orderId, $conn) {
     try {
         // Lấy chi tiết đơn hàng và discount áp dụng
         $sql = "SELECT od.product_id, od.soluong, d.id as discount_id, d.max_uses, d.current_uses
-                FROM orderDetails od
+                FROM orderdetails od
                 JOIN products p ON od.product_id = p.id
                 JOIN discount_products dp ON p.id = dp.product_id
                 JOIN discounts d ON dp.discount_id = d.id
@@ -170,10 +137,11 @@ $conn->close();
 
 // Đảm bảo không có ký tự thừa trước khi trả về JSON
 header('Content-Type: application/json');
-echo json_encode([
-    "success" => true,
-    "message" => "Đặt hàng thành công!",
-    "orderId" => $order['id']
-]);
+        echo json_encode([
+            "success" => true,
+            "message" => "Đặt hàng thành công!",
+            "orderId" => $order['id'],
+            "redirect_url" => "/Bookstore_DATN/src/controllers/order_success.php?order_id=" . $order['id']
+        ]);
 exit;
 ?>

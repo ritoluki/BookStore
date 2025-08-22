@@ -1397,6 +1397,37 @@ label a {
     background-color: #c82333;
 }
 
+/* Style cho button gửi nhắc nhở thanh toán */
+.btn-chuathanhtoan.payment-reminder {
+    background-color: #ffc107;
+    color: #212529;
+    border: 1px solid #ffc107;
+}
+
+.btn-chuathanhtoan.payment-reminder:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+.btn-chuathanhtoan.payment-reminder i {
+    margin-right: 5px;
+}
+
+/* Animation cho button loading */
+.btn-chuathanhtoan.loading {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-chuathanhtoan.loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 .modal-detail-bottom-right {
     margin-bottom: 50px;
     display: flex;
@@ -1511,6 +1542,19 @@ label a {
 /* Nút đã nhận được hàng (khách) */
 .btn-danhanhang {
   background: #28a745 !important;
+  color: #fff !important;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 99px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: background 0.2s;
+  margin-left: 10px;
+}
+
+/* Nút đã thanh toán bằng tiền mặt (khách) */
+.btn-thanhtoan-cod {
+  background: #17a2b8 !important;
   color: #fff !important;
   border: none;
   padding: 8px 20px;

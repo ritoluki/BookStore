@@ -480,9 +480,17 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             }
         }
 
-        setTimeout(() => {
-            window.location.href = "/Bookstore_DATN/";
-        }, 2000);  
+        // Redirect đến trang thành công nếu có URL
+        if (result.redirect_url) {
+            setTimeout(() => {
+                window.location.href = result.redirect_url;
+            }, 1500);
+        } else {
+            // Fallback về trang chủ nếu không có redirect_url
+            setTimeout(() => {
+                window.location.href = "/Bookstore_DATN/";
+            }, 2000);
+        }  
     }
 
     // Sau khi lưu đơn hàng và orderDetails:

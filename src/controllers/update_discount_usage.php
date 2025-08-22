@@ -13,7 +13,7 @@ try {
     
     // Lấy chi tiết đơn hàng
     $sql = "SELECT od.product_id, od.soluong 
-            FROM orderDetails od 
+            FROM orderdetails od 
             WHERE od.madon = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $orderId);

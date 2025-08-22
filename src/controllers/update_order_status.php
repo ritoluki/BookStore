@@ -98,14 +98,13 @@ try {
         if (!empty($user_email)) {
             try {
                 require_once '../services/order_mail_helper.php';
-                if ($order['trangthai'] == 1) {
-                    sendOrderConfirmationEmail($order, [], $user_email, $conn);
-                } elseif ($order['trangthai'] == 3) {
+                // Chỉ gửi email cho các trạng thái quan trọng
+                if ($order['trangthai'] == 3) {
                     sendOrderStatusUpdateEmail($order, $user_email);
                 } elseif ($order['trangthai'] == 4) {
                     sendOrderCancellationEmail($order, $user_email);
                 }
-                // Không gửi mail cho trạng thái 2
+                // Không gửi mail cho trạng thái 1 (đã xác nhận) và 2 (đang giao hàng)
             } catch (Exception $mailError) {
                 // Log lỗi mail nhưng không dừng quá trình cập nhật
                 error_log("Mail sending error: " . $mailError->getMessage());
