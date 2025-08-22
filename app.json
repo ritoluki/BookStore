@@ -1,0 +1,39 @@
+{
+  "name": "bookstore-datn",
+  "description": "Bookstore Management System",
+  "repository": "https://github.com/yourusername/bookstore-datn",
+  "logo": "https://cdn.rawgit.com/heroku/node-js-getting-started/master/public/node.svg",
+  "keywords": ["php", "bookstore", "ecommerce"],
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "env": {
+    "DB_HOST": {
+      "description": "Database host",
+      "value": "localhost"
+    },
+    "DB_USERNAME": {
+      "description": "Database username",
+      "value": "root"
+    },
+    "DB_PASSWORD": {
+      "description": "Database password",
+      "value": ""
+    },
+    "DB_NAME": {
+      "description": "Database name",
+      "value": "websach"
+    },
+    "DB_PORT": {
+      "description": "Database port",
+      "value": "3308"
+    }
+  }
+}

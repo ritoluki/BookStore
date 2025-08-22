@@ -1,6 +1,16 @@
 {
     "require": {
+        "php": "^7.4|^8.0",
         "phpmailer/phpmailer": "^6.9",
-        "ralouphie/getallheaders": "^3.0"
+        "ralouphie/getallheaders": "^3.0",
+        "heroku/heroku-buildpack-php": "*"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php -r \"copy('apache_app.conf', 'apache_app.conf');\""
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true
     }
 } 
