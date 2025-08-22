@@ -1,172 +1,90 @@
-# Script tu dong deploy Bookstore_DATN len Heroku
-# Chay script nay trong PowerShell voi quyen Administrator
+# Deploy to Heroku Script
+# Chạy script này sau khi đã cài đặt Heroku CLI
 
-Write-Host "=== DEPLOY BOOKSTORE_DATN LEN HEROKU ===" -ForegroundColor Green
+Write-Host "=== DEPLOY TO HEROKU ===" -ForegroundColor Green
 Write-Host ""
 
-# Kiem tra Heroku CLI
-Write-Host "Kiem tra Heroku CLI..." -ForegroundColor Yellow
+# Kiểm tra Heroku CLI
 try {
     $herokuVersion = heroku --version
-    Write-Host "✓ Heroku CLI da cai dat: $herokuVersion" -ForegroundColor Green
+    Write-Host "✓ Heroku CLI found: $herokuVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Heroku CLI chua cai dat!" -ForegroundColor Red
-    Write-Host "Vui long cai dat Heroku CLI tu: https://devcenter.heroku.com/articles/heroku-cli" -ForegroundColor Yellow
-    Write-Host "Hoac chay: choco install heroku" -ForegroundColor Yellow
+    Write-Host "✗ Heroku CLI not found. Please install it first." -ForegroundColor Red
+    Write-Host "Download from: https://devcenter.heroku.com/articles/heroku-cli" -ForegroundColor Yellow
     exit 1
 }
 
-# Kiem tra Git
-Write-Host "Kiem tra Git..." -ForegroundColor Yellow
-try {
-    $gitVersion = git --version
-    Write-Host "✓ Git da cai dat: $gitVersion" -ForegroundColor Green
-} catch {
-    Write-Host "✗ Git chua cai dat!" -ForegroundColor Red
-    Write-Host "Vui long cai dat Git tu: https://git-scm.com/" -ForegroundColor Yellow
+# Kiểm tra git status
+Write-Host "Checking git status..." -ForegroundColor Yellow
+$gitStatus = git status --porcelain
+if ($gitStatus) {
+    Write-Host "⚠ Uncommitted changes detected. Please commit first:" -ForegroundColor Yellow
+    Write-Host $gitStatus
     exit 1
 }
 
-# Kiem tra Composer
-Write-Host "Kiem tra Composer..." -ForegroundColor Yellow
-try {
-    $composerVersion = composer --version
-    Write-Host "✓ Composer da cai dat: $composerVersion" -ForegroundColor Green
-} catch {
-    Write-Host "✗ Composer chua cai dat!" -ForegroundColor Red
-    Write-Host "Vui long cai dat Composer tu: https://getcomposer.org/" -ForegroundColor Yellow
-    exit 1
-}
+Write-Host "✓ Git repository is clean" -ForegroundColor Green
 
-Write-Host ""
-
-# Hoi ten ung dung Heroku
-$appName = Read-Host "Nhap ten ung dung Heroku (de trong de tu dong tao)"
-if ([string]::IsNullOrWhiteSpace($appName)) {
-    Write-Host "Tao ung dung Heroku moi..." -ForegroundColor Yellow
+# Hỏi tên app
+$appName = Read-Host "Enter your Heroku app name (or press Enter to generate one)"
+if (-not $appName) {
     $appName = "bookstore-datn-" + (Get-Random -Minimum 1000 -Maximum 9999)
-    Write-Host "Ten ung dung: $appName" -ForegroundColor Cyan
+    Write-Host "Generated app name: $appName" -ForegroundColor Cyan
 }
 
-# Hoi ten database
-$dbName = Read-Host "Nhap ten database (mac dinh: websach)"
-if ([string]::IsNullOrWhiteSpace($dbName)) {
-    $dbName = "websach"
-}
-
-Write-Host ""
-
-# Cai dat dependencies
-Write-Host "Cai dat dependencies..." -ForegroundColor Yellow
-try {
-    composer install --no-dev --optimize-autoloader
-    Write-Host "✓ Dependencies da cai dat" -ForegroundColor Green
-} catch {
-    Write-Host "✗ Loi cai dat dependencies!" -ForegroundColor Red
-    exit 1
-}
-
-# Khoi tao Git repository
-Write-Host "Khoi tao Git repository..." -ForegroundColor Yellow
-if (-not (Test-Path ".git")) {
-    git init
-    Write-Host "✓ Git repository da khoi tao" -ForegroundColor Green
-} else {
-    Write-Host "✓ Git repository da ton tai" -ForegroundColor Green
-}
-
-# Them va commit files
-Write-Host "Commit files..." -ForegroundColor Yellow
-git add .
-git commit -m "Deploy to Heroku - $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-Write-Host "✓ Files da commit" -ForegroundColor Green
-
-# Tao ung dung Heroku
-Write-Host "Tao ung dung Heroku..." -ForegroundColor Yellow
+# Tạo app trên Heroku
+Write-Host "Creating Heroku app: $appName" -ForegroundColor Yellow
 try {
     heroku create $appName
-    Write-Host "✓ Ung dung Heroku da tao: $appName" -ForegroundColor Green
+    Write-Host "✓ Heroku app created successfully" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Loi tao ung dung Heroku!" -ForegroundColor Red
+    Write-Host "✗ Failed to create Heroku app" -ForegroundColor Red
     exit 1
 }
 
-# Them buildpack PHP
-Write-Host "Them buildpack PHP..." -ForegroundColor Yellow
+# Thêm buildpack PHP
+Write-Host "Adding PHP buildpack..." -ForegroundColor Yellow
 try {
     heroku buildpacks:set heroku/php
-    Write-Host "✓ Buildpack PHP da them" -ForegroundColor Green
+    Write-Host "✓ PHP buildpack added" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Loi them buildpack!" -ForegroundColor Red
-    exit 1
+    Write-Host "✗ Failed to add PHP buildpack" -ForegroundColor Red
 }
 
-# Them PostgreSQL database
-Write-Host "Them PostgreSQL database..." -ForegroundColor Yellow
+# Cài đặt PostgreSQL addon
+Write-Host "Adding PostgreSQL addon..." -ForegroundColor Yellow
 try {
     heroku addons:create heroku-postgresql:mini
-    Write-Host "✓ PostgreSQL database da them" -ForegroundColor Green
+    Write-Host "✓ PostgreSQL addon added" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Loi them database!" -ForegroundColor Red
-    exit 1
+    Write-Host "⚠ PostgreSQL addon already exists or failed to add" -ForegroundColor Yellow
 }
 
-# Cau hinh bien moi truong
-Write-Host "Cau hinh bien moi truong..." -ForegroundColor Yellow
-try {
-    $dbUrl = heroku config:get DATABASE_URL
-    Write-Host "✓ Database URL: $dbUrl" -ForegroundColor Green
-    
-    # Parse DATABASE_URL de lay thong tin
-    $pattern = "postgres://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)"
-    if ($dbUrl -match $pattern) {
-        $dbUser = $matches[1]
-        $dbPass = $matches[2]
-        $dbHost = $matches[3]
-        $dbPort = $matches[4]
-        $dbName = $matches[5]
-        
-        heroku config:set DB_HOST=$dbHost
-        heroku config:set DB_USERNAME=$dbUser
-        heroku config:set DB_PASSWORD=$dbPass
-        heroku config:set DB_NAME=$dbName
-        heroku config:set DB_PORT=$dbPort
-        
-        Write-Host "✓ Bien moi truong da cau hinh" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "✗ Loi cau hinh bien moi truong!" -ForegroundColor Red
-    exit 1
-}
-
-# Deploy ung dung
-Write-Host "Deploy ung dung..." -ForegroundColor Yellow
+# Deploy code
+Write-Host "Deploying to Heroku..." -ForegroundColor Yellow
 try {
     git push heroku main
-    Write-Host "✓ Ung dung da deploy thanh cong!" -ForegroundColor Green
+    Write-Host "✓ Deployment successful!" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Loi deploy!" -ForegroundColor Red
+    Write-Host "✗ Deployment failed" -ForegroundColor Red
     exit 1
 }
 
-# Mo ung dung
-Write-Host "Mo ung dung..." -ForegroundColor Yellow
+# Mở app
+Write-Host "Opening your app..." -ForegroundColor Yellow
 try {
     heroku open
-    Write-Host "✓ Ung dung da mo trong trinh duyet" -ForegroundColor Green
+    Write-Host "✓ App opened in browser" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Khong the mo ung dung tu dong" -ForegroundColor Yellow
+    Write-Host "⚠ Failed to open app automatically" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "=== DEPLOY THANH CONG! ===" -ForegroundColor Green
-Write-Host "URL ung dung: https://$appName.herokuapp.com" -ForegroundColor Cyan
+Write-Host "=== DEPLOYMENT COMPLETE ===" -ForegroundColor Green
+Write-Host "Your app URL: https://$appName.herokuapp.com" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Cac lenh huu ich:" -ForegroundColor Yellow
-Write-Host "  heroku logs --tail          # Xem logs" -ForegroundColor White
-Write-Host "  heroku ps                   # Kiem tra trang thai" -ForegroundColor White
-Write-Host "  heroku config               # Xem cau hinh" -ForegroundColor White
-Write-Host "  heroku restart              # Khoi dong lai" -ForegroundColor White
-Write-Host ""
-Write-Host "Nhan Enter de thoat..." -ForegroundColor Gray
-Read-Host
+Write-Host "Useful commands:" -ForegroundColor Yellow
+Write-Host "  heroku logs --tail          # View logs"
+Write-Host "  heroku run bash             # Run bash on Heroku"
+Write-Host "  heroku config               # View environment variables"
+Write-Host "  heroku config:set KEY=value # Set environment variables"

@@ -1,168 +1,159 @@
 # Hướng dẫn Deploy Bookstore_DATN lên Heroku
 
-## Bước 1: Chuẩn bị môi trường
+## Yêu cầu hệ thống
+- Windows 10/11
+- PHP 7.4+ hoặc 8.0+
+- Composer
+- Git
+- Heroku CLI
 
-### 1.1 Cài đặt Heroku CLI
-```bash
-# Windows (sử dụng Chocolatey)
-choco install heroku
+## Bước 1: Cài đặt Heroku CLI
 
-# Hoặc tải từ: https://devcenter.heroku.com/articles/heroku-cli
+### Cách 1: Tải từ trang chủ
+1. Truy cập: https://devcenter.heroku.com/articles/heroku-cli
+2. Tải file .exe cho Windows
+3. Chạy file cài đặt
+4. Khởi động lại PowerShell
+
+### Cách 2: Sử dụng winget
+```powershell
+winget install --id=Heroku.HerokuCLI
 ```
 
-### 1.2 Đăng nhập Heroku
-```bash
+### Cách 3: Sử dụng Chocolatey
+```powershell
+choco install heroku
+```
+
+## Bước 2: Đăng nhập Heroku
+```powershell
 heroku login
 ```
 
-### 1.3 Cài đặt Git (nếu chưa có)
-```bash
-# Kiểm tra git
-git --version
+## Bước 3: Chuẩn bị dự án
+Dự án đã được chuẩn bị sẵn với các file:
+- `Procfile` - Cấu hình Heroku
+- `composer.json` - Dependencies PHP
+- `.htaccess` - Apache rewrite rules
+- `app.json` - Cấu hình ứng dụng
 
-# Nếu chưa có, tải từ: https://git-scm.com/
+## Bước 4: Deploy tự động
+Chạy script PowerShell:
+```powershell
+.\deploy-to-heroku.ps1
 ```
 
-## Bước 2: Chuẩn bị dự án
+## Bước 5: Deploy thủ công (nếu cần)
 
-### 2.1 Khởi tạo Git repository (nếu chưa có)
-```bash
-cd /c:/Xampp/htdocs/Bookstore_DATN
-git init
-git add .
-git commit -m "Initial commit for Heroku deployment"
+### Tạo app Heroku
+```powershell
+heroku create your-app-name
 ```
 
-### 2.2 Cài đặt dependencies
-```bash
-composer install
-```
-
-## Bước 3: Tạo ứng dụng trên Heroku
-
-### 3.1 Tạo ứng dụng mới
-```bash
-heroku create your-bookstore-app-name
-```
-
-### 3.2 Thêm buildpack PHP
-```bash
+### Thêm buildpack PHP
+```powershell
 heroku buildpacks:set heroku/php
 ```
 
-### 3.3 Thêm PostgreSQL database
-```bash
+### Thêm PostgreSQL database
+```powershell
 heroku addons:create heroku-postgresql:mini
 ```
 
-## Bước 4: Cấu hình biến môi trường
-
-### 4.1 Lấy thông tin database
-```bash
-heroku config:get DATABASE_URL
-```
-
-### 4.2 Cấu hình biến môi trường
-```bash
-heroku config:set DB_HOST=your-db-host
-heroku config:set DB_USERNAME=your-db-username
-heroku config:set DB_PASSWORD=your-db-password
-heroku config:set DB_NAME=your-db-name
-heroku config:set DB_PORT=5432
-```
-
-## Bước 5: Deploy ứng dụng
-
-### 5.1 Push code lên Heroku
-```bash
-git add .
-git commit -m "Deploy to Heroku"
+### Deploy code
+```powershell
 git push heroku main
-```
-
-### 5.2 Kiểm tra logs
-```bash
-heroku logs --tail
-```
-
-### 5.3 Mở ứng dụng
-```bash
-heroku open
 ```
 
 ## Bước 6: Cấu hình database
 
-### 6.1 Kết nối database
-```bash
-heroku pg:psql
+### Xem thông tin database
+```powershell
+heroku config:get DATABASE_URL
 ```
 
-### 6.2 Import database schema
-```bash
-# Trong psql shell
-\i scripts/websach.sql
+### Cấu hình biến môi trường
+```powershell
+heroku config:set DB_HOST=your-host
+heroku config:set DB_USERNAME=your-username
+heroku config:set DB_PASSWORD=your-password
+heroku config:set DB_NAME=your-database
+heroku config:set DB_PORT=5432
 ```
 
-## Bước 7: Kiểm tra và test
+## Bước 7: Kiểm tra ứng dụng
 
-### 7.1 Kiểm tra trạng thái
-```bash
-heroku ps
+### Mở ứng dụng
+```powershell
+heroku open
 ```
 
-### 7.2 Kiểm tra logs
-```bash
+### Xem logs
+```powershell
 heroku logs --tail
 ```
 
-### 7.3 Test ứng dụng
-- Mở trình duyệt và truy cập URL của ứng dụng
-- Kiểm tra các chức năng chính
-- Kiểm tra kết nối database
-
-## Lưu ý quan trọng
-
-### 1. Database
-- Heroku sử dụng PostgreSQL, không phải MySQL
-- Cần chuyển đổi database schema nếu cần
-- Sử dụng biến môi trường DATABASE_URL
-
-### 2. File uploads
-- Heroku có filesystem ephemeral
-- Cần sử dụng cloud storage (AWS S3, Cloudinary) cho file uploads
-
-### 3. Email
-- Cấu hình SMTP cho Heroku
-- Sử dụng SendGrid hoặc Mailgun addon
-
-### 4. SSL
-- Heroku tự động cung cấp SSL
-- Không cần cấu hình thêm
-
-## Troubleshooting
-
-### Lỗi thường gặp:
-1. **Buildpack error**: Kiểm tra buildpack PHP
-2. **Database connection**: Kiểm tra biến môi trường
-3. **File permissions**: Kiểm tra quyền file
-4. **Memory limit**: Tăng dyno size nếu cần
-
-### Lệnh hữu ích:
-```bash
-# Restart app
-heroku restart
-
-# Check config
-heroku config
-
-# Check buildpacks
-heroku buildpacks
-
-# Check addons
-heroku addons
+### Kiểm tra trạng thái
+```powershell
+heroku ps
 ```
 
-## Liên hệ hỗ trợ
-- Heroku Support: https://help.heroku.com/
-- Heroku Dev Center: https://devcenter.heroku.com/
-- Heroku Status: https://status.heroku.com/
+## Lệnh hữu ích
+
+### Quản lý app
+```powershell
+heroku apps                    # Liệt kê apps
+heroku info                    # Thông tin app
+heroku restart                 # Khởi động lại
+```
+
+### Quản lý database
+```powershell
+heroku pg:info                # Thông tin PostgreSQL
+heroku pg:psql                # Kết nối database
+heroku pg:backups             # Quản lý backup
+```
+
+### Quản lý logs
+```powershell
+heroku logs                    # Xem logs
+heroku logs --tail            # Xem logs real-time
+heroku logs --source app      # Chỉ xem logs app
+```
+
+## Xử lý lỗi thường gặp
+
+### Lỗi buildpack
+```powershell
+heroku buildpacks:clear
+heroku buildpacks:set heroku/php
+```
+
+### Lỗi database connection
+- Kiểm tra DATABASE_URL
+- Cấu hình lại biến môi trường
+- Restart app
+
+### Lỗi 500 Internal Server Error
+- Kiểm tra logs: `heroku logs --tail`
+- Kiểm tra cấu hình database
+- Kiểm tra file .htaccess
+
+## Cập nhật ứng dụng
+
+### Deploy lại sau khi thay đổi code
+```powershell
+git add .
+git commit -m "Update message"
+git push heroku main
+```
+
+### Rollback về version cũ
+```powershell
+heroku rollback
+```
+
+## Tài nguyên tham khảo
+- [Heroku PHP Documentation](https://devcenter.heroku.com/categories/php)
+- [Heroku CLI Documentation](https://devcenter.heroku.com/articles/heroku-cli)
+- [PostgreSQL on Heroku](https://devcenter.heroku.com/articles/heroku-postgresql)
