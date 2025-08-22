@@ -50,12 +50,29 @@ function decreasingNumber(e) {
 
 
 //Xem chi tiet san pham
-function detailProduct(index) {
+async function detailProduct(index) {
     let modal = document.querySelector('.modal.product-detail');
-    let products = JSON.parse(localStorage.getItem('products'));
     event.preventDefault();
-    // Sửa: dùng so sánh == và kiểm tra null
-    let infoProduct = products.find(sp => sp.id == index);
+    
+    // Fetch dữ liệu sản phẩm mới từ server để có giá cập nhật
+    let infoProduct;
+    try {
+        const response = await fetch('src/controllers/get_products.php');
+        const products = await response.json();
+        infoProduct = products.find(sp => sp.id == index);
+        
+        if (!infoProduct) {
+            // Fallback: sử dụng localStorage nếu không tìm thấy từ server
+            const localProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            infoProduct = localProducts.find(sp => sp.id == index);
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu sản phẩm từ server:', error);
+        // Fallback: sử dụng localStorage
+        const localProducts = JSON.parse(localStorage.getItem('products') || '[]');
+        infoProduct = localProducts.find(sp => sp.id == index);
+    }
+    
     if (!infoProduct) {
         alert('Không tìm thấy thông tin sản phẩm!');
         return;
@@ -484,8 +501,30 @@ async function addCart(index) {
         note: note
     }
     let vitri = currentuser.cart.findIndex(item => item.id == productcart.id);
-    let products = JSON.parse(localStorage.getItem('products'));
-    let infoProduct = products.find(sp => sp.id == index);
+    
+    // Fetch dữ liệu sản phẩm mới từ server để có giá cập nhật
+    let infoProduct;
+    try {
+        const response = await fetch('src/controllers/get_products.php');
+        const products = await response.json();
+        infoProduct = products.find(sp => sp.id == index);
+        
+        if (!infoProduct) {
+            // Fallback: sử dụng localStorage nếu không tìm thấy từ server
+            const localProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            infoProduct = localProducts.find(sp => sp.id == index);
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu sản phẩm từ server:', error);
+        // Fallback: sử dụng localStorage
+        const localProducts = JSON.parse(localStorage.getItem('products') || '[]');
+        infoProduct = localProducts.find(sp => sp.id == index);
+    }
+    
+    if (!infoProduct) {
+        toast({ title: 'Lỗi', message: 'Không tìm thấy thông tin sản phẩm!', type: 'error', duration: 3000 });
+        return;
+    }
     let currentQtyInCart = vitri !== -1 ? parseInt(currentuser.cart[vitri].soluong) : 0;
     let totalRequestedQty = parseInt(productcart.soluong) + currentQtyInCart;
     
@@ -2418,3 +2457,60 @@ function updateProductSales(productId, quantity) {
         localStorage.setItem('products', JSON.stringify(products));
     }
 }
+
+// Function để refresh dữ liệu sản phẩm từ server (dành cho trường hợp cập nhật discount)
+async function refreshProductData() {
+    try {
+        const response = await fetch('src/controllers/get_products.php');
+        const products = await response.json();
+        
+        if (products && Array.isArray(products)) {
+            localStorage.setItem('products', JSON.stringify(products));
+            console.log('Đã cập nhật dữ liệu sản phẩm từ server');
+            
+            // Refresh hiển thị nếu đang ở trang chủ
+            if (window.location.pathname.includes('index.php') || window.location.pathname.endsWith('/')) {
+                const categoryProducts = filterProductsByCurrentCategory(products);
+                showHomeProduct(categoryProducts);
+            }
+            
+            return true;
+        }
+    } catch (error) {
+        console.error('Lỗi khi refresh dữ liệu sản phẩm:', error);
+        return false;
+    }
+}
+
+// Auto refresh dữ liệu sản phẩm mỗi 30 giây khi user đang active
+let lastActivityTime = Date.now();
+let autoRefreshInterval;
+
+function resetActivityTimer() {
+    lastActivityTime = Date.now();
+}
+
+function startAutoRefresh() {
+    // Clear interval cũ nếu có
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Refresh mỗi 30 giây nếu user active trong 5 phút gần đây
+    autoRefreshInterval = setInterval(async () => {
+        const timeSinceLastActivity = Date.now() - lastActivityTime;
+        if (timeSinceLastActivity < 5 * 60 * 1000) { // 5 phút
+            await refreshProductData();
+        }
+    }, 30000); // 30 giây
+}
+
+// Lắng nghe activity của user
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetActivityTimer, true);
+});
+
+// Bắt đầu auto refresh khi trang load
+document.addEventListener('DOMContentLoaded', () => {
+    startAutoRefresh();
+});

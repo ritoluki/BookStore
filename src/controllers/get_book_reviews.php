@@ -10,7 +10,7 @@ ini_set('display_errors', 0);
 
 try {
     // Kiểm tra file config có tồn tại không
-    if (!file_exists('config.php')) {
+    if (!file_exists('../../config/config.php')) {
         echo json_encode([
             'success' => false,
             'message' => 'File config.php không tồn tại',
