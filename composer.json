@@ -2,7 +2,9 @@
     "require": {
         "php": "^7.4|^8.0",
         "phpmailer/phpmailer": "^6.9",
-        "ralouphie/getallheaders": "^3.0"
+        "ralouphie/getallheaders": "^3.0",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*"
     },
     "require-dev": {
         "heroku/heroku-buildpack-php": "*"
