@@ -36,6 +36,28 @@ if (isPostgreSQL($conn)) {
                     echo "✅ Bảng order đã có PRIMARY KEY\n";
                 } else {
                     echo "❌ Bảng order chưa có PRIMARY KEY\n";
+                    
+                    // Kiểm tra và xóa các bản ghi có id null
+                    echo "\n4. Xử lý các bản ghi có id null:\n";
+                    $nullCheck = "SELECT COUNT(*) as null_count FROM \"order\" WHERE id IS NULL";
+                    $nullResult = db_query($conn, $nullCheck);
+                    if ($nullResult && db_num_rows($nullResult) > 0) {
+                        $nullRow = db_fetch_assoc($nullResult);
+                        $nullCount = $nullRow['null_count'];
+                        echo "- Số bản ghi có id null: {$nullCount}\n";
+                        
+                        if ($nullCount > 0) {
+                            try {
+                                $deleteNull = "DELETE FROM \"order\" WHERE id IS NULL";
+                                db_query($conn, $deleteNull);
+                                echo "✅ Đã xóa {$nullCount} bản ghi có id null\n";
+                            } catch (Exception $e) {
+                                echo "❌ Lỗi khi xóa bản ghi null: " . $e->getMessage() . "\n";
+                            }
+                        }
+                    }
+                    
+                    // Thử đặt PRIMARY KEY lại
                     try {
                         $addPK = "ALTER TABLE \"order\" ADD PRIMARY KEY (id)";
                         db_query($conn, $addPK);
