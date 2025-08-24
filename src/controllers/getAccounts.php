@@ -18,6 +18,9 @@ if ($result && db_num_rows($result) > 0) {
 
         // Kiểm tra nếu người dùng đã có trong mảng $accounts
         if (!isset($accounts[$userId])) {
+            // Debug logging
+            error_log("DEBUG: Processing user {$row['phone']}, userType: " . ($row['userType'] ?? 'NULL') . ", type: " . gettype($row['userType']));
+            
             $accounts[$userId] = array(
                 'fullname' => $row['fullname'],
                 'phone' => $row['phone'],
@@ -27,8 +30,11 @@ if ($result && db_num_rows($result) > 0) {
                 'status' => (int)$row['status'],
                 'join_date' => (new DateTime($row['join_date']))->format(DateTime::ATOM),
                 'cart' => [],
-                'userType' => isset($row['userType']) ? (int)$row['userType'] : 0
+                'userType' => isset($row['userType']) && $row['userType'] !== null ? (int)$row['userType'] : 0
             );
+            
+            // Debug logging
+            error_log("DEBUG: Final userType for {$row['phone']}: " . $accounts[$userId]['userType']);
         }
 
         // Thêm sản phẩm vào giỏ hàng

@@ -141,7 +141,7 @@ header('Content-Type: application/json');
             "success" => true,
             "message" => "Đặt hàng thành công!",
             "orderId" => $order['id'],
-            "redirect_url" => "/Bookstore_DATN/src/controllers/order_success.php?order_id=" . $order['id']
+            "redirect_url" => "./src/controllers/order_success.php?order_id=" . $order['id']
         ]);
 exit;
 ?>
