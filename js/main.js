@@ -1057,7 +1057,7 @@ signupButton.addEventListener('click', () => {
                 kiemtradangnhap();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/bookstore_datn/";
+                    window.location.reload();
                 }, 2000);
             } else {
                 toast({ title: 'Thất bại', message: 'Email hoặc số điện thoại đã tồn tại !', type: 'error', duration: 3000 });
@@ -1108,7 +1108,7 @@ loginButton.addEventListener('click', () => {
                 checkAdmin();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/bookstore_datn/";
+                    window.location.reload();
                 }, 2000);
             }
         } else {
