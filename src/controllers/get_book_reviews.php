@@ -34,11 +34,20 @@ try {
             exit;
         }
         
-        // Kiểm tra bảng có tồn tại không (đổi từ books_reviews thành book_reviews)
-        $checkTable = "SHOW TABLES LIKE 'book_reviews'";
-        $result = $conn->query($checkTable);
+        // Kiểm tra bảng có tồn tại không (PostgreSQL compatible)
+        if (isPostgreSQL($conn)) {
+            // PostgreSQL
+            $checkTable = "SELECT table_name FROM information_schema.tables WHERE table_name = 'book_reviews'";
+            $result = $conn->query($checkTable);
+            $tableExists = $result && db_num_rows($result) > 0;
+        } else {
+            // MySQL
+            $checkTable = "SHOW TABLES LIKE 'book_reviews'";
+            $result = $conn->query($checkTable);
+            $tableExists = $result && $result->num_rows > 0;
+        }
         
-        if ($result->num_rows == 0) {
+        if (!$tableExists) {
             // Bảng chưa tồn tại, trả về mảng rỗng
             echo json_encode([
                 'success' => true,
@@ -54,19 +63,16 @@ try {
         $sql = "SELECT br.*, u.fullname as user_name 
                 FROM book_reviews br 
                 LEFT JOIN users u ON br.user_id = u.id 
-                WHERE br.product_id = ? 
+                WHERE br.product_id = " . (int)$product_id . " 
                 ORDER BY br.created_at DESC";
         
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $product_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        $result = db_query($conn, $sql);
         
         $reviews = [];
         $total_rating = 0;
         
-        if ($result && $result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
+        if ($result && db_num_rows($result) > 0) {
+            while ($row = db_fetch_assoc($result)) {
                 $reviews[] = [
                     'id' => $row['id'],
                     'user_id' => $row['user_id'],
@@ -92,7 +98,7 @@ try {
             'average_rating' => $average_rating
         ]);
         
-        if (isset($stmt)) $stmt->close();
+        db_close($conn);
     } else {
         echo json_encode([
             'success' => false,
