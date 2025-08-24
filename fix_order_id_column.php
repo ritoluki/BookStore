@@ -60,6 +60,25 @@ if (isPostgreSQL($conn)) {
         
     } catch (Exception $e) {
         echo "❌ Lỗi: " . $e->getMessage() . "\n";
+        
+        // Nếu lỗi về null values, hãy sửa
+        if (strpos($e->getMessage(), 'null values') !== false) {
+            echo "\n3. Sửa lỗi null values:\n";
+            try {
+                // Xóa các bản ghi có id null
+                $deleteNull = "DELETE FROM \"order\" WHERE id IS NULL";
+                db_query($conn, $deleteNull);
+                echo "✅ Đã xóa các bản ghi có id null\n";
+                
+                // Thử đặt PRIMARY KEY lại
+                $addPK = "ALTER TABLE \"order\" ADD PRIMARY KEY (id)";
+                db_query($conn, $addPK);
+                echo "✅ Đã đặt cột id làm PRIMARY KEY\n";
+                
+            } catch (Exception $e2) {
+                echo "❌ Lỗi khi sửa null values: " . $e2->getMessage() . "\n";
+            }
+        }
     }
     
 } else {
