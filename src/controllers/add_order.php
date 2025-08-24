@@ -48,10 +48,10 @@ if ($orderResult) {
     $seen = [];
     foreach ($orderDetails as $detail) {
         $productId = isset($detail['product_id']) ? $detail['product_id'] : (isset($detail['id']) ? $detail['id'] : null);
-        $key = $productId . '-' . $detail['madon'];
+        $key = $productId . '-' . $newOrderId;
         if (!isset($seen[$key])) {
             $uniqueOrderDetails[] = [
-                'madon' => $detail['madon'],
+                'madon' => $newOrderId, // Dùng ID mới của order
                 'product_id' => $productId,
                 'note' => $detail['note'],
                 'price' => $detail['price'],
@@ -65,8 +65,11 @@ if ($orderResult) {
         db_query($conn, $sqlOrderDetails, $detailParams);
     }
 
+    // Lấy ID của đơn hàng vừa tạo
+    $newOrderId = db_insert_id($conn);
+    
     // Cập nhật số lượng sử dụng discount
-    updateDiscountUsage($order['id'], $conn);
+    updateDiscountUsage($newOrderId, $conn);
 }
 
 // Hàm cập nhật số lượng sử dụng discount
