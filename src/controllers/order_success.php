@@ -14,11 +14,10 @@ if ($order_id) {
             JOIN users u ON o.khachhang = u.id 
             WHERE o.id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $order_id);
+    $stmt->bindParam(1, $order_id);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $order = $result->fetch_assoc();
-    $stmt->close();
+    $result = $stmt;
+    $order = $result->fetch(PDO::FETCH_ASSOC);
 
     if ($order) {
         // Lấy chi tiết đơn hàng
@@ -27,13 +26,12 @@ if ($order_id) {
                        JOIN products p ON od.product_id = p.id 
                        WHERE od.madon = ?";
         $stmtDetails = $conn->prepare($sqlDetails);
-        $stmtDetails->bind_param("s", $order_id);
+        $stmtDetails->bindParam(1, $order_id);
         $stmtDetails->execute();
-        $resultDetails = $stmtDetails->get_result();
-        while ($row = $resultDetails->fetch_assoc()) {
+        $resultDetails = $stmtDetails;
+        while ($row = $resultDetails->fetch(PDO::FETCH_ASSOC)) {
             $orderDetails[] = $row;
         }
-        $stmtDetails->close();
     }
 }
 
