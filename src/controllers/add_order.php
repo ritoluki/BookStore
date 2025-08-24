@@ -39,6 +39,9 @@ $orderParams = [$order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohan
 // Thực thi câu lệnh SQL để thêm đơn hàng
 $orderResult = db_query($conn, $sqlOrder, $orderParams);
 if ($orderResult) {
+    // Lấy ID của đơn hàng vừa tạo TRƯỚC KHI sử dụng
+    $newOrderId = db_insert_id($conn);
+    
     // Chuẩn bị câu lệnh SQL để thêm chi tiết đơn hàng vào bảng 'orderdetails'
     // Bỏ cột id vì nó sẽ tự động tăng
     $sqlOrderDetails = "INSERT INTO orderdetails (madon, product_id, note, product_price, soluong) VALUES (?, ?, ?, ?, ?)";
@@ -64,9 +67,6 @@ if ($orderResult) {
         $detailParams = [$detail['madon'], $detail['product_id'], $detail['note'], $detail['price'], $detail['soluong']];
         db_query($conn, $sqlOrderDetails, $detailParams);
     }
-
-    // Lấy ID của đơn hàng vừa tạo
-    $newOrderId = db_insert_id($conn);
     
     // Cập nhật số lượng sử dụng discount
     updateDiscountUsage($newOrderId, $conn);
@@ -125,9 +125,7 @@ function updateDiscountUsage($orderId, $conn) {
 db_close($conn);
 
 // Đảm bảo không có ký tự thừa trước khi trả về JSON
-header('Content-Type: application/json');
-        // Lấy ID của đơn hàng vừa tạo
-        $newOrderId = db_insert_id($conn);
+        // Lấy ID của đơn hàng vừa tạo (đã có từ trước)
         
         echo json_encode([
             "success" => true,
