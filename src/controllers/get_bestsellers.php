@@ -3,9 +3,16 @@ header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 try {
-    // Kiểm tra xem cột min_order_amount có tồn tại không
-    $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
-    $hasMinOrderAmount = $checkColumn && $checkColumn->num_rows > 0;
+    // Kiểm tra xem cột min_order_amount có tồn tại không (PostgreSQL compatible)
+    if (isPostgreSQL($conn)) {
+        // PostgreSQL
+        $checkColumn = $conn->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'discounts' AND column_name = 'min_order_amount'");
+        $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+    } else {
+        // MySQL
+        $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
+        $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+    }
     
     // Lấy danh sách sách bán chạy dựa trên số lượng đã bán với thông tin giảm giá
     $sql = "SELECT DISTINCT
@@ -31,7 +38,7 @@ try {
                 
             FROM products p
             LEFT JOIN orderdetails od ON p.id = od.product_id
-            LEFT JOIN "order" o ON od.madon = o.id
+            LEFT JOIN \"order\" o ON od.madon = o.id
             LEFT JOIN (
                 -- Subquery để lấy discount tốt nhất cho mỗi sản phẩm
                 SELECT 
@@ -60,12 +67,11 @@ try {
             ORDER BY sold_quantity DESC
             LIMIT 20"; // Lấy top 20 sách bán chạy
 
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    $result = db_query($conn, $sql);
     
     $bestsellers = [];
-    while ($row = $result->fetch_assoc()) {
+    if ($result && db_num_rows($result) > 0) {
+        while ($row = db_fetch_assoc($result)) {
         $bestsellers[] = [
             'id' => $row['id'],
             'title' => $row['title'],
@@ -85,6 +91,7 @@ try {
             'min_order_amount' => $hasMinOrderAmount ? (float)($row['min_order_amount'] ?? 0) : 0,
             'is_discounted' => isset($row['discounted_price']) && $row['discounted_price'] !== null
         ];
+        }
     }
     
     echo json_encode([
@@ -99,6 +106,5 @@ try {
     ]);
 }
 
-$stmt->close();
-$conn->close();
+db_close($conn);
 ?>

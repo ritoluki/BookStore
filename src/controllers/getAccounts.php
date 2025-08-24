@@ -27,7 +27,7 @@ if ($result && db_num_rows($result) > 0) {
                 'status' => (int)$row['status'],
                 'join_date' => (new DateTime($row['join_date']))->format(DateTime::ATOM),
                 'cart' => [],
-                'userType' => (int)$row['userType']
+                'userType' => isset($row['userType']) ? (int)$row['userType'] : 0
             );
         }
 
