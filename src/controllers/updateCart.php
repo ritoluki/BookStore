@@ -15,13 +15,10 @@ $userPhone = $input['phone'];
 $cart = $input['cart'];
 
 // Xóa giỏ hàng cũ của người dùng
-$sql = "DELETE c 
-FROM cart c
-JOIN users u ON c.user_id = u.id
-WHERE u.phone = '$userPhone';
-";
-if ($conn->query($sql) === FALSE) {
-    die(json_encode(["status" => "error", "message" => "Lỗi khi xóa giỏ hàng: " . $conn->error]));
+$sql = "DELETE FROM cart WHERE user_id = (SELECT id FROM users WHERE phone = '$userPhone')";
+$result = db_query($conn, $sql);
+if (!$result) {
+    die(json_encode(["status" => "error", "message" => "Lỗi khi xóa giỏ hàng"]));
 }
 
 // Chèn giỏ hàng mới vào cơ sở dữ liệu
@@ -35,12 +32,13 @@ foreach ($cart as $item) {
         (SELECT id FROM users WHERE phone = '$userPhone'),
         '$productId', '$quantity', '$note')";
 
-    if ($conn->query($sql) === FALSE) {
-        die(json_encode(["status" => "error", "message" => "Lỗi khi chèn giỏ hàng: " . $conn->error]));
+    $result = db_query($conn, $sql);
+    if (!$result) {
+        die(json_encode(["status" => "error", "message" => "Lỗi khi chèn giỏ hàng"]));
     }
 }
 
 echo json_encode(["status" => "success", "message" => "Giỏ hàng đã được cập nhật."]);
 
-$conn->close();
+db_close($conn);
 ?>
