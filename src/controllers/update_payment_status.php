@@ -32,7 +32,7 @@ if ($paymentStatus !== 0 && $paymentStatus !== 1) {
 
 try {
     // Prepare SQL statement to update the payment status
-    $sql = "UPDATE `order` SET payment_status = ? WHERE id = ?";
+    $sql = "UPDATE "order" SET payment_status = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
     
     if (!$stmt) {

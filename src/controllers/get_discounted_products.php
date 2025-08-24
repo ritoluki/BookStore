@@ -24,7 +24,7 @@ try {
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
                 LEFT JOIN orderdetails od ON p.id = od.product_id 
-                LEFT JOIN `order` o ON od.madon = o.id 
+                LEFT JOIN "order" o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1
                 AND NOW() BETWEEN d.start_date AND d.end_date
@@ -48,7 +48,7 @@ try {
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
                 LEFT JOIN orderdetails od ON p.id = od.product_id 
-                LEFT JOIN `order` o ON od.madon = o.id 
+                LEFT JOIN "order" o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1
                 AND NOW() BETWEEN d.start_date AND d.end_date

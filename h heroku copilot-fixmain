@@ -1,0 +1,139 @@
+[1mdiff --git a/src/controllers/getAccounts.php b/src/controllers/getAccounts.php[m
+[1mindex 5b6b066..ff3812e 100644[m
+[1m--- a/src/controllers/getAccounts.php[m
+[1m+++ b/src/controllers/getAccounts.php[m
+[36m@@ -8,12 +8,12 @@[m [mrequire_once '../../config/config.php';[m
+ $sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.userType, c.product_id, c.quantity, c.note[m
+         FROM users u[m
+         LEFT JOIN cart c ON u.id = c.user_id";[m
+[31m-$result = $conn->query($sql);[m
+[32m+[m[32m$result = db_query($conn, $sql);[m
+ [m
+ $accounts = array();[m
+ [m
+[31m-if ($result->num_rows > 0) {[m
+[31m-    while($row = $result->fetch_assoc()) {[m
+[32m+[m[32mif ($result && db_num_rows($result) > 0) {[m
+[32m+[m[32m    while($row = db_fetch_assoc($result)) {[m
+         $userId = $row['phone']; // Giả sử phone là unique và được dùng làm key[m
+ [m
+         // Kiểm tra nếu người dùng đã có trong mảng $accounts[m
+[36m@@ -47,5 +47,5 @@[m [m$accounts = array_values($accounts);[m
+ [m
+ echo json_encode($accounts);[m
+ [m
+[31m-$conn->close();[m
+[32m+[m[32mdb_close($conn);[m
+ ?>[m
+[1mdiff --git a/src/controllers/get_orders.php b/src/controllers/get_orders.php[m
+[1mindex 3f350d3..9e41873 100644[m
+[1m--- a/src/controllers/get_orders.php[m
+[1m+++ b/src/controllers/get_orders.php[m
+[36m@@ -6,33 +6,35 @@[m [mrequire_once '../../config/config.php';[m
+ [m
+ // Lấy tất cả đơn hàng từ database[m
+ $sql = "SELECT * FROM `order` ORDER BY thoigiandat DESC";[m
+[31m-$result = mysqli_query($conn, $sql);[m
+[32m+[m[32m$result = db_query($conn, $sql);[m
+ [m
+ $orders = array();[m
+[31m-while ($row = mysqli_fetch_assoc($result)) {[m
+[31m-    // Check if columns exist in the result[m
+[31m-    $payment_method = isset($row['payment_method']) ? $row['payment_method'] : null;[m
+[31m-    $payment_status = isset($row['payment_status']) ? (int)$row['payment_status'] : 0;[m
+[31m-    [m
+[31m-    $orders[] = array([m
+[31m-        'id' => $row['id'],[m
+[31m-        'khachhang' => $row['khachhang'],[m
+[31m-        'hinhthucgiao' => $row['hinhthucgiao'],[m
+[31m-        'ngaygiaohang' => $row['ngaygiaohang'],[m
+[31m-        'thoigiangiao' => $row['thoigiangiao'],[m
+[31m-        'ghichu' => $row['ghichu'],[m
+[31m-        'tenguoinhan' => $row['tenguoinhan'],[m
+[31m-        'sdtnhan' => $row['sdtnhan'],[m
+[31m-        'diachinhan' => $row['diachinhan'],[m
+[31m-        'thoigiandat' => $row['thoigiandat'],[m
+[31m-        'tongtien' => (int)$row['tongtien'],[m
+[31m-        'trangthai' => (int)$row['trangthai'],[m
+[31m-        'payment_method' => $payment_method,[m
+[31m-        'payment_status' => $payment_status[m
+[31m-    );[m
+[32m+[m[32mif ($result && db_num_rows($result) > 0) {[m
+[32m+[m[32m    while ($row = db_fetch_assoc($result)) {[m
+[32m+[m[32m        // Check if columns exist in the result[m
+[32m+[m[32m        $payment_method = isset($row['payment_method']) ? $row['payment_method'] : null;[m
+[32m+[m[32m        $payment_status = isset($row['payment_status']) ? (int)$row['payment_status'] : 0;[m
+[32m+[m[41m        [m
+[32m+[m[32m        $orders[] = array([m
+[32m+[m[32m            'id' => $row['id'],[m
+[32m+[m[32m            'khachhang' => $row['khachhang'],[m
+[32m+[m[32m            'hinhthucgiao' => $row['hinhthucgiao'],[m
+[32m+[m[32m            'ngaygiaohang' => $row['ngaygiaohang'],[m
+[32m+[m[32m            'thoigiangiao' => $row['thoigiangiao'],[m
+[32m+[m[32m            'ghichu' => $row['ghichu'],[m
+[32m+[m[32m            'tenguoinhan' => $row['tenguoinhan'],[m
+[32m+[m[32m            'sdtnhan' => $row['sdtnhan'],[m
+[32m+[m[32m            'diachinhan' => $row['diachinhan'],[m
+[32m+[m[32m            'thoigiandat' => $row['thoigiandat'],[m
+[32m+[m[32m            'tongtien' => (int)$row['tongtien'],[m
+[32m+[m[32m            'trangthai' => (int)$row['trangthai'],[m
+[32m+[m[32m            'payment_method' => $payment_method,[m
+[32m+[m[32m            'payment_status' => $payment_status[m
+[32m+[m[32m        );[m
+[32m+[m[32m    }[m
+ }[m
+ [m
+ echo json_encode($orders);[m
+ [m
+[31m-mysqli_close($conn);[m
+[32m+[m[32mdb_close($conn);[m
+ ?>[m
+[1mdiff --git a/src/controllers/get_products.php b/src/controllers/get_products.php[m
+[1mindex 03a322c..8a24741 100644[m
+[1m--- a/src/controllers/get_products.php[m
+[1m+++ b/src/controllers/get_products.php[m
+[36m@@ -1,9 +1,16 @@[m
+ <?php[m
+ require_once '../../config/config.php';[m
+ [m
+[31m-// Kiểm tra xem cột min_order_amount có tồn tại không[m
+[31m-$checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");[m
+[31m-$hasMinOrderAmount = $checkColumn && $checkColumn->num_rows > 0;[m
+[32m+[m[32m// Kiểm tra xem cột min_order_amount có tồn tại không (PostgreSQL compatible)[m
+[32m+[m[32mif (isPostgreSQL($conn)) {[m
+[32m+[m[32m    // PostgreSQL[m
+[32m+[m[32m    $checkColumn = $conn->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'discounts' AND column_name = 'min_order_amount'");[m
+[32m+[m[32m    $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;[m
+[32m+[m[32m} else {[m
+[32m+[m[32m    // MySQL[m
+[32m+[m[32m    $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");[m
+[32m+[m[32m    $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;[m
+[32m+[m[32m}[m
+ [m
+ // Truy vấn dữ liệu từ bảng sản phẩm với số lượng đã bán và thông tin giảm giá[m
+ $sql = "SELECT DISTINCT[m
+[36m@@ -56,13 +63,13 @@[m [m$sql = "SELECT DISTINCT[m
+                  d.discount_type, d.discount_value" . ($hasMinOrderAmount ? ", d.min_order_amount" : "") . "[m
+         ORDER BY p.id";[m
+ [m
+[31m-$result = $conn->query($sql);[m
+[32m+[m[32m$result = db_query($conn, $sql);[m
+ [m
+ $products = array();[m
+ [m
+[31m-if ($result->num_rows > 0) {[m
+[32m+[m[32mif ($result && db_num_rows($result) > 0) {[m
+     // Lưu dữ liệu sản phẩm vào mảng[m
+[31m-    while($row = $result->fetch_assoc()) {[m
+[32m+[m[32m    while($row = db_fetch_assoc($result)) {[m
+         $row['soluong'] = (int)$row['soluong'];[m
+         $row['sold_quantity'] = (int)$row['sold_quantity'];[m
+         $row['is_bestseller'] = (int)$row['sold_quantity'] > 10; // Đánh dấu sách bán chạy[m
+[36m@@ -93,5 +100,5 @@[m [mif ($result->num_rows > 0) {[m
+ header('Content-Type: application/json');[m
+ echo json_encode($products);[m
+ [m
+[31m-$conn->close();[m
+[32m+[m[32mdb_close($conn);[m
+ ?>[m
+\ No newline at end of file[m

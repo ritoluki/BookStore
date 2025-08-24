@@ -11,7 +11,7 @@ $order_id = $_GET['order_id'];
 
 try {
     // Lấy thông tin đơn hàng từ bảng order
-    $sql = "SELECT * FROM `order` WHERE id = ?";
+    $sql = "SELECT * FROM "order" WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $order_id);
     $stmt->execute();

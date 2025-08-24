@@ -87,7 +87,7 @@ try {
     $stmtDetail->close();
     
     // Xóa đơn hàng
-    $sql = "DELETE FROM `order` WHERE id = ?";
+    $sql = "DELETE FROM "order" WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $orderId);
     

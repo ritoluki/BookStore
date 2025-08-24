@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 // Lấy tất cả đơn hàng từ database
-$sql = "SELECT * FROM `order` ORDER BY thoigiandat DESC";
+$sql = "SELECT * FROM \"order\" ORDER BY thoigiandat DESC";
 $result = db_query($conn, $sql);
 
 $orders = array();

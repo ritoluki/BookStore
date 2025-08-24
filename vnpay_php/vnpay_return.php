@@ -138,7 +138,7 @@
                 $orderId = isset($_GET['vnp_TxnRef']) ? $_GET['vnp_TxnRef'] : '';
                 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
                 if (!$conn->connect_error && $orderId) {
-                    $stmt = $conn->prepare("UPDATE `order` SET trangthai = 1, payment_status = 1 WHERE id = ?");
+                    $stmt = $conn->prepare("UPDATE "order" SET trangthai = 1, payment_status = 1 WHERE id = ?");
                     $stmt->bind_param("s", $orderId);
                     $stmt->execute();
                     $stmt->close();
