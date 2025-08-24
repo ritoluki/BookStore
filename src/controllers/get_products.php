@@ -1,4 +1,5 @@
 <?php
+header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 // Kiểm tra xem cột min_order_amount có tồn tại không (PostgreSQL compatible)
@@ -97,8 +98,6 @@ if ($result && db_num_rows($result) > 0) {
 }
 
 // Trả về dữ liệu dưới dạng JSON
-header('Content-Type: application/json');
 echo json_encode($products);
-
 db_close($conn);
 ?>

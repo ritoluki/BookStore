@@ -6,9 +6,16 @@ try {
     // Lấy category nếu có (để filter theo category hiện tại)
     $category = $_GET['category'] ?? null;
     
-    // Kiểm tra xem cột min_order_amount có tồn tại không
-    $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
-    $hasMinOrderAmount = $checkColumn && $checkColumn->num_rows > 0;
+    // Kiểm tra xem cột min_order_amount có tồn tại không (PostgreSQL compatible)
+    if (isPostgreSQL($conn)) {
+        // PostgreSQL
+        $checkColumn = $conn->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'discounts' AND column_name = 'min_order_amount'");
+        $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+    } else {
+        // MySQL
+        $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
+        $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+    }
     
     if ($hasMinOrderAmount) {
         // Query với min_order_amount
@@ -24,7 +31,7 @@ try {
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
                 LEFT JOIN orderdetails od ON p.id = od.product_id 
-                LEFT JOIN "order" o ON od.madon = o.id 
+                LEFT JOIN \"order\" o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1
                 AND NOW() BETWEEN d.start_date AND d.end_date
@@ -48,26 +55,27 @@ try {
                 INNER JOIN discount_products dp ON p.id = dp.product_id
                 INNER JOIN discounts d ON dp.discount_id = d.id
                 LEFT JOIN orderdetails od ON p.id = od.product_id 
-                LEFT JOIN "order" o ON od.madon = o.id 
+                LEFT JOIN \"order\" o ON od.madon = o.id 
                 WHERE p.status = 1 
                 AND d.status = 1
                 AND NOW() BETWEEN d.start_date AND d.end_date
                 AND (d.max_uses = 0 OR d.current_uses < d.max_uses)
                 " . ($category ? "AND p.category = ?" : "") . "
-                AND (o.trangthai IS NULL OR o.trangthai != 4)
+                AND (o.trangthai != 4)
                 GROUP BY p.id, p.title, p.price, p.img, p.category, p.describes, p.status, p.soluong, d.discount_type, d.discount_value
                 ORDER BY d.discount_value DESC";
     }
     
-    $stmt = $conn->prepare($sql);
     if ($category) {
-        $stmt->bind_param("s", $category);
+        // Thay thế placeholder trong SQL
+        $sql = str_replace('?', "'" . db_escape_string($conn, $category) . "'", $sql);
     }
-    $stmt->execute();
-    $result = $stmt->get_result();
+    
+    $result = db_query($conn, $sql);
     
     $discountedProducts = [];
-    while ($row = $result->fetch_assoc()) {
+    if ($result && db_num_rows($result) > 0) {
+        while ($row = db_fetch_assoc($result)) {
         $discountedProducts[] = [
             'id' => $row['id'],
             'title' => $row['title'],
@@ -84,6 +92,7 @@ try {
             'min_order_amount' => isset($row['min_order_amount']) ? (float)$row['min_order_amount'] : 0,
             'is_discounted' => true
         ];
+        }
     }
     
     echo json_encode([
