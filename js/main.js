@@ -3,6 +3,22 @@ function vnd(price) {
     return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 }
 
+// Load accounts from database to localStorage
+async function loadAccountsFromDatabase() {
+    try {
+        const response = await fetch('src/controllers/getAccounts.php');
+        if (response.ok) {
+            const accounts = await response.json();
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            console.log('Loaded accounts from database:', accounts.length, 'accounts');
+        } else {
+            console.error('Failed to load accounts from database');
+        }
+    } catch (error) {
+        console.error('Error loading accounts:', error);
+    }
+}
+
 // Close popup 
 const body = document.querySelector("body");
 let modalContainer = document.querySelectorAll('.modal');
@@ -1154,8 +1170,11 @@ function checkAdmin() {
     }
 }
 
-window.onload = kiemtradangnhap();
-window.onload = checkAdmin();
+window.onload = function() {
+    loadAccountsFromDatabase();
+    kiemtradangnhap();
+    checkAdmin();
+};
 
 // Chuyển đổi trang chủ và trang thông tin tài khoản
 function myAccount() {
@@ -1669,6 +1688,8 @@ function showHomeProduct(products) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Load accounts from database first
+    loadAccountsFromDatabase();
     kiemtradangnhap();
     checkAdmin();
     updateAmount();
