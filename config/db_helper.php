@@ -7,13 +7,50 @@ function isPostgreSQL($conn) {
 }
 
 // Universal query function
-function db_query($conn, $sql) {
+function db_query($conn, $sql, $params = []) {
     if (isPostgreSQL($conn)) {
-        // PostgreSQL
-        return $conn->query($sql);
+        // PostgreSQL with parameterized query
+        if (!empty($params)) {
+            $stmt = $conn->prepare($sql);
+            if ($stmt) {
+                $stmt->execute($params);
+                return $stmt;
+            }
+            return false;
+        } else {
+            return $conn->query($sql);
+        }
     } else {
-        // MySQL
-        return mysqli_query($conn, $sql);
+        // MySQL with parameterized query
+        if (!empty($params)) {
+            $stmt = mysqli_prepare($conn, $sql);
+            if ($stmt) {
+                // Convert params to types for bind_param
+                $types = '';
+                $bindParams = [];
+                foreach ($params as $param) {
+                    if (is_int($param)) {
+                        $types .= 'i';
+                    } elseif (is_float($param)) {
+                        $types .= 'd';
+                    } else {
+                        $types .= 's';
+                    }
+                    $bindParams[] = $param;
+                }
+                
+                if (!empty($bindParams)) {
+                    array_unshift($bindParams, $types);
+                    call_user_func_array([$stmt, 'bind_param'], $bindParams);
+                }
+                
+                mysqli_stmt_execute($stmt);
+                return $stmt;
+            }
+            return false;
+        } else {
+            return mysqli_query($conn, $sql);
+        }
     }
 }
 

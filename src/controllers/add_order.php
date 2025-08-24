@@ -81,47 +81,41 @@ function updateDiscountUsage($orderId, $conn) {
                   AND NOW() BETWEEN d.start_date AND d.end_date
                   AND (d.max_uses = 0 OR d.current_uses < d.max_uses)";
         
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $orderId);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        $updatedDiscounts = [];
-        while ($row = $result->fetch_assoc()) {
-            $discountId = $row['discount_id'];
-            $maxUses = (int)$row['max_uses'];
-            $currentUses = (int)$row['current_uses'];
-            $orderedQuantity = (int)$row['soluong'];
-            
-            // Tính số lượng có thể áp dụng giảm giá
-            $incrementAmount = $orderedQuantity;
-            if ($maxUses > 0) {
-                $remainingUses = $maxUses - $currentUses;
-                $incrementAmount = min($orderedQuantity, $remainingUses);
-            }
-            
-            if ($incrementAmount > 0) {
-                // Cập nhật current_uses cho discount
-                $sqlUpdate = "UPDATE discounts SET current_uses = current_uses + ? WHERE id = ?";
-                $stmtUpdate = $conn->prepare($sqlUpdate);
-                $stmtUpdate->bind_param("ii", $incrementAmount, $discountId);
-                if (!$stmtUpdate->execute()) {
-                    error_log("Không thể cập nhật current_uses cho discount ID: " . $discountId);
+        $result = db_query($conn, $sql, [$orderId]);
+        if ($result) {
+            $updatedDiscounts = [];
+            while ($row = db_fetch_assoc($result)) {
+                $discountId = $row['discount_id'];
+                $maxUses = (int)$row['max_uses'];
+                $currentUses = (int)$row['current_uses'];
+                $orderedQuantity = (int)$row['soluong'];
+                
+                // Tính số lượng có thể áp dụng giảm giá
+                $incrementAmount = $orderedQuantity;
+                if ($maxUses > 0) {
+                    $remainingUses = $maxUses - $currentUses;
+                    $incrementAmount = min($orderedQuantity, $remainingUses);
                 }
-                $stmtUpdate->close();
-                $updatedDiscounts[$discountId] = ($updatedDiscounts[$discountId] ?? 0) + $incrementAmount;
+                
+                if ($incrementAmount > 0) {
+                    // Cập nhật current_uses cho discount
+                    $sqlUpdate = "UPDATE discounts SET current_uses = current_uses + ? WHERE id = ?";
+                    db_query($conn, $sqlUpdate, [$incrementAmount, $discountId]);
+                    $updatedDiscounts[$discountId] = ($updatedDiscounts[$discountId] ?? 0) + $incrementAmount;
+                }
             }
-        }
-        $stmt->close();
-        
-        if (!empty($updatedDiscounts)) {
-            error_log("Đã cập nhật discount usage: " . json_encode($updatedDiscounts));
+            
+            if (!empty($updatedDiscounts)) {
+                error_log("Đã cập nhật discount usage: " . json_encode($updatedDiscounts));
+            }
         }
         
     } catch (Exception $e) {
         error_log("Lỗi cập nhật discount usage: " . $e->getMessage());
     }
 }
+
+
 
 db_close($conn);
 
