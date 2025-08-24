@@ -1,4 +1,5 @@
 <?php
+header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 // Lấy dữ liệu từ yêu cầu POST
@@ -14,40 +15,31 @@ $khachhang = $order['khachhang'];
 
 // Nếu không phải số, hoặc là số nhưng không tìm thấy theo id, thử tìm theo số điện thoại
 $sql_user = "SELECT email FROM users WHERE id = ?";
-$stmt_user = $conn->prepare($sql_user);
-$stmt_user->bind_param("i", $khachhang);
-$stmt_user->execute();
-$result = $stmt_user->get_result();
-if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
+$result = db_query($conn, $sql_user, [$khachhang]);
+if ($result && db_num_rows($result) > 0) {
+    $row = db_fetch_assoc($result);
     $user_email = $row['email'];
 } else {
     // Thử tìm theo số điện thoại
-    $stmt_user->close();
     $sql_user_phone = "SELECT email, id FROM users WHERE phone = ?";
-    $stmt_user_phone = $conn->prepare($sql_user_phone);
-    $stmt_user_phone->bind_param("s", $khachhang);
-    $stmt_user_phone->execute();
-    $result_phone = $stmt_user_phone->get_result();
-    if ($result_phone->num_rows > 0) {
-        $row_phone = $result_phone->fetch_assoc();
+    $result_phone = db_query($conn, $sql_user_phone, [$khachhang]);
+    if ($result_phone && db_num_rows($result_phone) > 0) {
+        $row_phone = db_fetch_assoc($result_phone);
         $user_email = $row_phone['email'];
         // Cập nhật lại id cho đơn hàng nếu cần
         $order['khachhang'] = $row_phone['id'];
     }
-    $stmt_user_phone->close();
 }
 
 // Chuẩn bị câu lệnh SQL để thêm đơn hàng vào bảng 'order'
 $sqlOrder = "INSERT INTO \"order\" (id, khachhang, hinhthucgiao, ngaygiaohang, thoigiangiao, ghichu, tenguoinhan, sdtnhan, diachinhan, thoigiandat, tongtien, trangthai, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-$stmtOrder = $conn->prepare($sqlOrder);
-$stmtOrder->bind_param("ssssssssssiis", $order['id'], $order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohang'], $order['thoigiangiao'], $order['ghichu'], $order['tenguoinhan'], $order['sdtnhan'], $order['diachinhan'], $thoigiandat, $order['tongtien'], $order['trangthai'], $order['payment_method']);
+$orderParams = [$order['id'], $order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohang'], $order['thoigiangiao'], $order['ghichu'], $order['tenguoinhan'], $order['sdtnhan'], $order['diachinhan'], $thoigiandat, $order['tongtien'], $order['trangthai'], $order['payment_method']];
 
 // Thực thi câu lệnh SQL để thêm đơn hàng
-if ($stmtOrder->execute()) {
+$orderResult = db_query($conn, $sqlOrder, $orderParams);
+if ($orderResult) {
     // Chuẩn bị câu lệnh SQL để thêm chi tiết đơn hàng vào bảng 'orderdetails'
     $sqlOrderDetails = "INSERT INTO orderdetails (madon, product_id, note, product_price, soluong) VALUES (?, ?, ?, ?, ?)";
-    $stmtOrderDetails = $conn->prepare($sqlOrderDetails);
     
     // Loại bỏ duplicate theo product_id + madon
     $uniqueOrderDetails = [];
@@ -67,8 +59,8 @@ if ($stmtOrder->execute()) {
         }
     }
     foreach ($uniqueOrderDetails as $detail) {
-        $stmtOrderDetails->bind_param("sisii", $detail['madon'], $detail['product_id'], $detail['note'], $detail['price'], $detail['soluong']);
-        $stmtOrderDetails->execute();
+        $detailParams = [$detail['madon'], $detail['product_id'], $detail['note'], $detail['price'], $detail['soluong']];
+        db_query($conn, $sqlOrderDetails, $detailParams);
     }
 
     // Cập nhật số lượng sử dụng discount
@@ -131,9 +123,7 @@ function updateDiscountUsage($orderId, $conn) {
     }
 }
 
-$stmtOrder->close();
-$stmtOrderDetails->close();
-$conn->close();
+db_close($conn);
 
 // Đảm bảo không có ký tự thừa trước khi trả về JSON
 header('Content-Type: application/json');

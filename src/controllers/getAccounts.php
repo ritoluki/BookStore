@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 // Truy vấn để lấy thông tin người dùng và giỏ hàng của họ
-$sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.userType, c.product_id, c.quantity, c.note
+$sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.usertype, c.product_id, c.quantity, c.note
         FROM users u
         LEFT JOIN cart c ON u.id = c.user_id";
 $result = db_query($conn, $sql);
@@ -19,7 +19,7 @@ if ($result && db_num_rows($result) > 0) {
         // Kiểm tra nếu người dùng đã có trong mảng $accounts
         if (!isset($accounts[$userId])) {
             // Debug logging
-            error_log("DEBUG: Processing user {$row['phone']}, userType: " . ($row['userType'] ?? 'NULL') . ", type: " . gettype($row['userType']));
+            error_log("DEBUG: Processing user {$row['phone']}, usertype: " . ($row['usertype'] ?? 'NULL') . ", type: " . gettype($row['usertype']));
             
             $accounts[$userId] = array(
                 'fullname' => $row['fullname'],
@@ -30,7 +30,7 @@ if ($result && db_num_rows($result) > 0) {
                 'status' => (int)$row['status'],
                 'join_date' => (new DateTime($row['join_date']))->format(DateTime::ATOM),
                 'cart' => [],
-                'userType' => isset($row['userType']) && $row['userType'] !== null ? (int)$row['userType'] : 0
+                'userType' => isset($row['usertype']) && $row['usertype'] !== null ? (int)$row['usertype'] : 0
             );
             
             // Debug logging
