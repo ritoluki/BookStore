@@ -1,9 +1,16 @@
 <?php
 require_once '../../config/config.php';
 
-// Kiểm tra xem cột min_order_amount có tồn tại không
-$checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
-$hasMinOrderAmount = $checkColumn && $checkColumn->num_rows > 0;
+// Kiểm tra xem cột min_order_amount có tồn tại không (PostgreSQL compatible)
+if (isPostgreSQL($conn)) {
+    // PostgreSQL
+    $checkColumn = $conn->query("SELECT column_name FROM information_schema.columns WHERE table_name = 'discounts' AND column_name = 'min_order_amount'");
+    $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+} else {
+    // MySQL
+    $checkColumn = $conn->query("SHOW COLUMNS FROM discounts LIKE 'min_order_amount'");
+    $hasMinOrderAmount = $checkColumn && db_num_rows($checkColumn) > 0;
+}
 
 // Truy vấn dữ liệu từ bảng sản phẩm với số lượng đã bán và thông tin giảm giá
 $sql = "SELECT DISTINCT
@@ -56,13 +63,13 @@ $sql = "SELECT DISTINCT
                  d.discount_type, d.discount_value" . ($hasMinOrderAmount ? ", d.min_order_amount" : "") . "
         ORDER BY p.id";
 
-$result = $conn->query($sql);
+$result = db_query($conn, $sql);
 
 $products = array();
 
-if ($result->num_rows > 0) {
+if ($result && db_num_rows($result) > 0) {
     // Lưu dữ liệu sản phẩm vào mảng
-    while($row = $result->fetch_assoc()) {
+    while($row = db_fetch_assoc($result)) {
         $row['soluong'] = (int)$row['soluong'];
         $row['sold_quantity'] = (int)$row['sold_quantity'];
         $row['is_bestseller'] = (int)$row['sold_quantity'] > 10; // Đánh dấu sách bán chạy
@@ -93,5 +100,5 @@ if ($result->num_rows > 0) {
 header('Content-Type: application/json');
 echo json_encode($products);
 
-$conn->close();
+db_close($conn);
 ?>

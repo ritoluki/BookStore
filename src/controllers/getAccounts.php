@@ -8,12 +8,12 @@ require_once '../../config/config.php';
 $sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.userType, c.product_id, c.quantity, c.note
         FROM users u
         LEFT JOIN cart c ON u.id = c.user_id";
-$result = $conn->query($sql);
+$result = db_query($conn, $sql);
 
 $accounts = array();
 
-if ($result->num_rows > 0) {
-    while($row = $result->fetch_assoc()) {
+if ($result && db_num_rows($result) > 0) {
+    while($row = db_fetch_assoc($result)) {
         $userId = $row['phone']; // Giả sử phone là unique và được dùng làm key
 
         // Kiểm tra nếu người dùng đã có trong mảng $accounts
@@ -47,5 +47,5 @@ $accounts = array_values($accounts);
 
 echo json_encode($accounts);
 
-$conn->close();
+db_close($conn);
 ?>
