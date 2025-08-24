@@ -10,7 +10,7 @@ $orderDetails = [];
 if ($order_id) {
     // Lấy thông tin đơn hàng
     $sql = "SELECT o.*, u.fullname, u.phone, u.address, u.email 
-            FROM "order" o 
+            FROM \"order\" o 
             JOIN users u ON o.khachhang = u.id 
             WHERE o.id = ?";
     $stmt = $conn->prepare($sql);

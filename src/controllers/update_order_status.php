@@ -15,7 +15,7 @@ try {
     $status = $data['status'];
 
     // Lấy thông tin đơn hàng trước khi cập nhật, JOIN với users để lấy email (JOIN qua id)
-    $sql_get_order = "SELECT o.*, u.email FROM "order" o JOIN users u ON o.khachhang = u.id WHERE o.id = ?";
+    $sql_get_order = "SELECT o.*, u.email FROM \"order\" o JOIN users u ON o.khachhang = u.id WHERE o.id = ?";
     $stmt_get_order = $conn->prepare($sql_get_order);
     $stmt_get_order->bind_param('s', $orderId);
     $stmt_get_order->execute();
@@ -55,7 +55,7 @@ try {
     }
 
     // Cập nhật trạng thái đơn hàng
-    $sql = "UPDATE "order" SET trangthai = ? WHERE id = ?";
+    $sql = "UPDATE \"order\" SET trangthai = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
@@ -70,7 +70,7 @@ try {
 
     if ($stmt->affected_rows > 0) {
         // Truy vấn lại đơn hàng để lấy trạng thái mới nhất
-        $sql_get_order = "SELECT * FROM "order" WHERE id = ?";
+        $sql_get_order = "SELECT * FROM \"order\" WHERE id = ?";
         $stmt_get_order = $conn->prepare($sql_get_order);
         $stmt_get_order->bind_param('s', $orderId);
         $stmt_get_order->execute();

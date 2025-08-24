@@ -23,7 +23,7 @@ try {
     
     // Kiểm tra xem đơn hàng có tồn tại không
     $sql = "SELECT o.*, u.email, u.fullname 
-            FROM "order" o 
+            FROM \"order\" o 
             JOIN users u ON o.khachhang = u.id 
             WHERE o.id = ?";
     $stmt = $conn->prepare($sql);

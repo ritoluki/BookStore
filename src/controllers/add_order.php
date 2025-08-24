@@ -39,7 +39,7 @@ if ($result->num_rows > 0) {
 }
 
 // Chuẩn bị câu lệnh SQL để thêm đơn hàng vào bảng 'order'
-$sqlOrder = "INSERT INTO "order" (id, khachhang, hinhthucgiao, ngaygiaohang, thoigiangiao, ghichu, tenguoinhan, sdtnhan, diachinhan, thoigiandat, tongtien, trangthai, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$sqlOrder = "INSERT INTO \"order\" (id, khachhang, hinhthucgiao, ngaygiaohang, thoigiangiao, ghichu, tenguoinhan, sdtnhan, diachinhan, thoigiandat, tongtien, trangthai, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 $stmtOrder = $conn->prepare($sqlOrder);
 $stmtOrder->bind_param("ssssssssssiis", $order['id'], $order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohang'], $order['thoigiangiao'], $order['ghichu'], $order['tenguoinhan'], $order['sdtnhan'], $order['diachinhan'], $thoigiandat, $order['tongtien'], $order['trangthai'], $order['payment_method']);
 

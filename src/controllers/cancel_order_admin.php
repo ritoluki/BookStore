@@ -14,7 +14,7 @@ try {
     $isAdmin = $data['isAdmin'] ?? false;
     
     // Lấy thông tin đơn hàng
-    $sql = "SELECT o.*, u.email, u.fullname FROM "order" o 
+    $sql = "SELECT o.*, u.email, u.fullname FROM \"order\" o 
             LEFT JOIN users u ON o.khachhang = u.id 
             WHERE o.id = ?";
     $stmt = $conn->prepare($sql);
@@ -43,7 +43,7 @@ try {
     
     try {
         // Cập nhật trạng thái đơn hàng thành "Đã hủy"
-        $sql = "UPDATE "order" SET trangthai = 4, cancel_reason = ?, cancelled_by = ? WHERE id = ?";
+        $sql = "UPDATE \"order\" SET trangthai = 4, cancel_reason = ?, cancelled_by = ? WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $cancelledBy = $isAdmin ? 'admin' : 'customer';
         $stmt->bind_param("sss", $reason, $cancelledBy, $orderId);

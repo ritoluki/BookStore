@@ -22,7 +22,7 @@ try {
     }
     
     // Kiểm tra trạng thái đơn hàng
-    $checkSql = "SELECT * FROM "order" WHERE id = ?";
+    $checkSql = "SELECT * FROM \"order\" WHERE id = ?";
     $stmt = mysqli_prepare($conn, $checkSql);
     if (!$stmt) {
         throw new Exception('Lỗi chuẩn bị truy vấn: ' . mysqli_error($conn));
@@ -60,7 +60,7 @@ try {
     }
 
     // Cập nhật trạng thái đơn hàng thành đã hủy (4)
-    $updateSql = "UPDATE "order" SET trangthai = 4 WHERE id = ?";
+    $updateSql = "UPDATE \"order\" SET trangthai = 4 WHERE id = ?";
     $updateStmt = mysqli_prepare($conn, $updateSql);
     if (!$updateStmt) {
         throw new Exception('Lỗi chuẩn bị truy vấn cập nhật: ' . mysqli_error($conn));
@@ -115,7 +115,7 @@ try {
         }
 
         // Truy vấn lại để lấy thông tin đơn hàng đã cập nhật
-        $refreshSql = "SELECT * FROM "order" WHERE id = ?";
+        $refreshSql = "SELECT * FROM \"order\" WHERE id = ?";
         $refreshStmt = mysqli_prepare($conn, $refreshSql);
         mysqli_stmt_bind_param($refreshStmt, "s", $orderId);
         mysqli_stmt_execute($refreshStmt);

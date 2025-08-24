@@ -5,7 +5,7 @@ require_once '../../config/config.php';
 
 try {
     // Check for any orders where status might be stored as a string
-    $checkSql = "SELECT id, trangthai FROM "order"";
+    $checkSql = "SELECT id, trangthai FROM \"order\"";
     $result = mysqli_query($conn, $checkSql);
     
     $issues = [];
@@ -25,7 +25,7 @@ try {
             
             // Try to fix it by converting to integer
             $fixedStatus = (int)$status;
-            $updateSql = "UPDATE "order" SET trangthai = ? WHERE id = ?";
+            $updateSql = "UPDATE \"order\" SET trangthai = ? WHERE id = ?";
             $stmt = mysqli_prepare($conn, $updateSql);
             mysqli_stmt_bind_param($stmt, "is", $fixedStatus, $id);
             
