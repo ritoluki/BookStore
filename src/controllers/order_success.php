@@ -405,7 +405,7 @@ if (!$order) {
                     </div>
                     <div class="info-content">
                         <h4>Mã đơn hàng</h4>
-                        <p><?php echo htmlspecialchars($order['id']); ?></p>
+                        <p><?php echo htmlspecialchars(str_replace('DH', '', $order['id'])); ?></p>
                     </div>
                 </div>
                 
