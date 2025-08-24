@@ -50,7 +50,7 @@ if ($result && db_num_rows($result) > 0) {
             // 4. Kiểm tra lại
             echo "\n4. Kiểm tra lại sau khi sửa:\n";
             $checkResult = db_query($conn, $sql);
-            if ($checkResult && db_num_rows($result) > 0) {
+            if ($checkResult && db_num_rows($checkResult) > 0) {
                 $checkRow = db_fetch_assoc($checkResult);
                 echo "- userType mới: {$checkRow['userType']}\n";
                 if ($checkRow['userType'] == 1) {

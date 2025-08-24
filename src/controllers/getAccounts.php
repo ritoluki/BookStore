@@ -5,7 +5,7 @@ header('Content-Type: application/json');
 require_once '../../config/config.php';
 
 // Truy vấn để lấy thông tin người dùng và giỏ hàng của họ
-$sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.usertype, c.product_id, c.quantity, c.note
+$sql = "SELECT u.fullname, u.phone, u.password, u.address, u.email, u.status, u.join_date, u.userType, c.product_id, c.quantity, c.note
         FROM users u
         LEFT JOIN cart c ON u.id = c.user_id";
 $result = db_query($conn, $sql);
