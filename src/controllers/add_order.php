@@ -32,13 +32,15 @@ if ($result && db_num_rows($result) > 0) {
 }
 
 // Chuẩn bị câu lệnh SQL để thêm đơn hàng vào bảng 'order'
-$sqlOrder = "INSERT INTO \"order\" (id, khachhang, hinhthucgiao, ngaygiaohang, thoigiangiao, ghichu, tenguoinhan, sdtnhan, diachinhan, thoigiandat, tongtien, trangthai, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-$orderParams = [$order['id'], $order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohang'], $order['thoigiangiao'], $order['ghichu'], $order['tenguoinhan'], $order['sdtnhan'], $order['diachinhan'], $thoigiandat, $order['tongtien'], $order['trangthai'], $order['payment_method']];
+// Bỏ cột id vì nó sẽ tự động tăng
+$sqlOrder = "INSERT INTO \"order\" (khachhang, hinhthucgiao, ngaygiaohang, thoigiangiao, ghichu, tenguoinhan, sdtnhan, diachinhan, thoigiandat, tongtien, trangthai, payment_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+$orderParams = [$order['khachhang'], $order['hinhthucgiao'], $order['ngaygiaohang'], $order['thoigiangiao'], $order['ghichu'], $order['tenguoinhan'], $order['sdtnhan'], $order['diachinhan'], $thoigiandat, $order['tongtien'], $order['trangthai'], $order['payment_method']];
 
 // Thực thi câu lệnh SQL để thêm đơn hàng
 $orderResult = db_query($conn, $sqlOrder, $orderParams);
 if ($orderResult) {
     // Chuẩn bị câu lệnh SQL để thêm chi tiết đơn hàng vào bảng 'orderdetails'
+    // Bỏ cột id vì nó sẽ tự động tăng
     $sqlOrderDetails = "INSERT INTO orderdetails (madon, product_id, note, product_price, soluong) VALUES (?, ?, ?, ?, ?)";
     
     // Loại bỏ duplicate theo product_id + madon
@@ -121,11 +123,14 @@ db_close($conn);
 
 // Đảm bảo không có ký tự thừa trước khi trả về JSON
 header('Content-Type: application/json');
+        // Lấy ID của đơn hàng vừa tạo
+        $newOrderId = db_insert_id($conn);
+        
         echo json_encode([
             "success" => true,
             "message" => "Đặt hàng thành công!",
-            "orderId" => $order['id'],
-            "redirect_url" => "./src/controllers/order_success.php?order_id=" . $order['id']
+            "orderId" => $newOrderId,
+            "redirect_url" => "./src/controllers/order_success.php?order_id=" . $newOrderId
         ]);
 exit;
 ?>
