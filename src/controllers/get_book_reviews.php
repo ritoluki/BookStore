@@ -8,19 +8,18 @@ header('Access-Control-Allow-Headers: Content-Type');
 error_reporting(0);
 ini_set('display_errors', 0);
 
-try {
-    // Kiểm tra file config có tồn tại không
-    if (!file_exists('../../config/config.php')) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'File config.php không tồn tại',
-            'reviews' => []
-        ]);
-        exit;
-    }
+// Kiểm tra file config có tồn tại không
+if (!file_exists('../../config/config.php')) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'File config.php không tồn tại',
+        'reviews' => []
+    ]);
+    exit;
+}
 
-    // Kết nối database
-    include '../../config/config.php';
+// Kết nối database
+include '../../config/config.php';
 
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $product_id = $_GET['product_id'] ?? null;
@@ -105,16 +104,4 @@ try {
             'message' => 'Method không được hỗ trợ'
         ]);
     }
-
-} catch (Exception $e) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Lỗi server: ' . $e->getMessage(),
-        'reviews' => []
-    ]);
-}
-
-if (isset($conn)) {
-    $conn->close();
-}
 ?>
