@@ -10,7 +10,7 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 $vnp_TmnCode = "DLTZCNT3"; //Mã định danh merchant kết nối (Terminal Id)
 $vnp_HashSecret = "L2DBGVM47JV0DBS2OCQB756IHSQVYK3R"; //Secret key
 $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-$vnp_Returnurl = "http://localhost/Bookstore_DATN/vnpay_php/vnpay_return.php";
+$vnp_Returnurl = "http://localhost/Bookstore_DATN/src/controllers/order_success.php";
 $vnp_apiUrl = "http://sandbox.vnpayment.vn/merchant_webapi/merchant.html";
 $apiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
 //Config input format

@@ -2,10 +2,84 @@
 session_start();
 require_once '../../config/config.php';
 
-// Kiểm tra xem có order_id trong URL không
+// Kiểm tra xem có order_id trong URL không (từ COD) hoặc vnp_TxnRef (từ VNPay)
 $order_id = isset($_GET['order_id']) ? $_GET['order_id'] : '';
+$vnpay_order_id = isset($_GET['vnp_TxnRef']) ? $_GET['vnp_TxnRef'] : '';
+
+// Ưu tiên order_id từ VNPay nếu có
+if ($vnpay_order_id) {
+    $order_id = $vnpay_order_id;
+}
+
 $order = null;
 $orderDetails = [];
+$payment_status = 'pending';
+$payment_method = 'COD';
+$vnpay_data = null;
+
+// Xử lý thông tin thanh toán VNPay nếu có
+if (isset($_GET['vnp_ResponseCode']) && isset($_GET['vnp_SecureHash'])) {
+    $vnp_ResponseCode = $_GET['vnp_ResponseCode'];
+    $vnp_SecureHash = $_GET['vnp_SecureHash'];
+    
+    // Xác thực hash từ VNPay
+    $inputData = array();
+    foreach ($_GET as $key => $value) {
+        if (substr($key, 0, 4) == "vnp_") {
+            $inputData[$key] = $value;
+        }
+    }
+    unset($inputData['vnp_SecureHash']);
+    ksort($inputData);
+    
+    $i = 0;
+    $hashData = "";
+    foreach ($inputData as $key => $value) {
+        if ($i == 1) {
+            $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+        } else {
+            $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+            $i = 1;
+        }
+    }
+    
+    // Sử dụng hash secret từ config VNPay
+    $vnp_HashSecret = "L2DBGVM47JV0DBS2OCQB756IHSQVYK3R";
+    $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+    
+    if ($secureHash == $vnp_SecureHash && $vnp_ResponseCode == '00') {
+        $payment_status = 'success';
+        $payment_method = 'VNPay';
+        
+        // Thu thập thông tin VNPay để hiển thị
+        $vnpay_data = array(
+            'amount' => isset($_GET['vnp_Amount']) ? number_format($_GET['vnp_Amount']/100, 0, ',', '.') . ' VNĐ' : '',
+            'bankCode' => isset($_GET['vnp_BankCode']) ? $_GET['vnp_BankCode'] : '',
+            'payDate' => isset($_GET['vnp_PayDate']) ? $_GET['vnp_PayDate'] : '',
+            'transId' => isset($_GET['vnp_TransactionNo']) ? $_GET['vnp_TransactionNo'] : '',
+            'cardType' => isset($_GET['vnp_CardType']) ? $_GET['vnp_CardType'] : ''
+        );
+        
+        // Cập nhật trạng thái đơn hàng trong DB
+        if ($order_id) {
+            $stmt = $conn->prepare("UPDATE `order` SET trangthai = 1, payment_status = 1, payment_method = 'VNPay' WHERE id = ?");
+            $stmt->bind_param("s", $order_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+    } else {
+        $payment_status = 'failed';
+        $payment_method = 'VNPay';
+        
+        // Cập nhật trạng thái đơn hàng thất bại
+        if ($order_id) {
+            $stmt = $conn->prepare("UPDATE `order` SET payment_status = 2, payment_method = 'VNPay' WHERE id = ?");
+            $stmt->bind_param("s", $order_id);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
 
 if ($order_id) {
     // Lấy thông tin đơn hàng
@@ -348,6 +422,11 @@ if (!$order) {
             color: #721c24;
         }
         
+        .status-failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
         @media (max-width: 768px) {
             .success-container {
                 margin: 20px auto;
@@ -389,12 +468,36 @@ if (!$order) {
 <body>
     <div class="success-container">
         <!-- Header thành công -->
-        <div class="success-header">
+        <div class="success-header" style="background: <?php echo $payment_status == 'success' ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' : ($payment_status == 'failed' ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' : 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)'); ?>">
             <div class="success-icon">
-                <i class="fas fa-check-circle"></i>
+                <i class="fas fa-<?php echo $payment_status == 'success' ? 'check-circle' : ($payment_status == 'failed' ? 'times-circle' : 'clock'); ?>"></i>
             </div>
-            <h1 class="success-title">Đặt hàng thành công!</h1>
-            <p class="success-subtitle">Cảm ơn bạn đã mua sách tại BOOK SHOP. Chúng tôi sẽ xử lý đơn hàng của bạn trong thời gian sớm nhất.</p>
+            <h1 class="success-title">
+                <?php 
+                if ($payment_status == 'success') {
+                    echo 'Đặt hàng thành công!';
+                } elseif ($payment_status == 'failed') {
+                    echo 'Thanh toán thất bại!';
+                } else {
+                    echo 'Đặt hàng thành công!';
+                }
+                ?>
+            </h1>
+            <p class="success-subtitle">
+                <?php 
+                if ($payment_status == 'success') {
+                    if ($payment_method == 'VNPay') {
+                        echo 'Thanh toán VNPay thành công! Cảm ơn bạn đã mua sách tại BOOK SHOP. Chúng tôi sẽ xử lý đơn hàng của bạn trong thời gian sớm nhất.';
+                    } else {
+                        echo 'Cảm ơn bạn đã mua sách tại BOOK SHOP. Chúng tôi sẽ xử lý đơn hàng của bạn trong thời gian sớm nhất.';
+                    }
+                } elseif ($payment_status == 'failed') {
+                    echo 'Đã có lỗi xảy ra trong quá trình thanh toán VNPay. Vui lòng thử lại sau hoặc liên hệ với chúng tôi để được hỗ trợ.';
+                } else {
+                    echo 'Cảm ơn bạn đã mua sách tại BOOK SHOP. Chúng tôi sẽ xử lý đơn hàng của bạn trong thời gian sớm nhất.';
+                }
+                ?>
+            </p>
         </div>
 
         <!-- Thông tin đơn hàng -->
@@ -471,8 +574,96 @@ if (!$order) {
                         </span>
                     </div>
                 </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Phương thức thanh toán</h4>
+                        <p><?php echo htmlspecialchars($payment_method); ?></p>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Thông tin thanh toán VNPay (nếu có) -->
+        <?php if ($vnpay_data && $payment_method == 'VNPay'): ?>
+        <div class="order-info" style="margin-bottom: 30px;">
+            <h3><i class="fas fa-credit-card"></i> Thông tin thanh toán VNPay</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Số tiền thanh toán</h4>
+                        <p><?php echo htmlspecialchars($vnpay_data['amount']); ?></p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Ngân hàng</h4>
+                        <p><?php echo htmlspecialchars($vnpay_data['bankCode']); ?></p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Thời gian thanh toán</h4>
+                        <p>
+                            <?php 
+                            if ($vnpay_data['payDate'] && strlen($vnpay_data['payDate']) == 14) {
+                                echo substr($vnpay_data['payDate'],6,2).'/'.substr($vnpay_data['payDate'],4,2).'/'.substr($vnpay_data['payDate'],0,4).' '.substr($vnpay_data['payDate'],8,2).':'.substr($vnpay_data['payDate'],10,2).':'.substr($vnpay_data['payDate'],12,2);
+                            } else {
+                                echo 'Chưa xác định';
+                            }
+                            ?>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Mã giao dịch</h4>
+                        <p><?php echo htmlspecialchars($vnpay_data['transId']); ?></p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Loại thẻ</h4>
+                        <p><?php echo htmlspecialchars($vnpay_data['cardType']); ?></p>
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Trạng thái thanh toán</h4>
+                        <span class="status-badge status-<?php echo $payment_status == 'success' ? 'completed' : 'cancelled'; ?>">
+                            <?php echo $payment_status == 'success' ? 'Thành công' : 'Thất bại'; ?>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <!-- Chi tiết sản phẩm -->
         <div class="order-details">
@@ -523,14 +714,22 @@ if (!$order) {
 
         <!-- Nút hành động -->
         <div class="action-buttons">
-                         <a href="../../index.php" class="btn-primary">
+            <a href="../../index.php" class="btn-primary">
                 <i class="fas fa-home"></i>
                 Về trang chủ
             </a>
-                         <a href="../../index.php?page=checkorder" class="btn-secondary">
+            
+            <?php if ($payment_status == 'failed'): ?>
+            <a href="../../index.php?page=checkout" class="btn-secondary" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                <i class="fas fa-redo"></i>
+                Thử lại thanh toán
+            </a>
+            <?php else: ?>
+            <a href="../../index.php?page=checkorder" class="btn-secondary">
                 <i class="fas fa-search"></i>
                 Tra cứu đơn hàng
             </a>
+            <?php endif; ?>
         </div>
     </div>
 
