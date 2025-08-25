@@ -2,9 +2,6 @@
 // Include file cấu hình cơ sở dữ liệu
 require_once __DIR__ . '/../../config/config.php';
 
-// Include URL Helper
-require_once __DIR__ . '/url_helper.php';
-
 /**
  * Hàm định dạng tiền tệ VND
  * 
