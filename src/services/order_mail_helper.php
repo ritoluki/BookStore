@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/send_mail.php';
+require_once __DIR__ . '/../utils/main.php';
 
 /**
  * Gửi email xác nhận đơn hàng - ĐÃ BỎ (thay bằng trang thành công)

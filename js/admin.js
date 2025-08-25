@@ -10,6 +10,21 @@ function checkLogin() {
 }
 window.onload = checkLogin();
 
+// Silence verbose console output in admin by default. Set window.__ADMIN_DEBUG__=true to enable logs.
+(function(){
+    try {
+        if (!window.__ADMIN_DEBUG__) {
+            ['log','warn','info','debug'].forEach(function(method){
+                if (typeof console !== 'undefined' && console[method]) {
+                    console[method] = function(){};
+                }
+            });
+        }
+    } catch (e) {
+        // ignore
+    }
+})();
+
 //do sidebar open and close
 const menuIconButton = document.querySelector(".menu-icon-btn");
 const sidebar = document.querySelector(".sidebar");
@@ -234,8 +249,9 @@ function showProductArr(arr) {
 // Hàm tìm đường dẫn đầy đủ của hình ảnh
 function findProductImagePath(imgPath) {
     // If it's already a full URL (from upload_image.php) or an absolute path, return as is
-    if (imgPath.startsWith('./assets/img/products/') || imgPath.startsWith('http')) {
-        return imgPath;
+    if (imgPath.startsWith('./assets/img/products/') || imgPath.startsWith('assets/img/products/') || imgPath.startsWith('http')) {
+        // Normalize to start with ./ so existing code paths work consistently
+        return imgPath.startsWith('assets/') ? `./${imgPath}` : imgPath;
         // If it's a data URL (from FileReader), return as is
     } else if (imgPath.startsWith('data:image/')) {
         return imgPath;
@@ -1332,13 +1348,7 @@ function showOverview(arr) {
     document.getElementById("quantity-order").innerText = totalQuantity;
     document.getElementById("quantity-sale").innerText = vnd(totalRevenue);
     
-    // Log để debug
-    console.log('showOverview called with:', {
-        productCount,
-        totalQuantity,
-        totalRevenue,
-        rawData: arr
-    });
+    // Debug logs removed for production
 }
 
 // Hàm fetch dữ liệu thống kê, chỉ gọi khi load trang hoặc cần làm mới
@@ -1375,17 +1385,13 @@ async function createObj() {
     // Lọc ra các đơn hàng đã hoàn thành (trangthai = 3) và đã thanh toán (payment_status = 1)
     const validOrders = orders.filter(order => parseInt(order.trangthai) === 3 && parseInt(order.payment_status) === 1);
     const validOrderIds = validOrders.map(order => order.id);
-    console.log('Valid orders:', validOrders);
-    console.log('Valid order IDs:', validOrderIds);
-    console.log('Order details:', orderDetails);
-    console.log('Products:', products);
     
     orderDetails.forEach(item => {
-        console.log('Processing order detail item:', item);
+        // Debug log removed
         if (validOrderIds.includes(item.madon)) {
             // Kiểm tra cấu trúc dữ liệu
             const productId = item.product_id || item.id;
-            console.log('Using product ID:', productId, 'from item:', item);
+            // Debug log removed
             
             // Sử dụng product_id từ orderdetails để tìm sản phẩm
             let prod = products.find(product => product.id == productId);
@@ -1401,23 +1407,24 @@ async function createObj() {
                     time: validOrders.find(o => o.id === item.madon).thoigiandat
                 };
                 result.push(obj);
-                console.log('Added product to result:', obj);
+                // Debug log removed
             } else {
-                console.warn('Product not found for product_id:', productId, 'Item:', item);
+                // Keep warning for missing product mapping
+                console.warn('Product not found for product_id:', productId);
             }
         }
     });
     
-    console.log('Final result:', result);
+    // Debug log removed
     return result;
 }
 
 // Reset bảng thống kê trước khi render
 async function showThongKe(arr, mode) {
-    console.log('showThongKe called with arr:', arr);
+    // Debug log removed
     let orderHtml = "";
     let mergeObj = mergeObjThongKe(arr);
-    console.log('After mergeObjThongKe:', mergeObj);
+    // Debug log removed
     showOverview(mergeObj);
 
     // Reset bảng trước khi render
@@ -1482,12 +1489,9 @@ async function showThongKe(arr, mode) {
 
 // Khởi tạo thống kê chỉ fetch dữ liệu 1 lần khi load trang
 (async function initializeStatistics() {
-    console.log('Initializing statistics...');
     await fetchStatisticsData(); // Chỉ fetch 1 lần khi load trang
     try {
-        console.log('Fetching statistics data completed, now creating objects...');
         const objData = await createObj();
-        console.log('Object data created:', objData);
         await showThongKe(objData);
     } catch (error) {
         console.error("Lỗi khi hiển thị thống kê:", error);
@@ -1496,7 +1500,7 @@ async function showThongKe(arr, mode) {
 
 // Debug function to check if order display works
 function debugOrders() {
-    // Xóa các lệnh console.log debug để không log ra console nữa
+    // Console debug removed
     /*
     console.log("Checking if showOrder element exists:", document.getElementById("showOrder"));
     fetch('/Bookstore_DATN/src/controllers/get_orders.php')
@@ -1594,12 +1598,13 @@ window.addEventListener('DOMContentLoaded', syncAccountsAndShowUser);
 
 // Merge các sản phẩm thống kê theo id, cộng dồn số lượng và doanh thu
 function mergeObjThongKe(arr) {
-    console.log('mergeObjThongKe called with arr:', arr);
+    // Debug log removed
     let result = [];
     arr.forEach(item => {
         // Đảm bảo dữ liệu hợp lệ
         if (!item || !item.id || !item.price || !item.quantity) {
-            console.warn('Invalid item data:', item);
+            // Keep warning minimal
+            console.warn('Invalid item data');
             return;
         }
         
@@ -1607,17 +1612,17 @@ function mergeObjThongKe(arr) {
         if (check) {
             check.quantity = parseInt(check.quantity || 0) + parseInt(item.quantity || 0);
             check.doanhthu = parseInt(check.doanhthu || 0) + (parseInt(item.price || 0) * parseInt(item.quantity || 0));
-            console.log('Updated existing item:', check);
+            // Debug log removed
         } else {
             const newItem = { ...item };
             newItem.quantity = parseInt(item.quantity || 0);
             newItem.price = parseInt(item.price || 0);
             newItem.doanhthu = newItem.price * newItem.quantity;
             result.push(newItem);
-            console.log('Added new item:', newItem);
+            // Debug log removed
         }
     });
-    console.log('Final merged result:', result);
+    // Debug log removed
     return result;
 }
 

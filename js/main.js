@@ -1,6 +1,7 @@
-// Doi sang dinh dang tien VND
+// Định dạng tiền VND: 123.000 đ
 function vnd(price) {
-    return price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    const n = Number(price || 0);
+    return n.toLocaleString('vi-VN') + ' đ';
 }
 
 // Close popup 
@@ -2136,11 +2137,12 @@ window.addEventListener('DOMContentLoaded', function () {
 async function showTrangChu() {
     document.getElementById('trangchu').classList.remove('hide');
     document.getElementById('gioithieu').style.display = 'none';
-    document.getElementById('tracuu').style.display = 'none';
-    document.getElementById('account-user').classList.remove('open');
-    document.getElementById('order-history').classList.remove('open');
-    document.getElementById('home-products').classList.remove('hide');
-    document.getElementById('home-title').classList.remove('hide');
+    const tracuuEl = document.getElementById('tracuu');
+    if (tracuuEl) tracuuEl.style.display = 'none';
+    document.getElementById('account-user')?.classList.remove('open');
+    document.getElementById('order-history')?.classList.remove('open');
+    document.getElementById('home-products')?.classList.remove('hide');
+    document.getElementById('home-title')?.classList.remove('hide');
 
     // Xóa active class khỏi tất cả menu items và đặt active cho menu Trang chủ
     clearActiveMenuItems();
@@ -2162,7 +2164,8 @@ async function showTrangChu() {
     
     // Reset navigation tabs về trạng thái mặc định (Sách giảm giá)
     document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector('.nav-tab').classList.add('active'); // Tab đầu tiên (Sách giảm giá)
+    const firstNavTab = document.querySelector('.nav-tab');
+    if (firstNavTab) firstNavTab.classList.add('active'); // Tab đầu tiên (Sách giảm giá)
 }
 
 // Thêm hàm hủy đơn hàng chuẩn phân quyền

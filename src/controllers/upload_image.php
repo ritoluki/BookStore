@@ -3,13 +3,22 @@ header('Content-Type: application/json');
 
 // Lấy category từ client, nếu không có thì dùng 'default'
 $category = isset($_POST['category']) ? $_POST['category'] : 'default';
-$upload_dir = './assets/img/products/' . $category . '/';
+
+// Đường dẫn thư mục upload (tuyệt đối trên filesystem) trỏ về thư mục assets gốc của dự án
+$upload_base_abs = realpath(__DIR__ . '/../../'); // Bookstore_DATN
+if ($upload_base_abs === false) {
+    $upload_base_abs = dirname(__DIR__, 2);
+}
+$upload_dir_abs = $upload_base_abs . '/assets/img/products/' . $category . '/';
+
+// Đường dẫn URL/relative để lưu trong DB và trả về cho client
+$upload_dir_rel = 'assets/img/products/' . $category . '/';
 $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 $max_file_size = 5 * 1024 * 1024; // 5MB
 
 // Đảm bảo thư mục upload tồn tại
-if (!file_exists($upload_dir)) {
-    if (!mkdir($upload_dir, 0777, true)) {
+if (!file_exists($upload_dir_abs)) {
+    if (!mkdir($upload_dir_abs, 0777, true)) {
         echo json_encode([
             'success' => false,
             'message' => 'Không thể tạo thư mục upload'
@@ -51,18 +60,19 @@ if (!in_array($file_extension, $allowed_extensions)) {
 
 // Tạo tên file duy nhất để tránh trùng lặp
 $new_file_name = uniqid() . '_' . bin2hex(random_bytes(8)) . '.' . $file_extension;
-$upload_path = $upload_dir . $new_file_name;
+$upload_path_abs = $upload_dir_abs . $new_file_name;
+$upload_path_rel = $upload_dir_rel . $new_file_name;
 
 // Di chuyển file tải lên vào thư mục đích
-if (move_uploaded_file($file['tmp_name'], $upload_path)) {
+if (move_uploaded_file($file['tmp_name'], $upload_path_abs)) {
     // Đảm bảo file có quyền hạn đọc cho web server
-    chmod($upload_path, 0644);
+    @chmod($upload_path_abs, 0644);
     
     // Trả về đường dẫn tương đối cho client
     echo json_encode([
         'success' => true,
-        'file_path' => $upload_path,
-        'file_url' => $upload_path
+        'file_path' => $upload_path_rel,
+        'file_url' => $upload_path_rel
     ]);
 } else {
     echo json_encode([

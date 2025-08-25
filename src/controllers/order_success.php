@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../../config/config.php';
+require_once __DIR__ . '/../utils/main.php';
 
 // Kiểm tra xem có order_id trong URL không (từ COD) hoặc vnp_TxnRef (từ VNPay)
 $order_id = isset($_GET['order_id']) ? $_GET['order_id'] : '';
@@ -53,7 +54,7 @@ if (isset($_GET['vnp_ResponseCode']) && isset($_GET['vnp_SecureHash'])) {
         
         // Thu thập thông tin VNPay để hiển thị
         $vnpay_data = array(
-            'amount' => isset($_GET['vnp_Amount']) ? number_format($_GET['vnp_Amount']/100, 0, ',', '.') . ' VNĐ' : '',
+            'amount' => isset($_GET['vnp_Amount']) ? formatCurrency($_GET['vnp_Amount']/100) : '',
             'bankCode' => isset($_GET['vnp_BankCode']) ? $_GET['vnp_BankCode'] : '',
             'payDate' => isset($_GET['vnp_PayDate']) ? $_GET['vnp_PayDate'] : '',
             'transId' => isset($_GET['vnp_TransactionNo']) ? $_GET['vnp_TransactionNo'] : '',
@@ -676,7 +677,7 @@ if (!$order) {
                 <div class="product-info">
                     <h4 class="product-title"><?php echo htmlspecialchars($item['title']); ?></h4>
                     <p class="product-category"><?php echo htmlspecialchars($item['category']); ?></p>
-                    <p class="product-price"><?php echo number_format($item['product_price'], 0, ',', '.'); ?> ₫</p>
+                    <p class="product-price"><?php echo formatCurrency($item['product_price']); ?></p>
                 </div>
                 <div class="product-quantity">
                     x<?php echo $item['soluong']; ?>
@@ -690,7 +691,7 @@ if (!$order) {
             <h3><i class="fas fa-calculator"></i> Tóm tắt đơn hàng</h3>
             <div class="summary-item">
                 <span class="summary-label">Tổng tiền sản phẩm:</span>
-                <span class="summary-value"><?php echo number_format($order['tongtien'], 0, ',', '.'); ?> ₫</span>
+                <span class="summary-value"><?php echo formatCurrency($order['tongtien']); ?></span>
             </div>
             <?php 
             $giamgia = isset($order['giamgia']) ? (float)$order['giamgia'] : 0;
@@ -699,16 +700,16 @@ if (!$order) {
             <?php if ($giamgia > 0): ?>
             <div class="summary-item">
                 <span class="summary-label">Giảm giá:</span>
-                <span class="summary-value">-<?php echo number_format($giamgia, 0, ',', '.'); ?> ₫</span>
+                <span class="summary-value">-<?php echo formatCurrency($giamgia); ?></span>
             </div>
             <?php endif; ?>
             <div class="summary-item">
                 <span class="summary-label">Phí giao hàng:</span>
-                <span class="summary-value"><?php echo number_format($phigiaohang, 0, ',', '.'); ?> ₫</span>
+                <span class="summary-value"><?php echo formatCurrency($phigiaohang); ?></span>
             </div>
             <div class="summary-item">
                 <span class="summary-label">Tổng cộng:</span>
-                <span class="summary-value"><?php echo number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.'); ?> ₫</span>
+                <span class="summary-value"><?php echo formatCurrency($order['tongtien'] - $giamgia + $phigiaohang); ?></span>
             </div>
         </div>
 

@@ -12,8 +12,9 @@ ini_set('display_errors', 0);
 error_log("get_user_id.php được gọi");
 
 try {
-    // Kiểm tra file config có tồn tại không
-    if (!file_exists('config.php')) {
+    // Kiểm tra file config có tồn tại không (đường dẫn tuyệt đối dựa trên __DIR__)
+    $configPath = __DIR__ . '/../../config/config.php';
+    if (!file_exists($configPath)) {
         echo json_encode([
             'success' => false,
             'message' => 'File config.php không tồn tại'
@@ -22,7 +23,7 @@ try {
     }
 
     // Kết nối database
-    include '../../config/config.php';
+    require_once $configPath;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = json_decode(file_get_contents('php://input'), true);
