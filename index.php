@@ -140,6 +140,8 @@ session_start();
                     <option>Khoa Học</option>
                     <option>Tiểu Thuyết</option>
                     <option>Thiếu Nhi</option>
+                    <option>Sách Giảm Giá</option>
+                    <option>Sách Bán Chạy</option>
                 </select>
             </div>
             <div class="advanced-search-price">

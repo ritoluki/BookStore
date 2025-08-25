@@ -439,7 +439,7 @@ header {
     margin-bottom: 7px;
     position: sticky;
     top: 68px; /* Giữ vị trí ngay dưới header-middle */
-    z-index: 10;
+    z-index: 10; /* ensure menu sits above content */
     transition: transform 0.3s ease; /* Hiệu ứng ẩn/hiện khi cuộn */
     box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%); /* Thêm đổ bóng để dễ nhìn hơn */
 }
@@ -456,8 +456,8 @@ header {
     display: flex;
     height: 49px;
     white-space: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow-x: visible; /* avoid horizontal scrollbar on desktop */
+    overflow-y: visible; /* allow dropdown to overflow vertically */
 }
 
 .menu-link {
@@ -478,15 +478,36 @@ header {
     position: relative;
 }
 .menu-list-item.dropdown .header-middle-right-menu{
-    top: 100%;
+    top: calc(100% + 8px);
     left: 0;
     min-width: 220px;
+    z-index: 1200; /* above header */
+    background: var(--white);
+    border: 1px solid #eef0f3;
+    border-radius: 10px;
+    padding: 6px 0;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
 }
 .menu-list-item.dropdown:hover .header-middle-right-menu{
-    visibility: visible;
-    opacity: 1;
-    transform: translateY(0);
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
 }
+
+/* Items inside dropdown */
+.menu-list-item.dropdown .header-middle-right-menu li{ padding: 0; }
+.menu-list-item.dropdown .header-middle-right-menu li a{
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+    padding: 10px 14px;
+    color: var(--text-color);
+    font-size: 14px;
+    border-radius: 8px;
+}
+.menu-list-item.dropdown .header-middle-right-menu li a i{ color: #9aa4b2; font-size: 15px; }
+.menu-list-item.dropdown .header-middle-right-menu li a:hover{ background: #f6f8fa; color: var(--red); }
+.menu-list-item.dropdown .header-middle-right-menu li a:hover i{ color: var(--red); }
 
 .menu-link:hover {
     color: var(--red); /* Thay đổi màu chữ thành đỏ khi hover */

@@ -1502,6 +1502,18 @@ window.addEventListener("scroll", () => {
     lastScrollY = window.scrollY;
 })
 
+// Scroll helper to correct in-page anchor within #trangchu
+function scrollToHomeAnchor() {
+    setTimeout(() => {
+        const anchor = document.querySelector('#trangchu .home-title-block')
+            || document.querySelector('#trangchu #home-service')
+            || document.querySelector('#trangchu');
+        if (anchor && typeof anchor.scrollIntoView === 'function') {
+            anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 0);
+}
+
 // Page
 function renderProducts(showProduct) {
     let productHtml = '';
@@ -1585,20 +1597,32 @@ function searchProducts(mode) {
         alert("Giá đã nhập sai !");
     }
 
-    let result = valueCategory == "Tất cả" ? productAll : productAll.filter((item) => {
-        return item.category == valueCategory;
-    });
+    // Category filter incl. dynamic groups
+    let result;
+    if (valueCategory === 'Tất cả') {
+        result = productAll;
+    } else if (valueCategory === 'Sách Giảm Giá') {
+        result = productAll.filter(item => (item.is_discounted || (item.discounted_price && item.discounted_price < item.price)));
+    } else if (valueCategory === 'Sách Bán Chạy') {
+        result = productAll.filter(item => (item.is_bestseller || (item.sold_quantity || 0) > 10));
+    } else {
+        result = productAll.filter((item) => item.category == valueCategory);
+    }
 
     result = valeSearchInput == "" ? result : result.filter(item => {
         return item.title.toString().toUpperCase().includes(valeSearchInput.toString().toUpperCase());
     })
 
+    // Normalize price for filtering: use discounted price if available
+    function effectivePrice(p) {
+        return (p.is_discounted && p.discounted_price) ? p.discounted_price : (p.discounted_price && p.discounted_price < p.price ? p.discounted_price : p.price);
+    }
     if (minPrice == "" && maxPrice != "") {
-        result = result.filter((item) => item.price <= maxPrice);
+        result = result.filter((item) => effectivePrice(item) <= maxPrice);
     } else if (minPrice != "" && maxPrice == "") {
-        result = result.filter((item) => item.price >= minPrice);
+        result = result.filter((item) => effectivePrice(item) >= minPrice);
     } else if (minPrice != "" && maxPrice != "") {
-        result = result.filter((item) => item.price <= maxPrice && item.price >= minPrice);
+        result = result.filter((item) => effectivePrice(item) <= maxPrice && effectivePrice(item) >= minPrice);
     }
 
     document.getElementById("home-service").scrollIntoView();
@@ -1612,10 +1636,10 @@ function searchProducts(mode) {
             document.getElementById("max-price").value = "";
             break;
         case 1:
-            result.sort((a, b) => a.price - b.price)
+            result.sort((a, b) => effectivePrice(a) - effectivePrice(b))
             break;
         case 2:
-            result.sort((a, b) => b.price - a.price)
+            result.sort((a, b) => effectivePrice(b) - effectivePrice(a))
             break;
     }
     showHomeProduct(result)
@@ -1760,11 +1784,50 @@ async function showCategory(category) {
     displayList(productSearch, perPage, currentPage);
     setupPagination(productSearch, perPage, currentPage);
     
-    // Reset navigation tabs về trạng thái mặc định (Sách giảm giá)
-    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector('.nav-tab').classList.add('active'); // Tab đầu tiên (Sách giảm giá)
+    // Reset navigation tabs nếu còn tồn tại (cũ) – tránh lỗi khi đã bỏ nav-tab
+    const navTabs = document.querySelectorAll('.nav-tab');
+    if (navTabs && navTabs.length > 0) {
+        navTabs.forEach(tab => tab.classList.remove('active'));
+        if (navTabs[0]) navTabs[0].classList.add('active');
+    }
     
-    document.getElementById("home-title").scrollIntoView();
+    scrollToHomeAnchor();
+}
+
+// Hiển thị Sách Giảm Giá
+function showDiscountedProducts() {
+    document.getElementById('trangchu').classList.remove('hide');
+    document.getElementById('gioithieu').style.display = 'none';
+    document.getElementById('tracuu').style.display = 'none';
+    document.getElementById('account-user').classList.remove('open');
+    document.getElementById('order-history').classList.remove('open');
+
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const result = products.filter(p => p.status == 1 && (p.is_discounted || (p.discounted_price && p.discounted_price < p.price)));
+
+    currentPage = 1;
+    displayList(result, perPage, currentPage);
+    setupPagination(result, perPage, currentPage);
+
+    scrollToHomeAnchor();
+}
+
+// Hiển thị Sách Bán Chạy
+function showBestsellers() {
+    document.getElementById('trangchu').classList.remove('hide');
+    document.getElementById('gioithieu').style.display = 'none';
+    document.getElementById('tracuu').style.display = 'none';
+    document.getElementById('account-user').classList.remove('open');
+    document.getElementById('order-history').classList.remove('open');
+
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const result = products.filter(p => p.status == 1 && (p.is_bestseller || (p.sold_quantity || 0) > 10));
+
+    currentPage = 1;
+    displayList(result, perPage, currentPage);
+    setupPagination(result, perPage, currentPage);
+
+    scrollToHomeAnchor();
 }
 
 function showGioiThieu() {
