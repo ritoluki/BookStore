@@ -720,7 +720,7 @@ if (!$order) {
             </a>
             
             <?php if ($payment_status == 'failed'): ?>
-            <a href="../../index.php?page=checkout" class="btn-secondary" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+            <a href="../../index.php?page=checkorder" class="btn-secondary" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
                 <i class="fas fa-redo"></i>
                 Thử lại thanh toán
             </a>
