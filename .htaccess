@@ -1,0 +1,117 @@
+RewriteEngine On
+
+# Loại bỏ .php extension
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Rewrite các route chính
+RewriteRule ^home/?$ index.php [L]
+RewriteRule ^trang-chu/?$ index.php [L]
+
+# Rewrite các trang sản phẩm
+RewriteRule ^san-pham/?$ index.php?page=products [L]
+RewriteRule ^products/?$ index.php?page=products [L]
+
+# Rewrite trang chi tiết sản phẩm
+RewriteRule ^san-pham/([^/]+)/?$ index.php?page=product&slug=$1 [L]
+RewriteRule ^product/([^/]+)/?$ index.php?page=product&slug=$1 [L]
+
+# Rewrite trang danh mục
+RewriteRule ^danh-muc/([^/]+)/?$ index.php?page=category&slug=$1 [L]
+RewriteRule ^category/([^/]+)/?$ index.php?page=category&slug=$1 [L]
+
+# Rewrite trang giỏ hàng
+RewriteRule ^gio-hang/?$ index.php?page=cart [L]
+RewriteRule ^cart/?$ index.php?page=cart [L]
+
+# Rewrite trang thanh toán
+RewriteRule ^thanh-toan/?$ index.php?page=checkout [L]
+RewriteRule ^checkout/?$ index.php?page=checkout [L]
+
+# Rewrite trang tra cứu đơn hàng
+RewriteRule ^tra-cuu-don-hang/?$ index.php?page=checkorder [L]
+RewriteRule ^check-order/?$ index.php?page=checkorder [L]
+
+# Rewrite trang đăng nhập
+RewriteRule ^dang-nhap/?$ index.php?page=login [L]
+RewriteRule ^login/?$ index.php?page=login [L]
+
+# Rewrite trang đăng ký
+RewriteRule ^dang-ky/?$ index.php?page=signup [L]
+RewriteRule ^signup/?$ index.php?page=signup [L]
+
+# Rewrite trang quên mật khẩu
+RewriteRule ^quen-mat-khau/?$ index.php?page=forgot-password [L]
+RewriteRule ^forgot-password/?$ index.php?page=forgot-password [L]
+
+# Rewrite trang tài khoản
+RewriteRule ^tai-khoan/?$ index.php?page=account [L]
+RewriteRule ^account/?$ index.php?page=account [L]
+
+# Rewrite trang liên hệ
+RewriteRule ^lien-he/?$ index.php?page=contact [L]
+RewriteRule ^contact/?$ index.php?page=contact [L]
+
+# Rewrite trang giới thiệu
+RewriteRule ^gioi-thieu/?$ index.php?page=about [L]
+RewriteRule ^about/?$ index.php?page=about [L]
+
+# Rewrite trang tin tức
+RewriteRule ^tin-tuc/?$ index.php?page=news [L]
+RewriteRule ^news/?$ index.php?page=news [L]
+
+# Rewrite trang chi tiết tin tức
+RewriteRule ^tin-tuc/([^/]+)/?$ index.php?page=news-detail&slug=$1 [L]
+RewriteRule ^news/([^/]+)/?$ index.php?page=news-detail&slug=$1 [L]
+
+# Rewrite trang tìm kiếm
+RewriteRule ^tim-kiem/?$ index.php?page=search [L]
+RewriteRule ^search/?$ index.php?page=search [L]
+
+# Rewrite trang admin
+RewriteRule ^admin/?$ admin.php [L]
+
+# Loại bỏ www nếu có
+RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+
+# Loại bỏ trailing slash
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+# Bảo mật
+<Files ".htaccess">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Cache cho static files
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType application/x-javascript "access plus 1 month"
+    ExpiresByType application/x-shockwave-flash "access plus 1 month"
+    ExpiresByType image/x-icon "access plus 1 year"
+    ExpiresDefault "access plus 2 days"
+</IfModule>
+
+# Gzip compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
