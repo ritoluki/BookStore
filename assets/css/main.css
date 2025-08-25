@@ -473,6 +473,21 @@ header {
     transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Dropdown inside nav menu */
+.menu-list-item.dropdown{
+    position: relative;
+}
+.menu-list-item.dropdown .header-middle-right-menu{
+    top: 100%;
+    left: 0;
+    min-width: 220px;
+}
+.menu-list-item.dropdown:hover .header-middle-right-menu{
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
 .menu-link:hover {
     color: var(--red); /* Thay đổi màu chữ thành đỏ khi hover */
     transform: scale(1.1); /* Phóng to liên kết */

@@ -114,7 +114,14 @@ session_start();
             <ul class="menu-list">
                 <pre>    </pre>
                 <li class="menu-list-item" onclick="showTrangChu()"><a href="javascript:;" class="menu-link">Trang chủ</a></li>
-                <li class="menu-list-item" onclick="showCategory('Sách Hay')"><a href="javascript:;" class="menu-link">Sách Hay</a></li>
+                <li class="menu-list-item dropdown">
+                    <a href="javascript:;" class="menu-link">Sách Nổi Bật <i class="fa-sharp fa-solid fa-caret-down"></i></a>
+                    <ul class="header-middle-right-menu">
+                        <li><a href="javascript:;" onclick="showCategory('Sách Hay')"><i class="fa-light fa-star"></i> Sách Hay</a></li>
+                        <li><a href="javascript:;" onclick="showDiscountedProducts()"><i class="fa-light fa-tags"></i> Sách Giảm Giá</a></li>
+                        <li><a href="javascript:;" onclick="showBestsellers()"><i class="fa-light fa-fire"></i> Sách Bán Chạy</a></li>
+                    </ul>
+                </li>
                 <li class="menu-list-item" onclick="showCategory('Khoa Học')"><a href="javascript:;" class="menu-link">Khoa Học</a></li>
                 <li class="menu-list-item" onclick="showCategory('Tiểu Thuyết')"><a href="javascript:;" class="menu-link">Tiểu Thuyết</a></li>
                 <li class="menu-list-item" onclick="showCategory('Thiếu Nhi')"><a href="javascript:;" class="menu-link">Thiếu Nhi</a></li>
@@ -123,7 +130,7 @@ session_start();
             </ul>
         </div>
     </nav>
-    <div class="advanced-search mobile-hide">
+    <div class="advanced-search">
         <div class="container">
             <div class="advanced-search-category">
                 <span>Phân loại </span>
@@ -238,12 +245,7 @@ session_start();
             <div class="home-title-block" id="home-title">
                 <h2 class="home-title">Khám phá vũ trụ sách của chúng tôi</h2>
             </div>
-            <div class="home-navigation">
-                <div class="nav-tabs">
-                    <button class="nav-tab active" onclick="showDiscountedProducts()">Sách giảm giá</button>
-                    <button class="nav-tab" onclick="showBestsellers()">Sách bán chạy</button>
-                </div>
-            </div>
+            
             <div class="home-products" id="home-products">
             </div>
             <div class="page-nav" id="page-products">
