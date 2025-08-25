@@ -720,10 +720,10 @@ if (!$order) {
             </a>
             
             <?php if ($payment_status == 'failed'): ?>
-            <a href="../../index.php?page=checkorder" class="btn-secondary" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+            <button onclick="retryVNPayPayment('<?php echo htmlspecialchars($order['id']); ?>', <?php echo $order['tongtien']; ?>)" class="btn-secondary" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
                 <i class="fas fa-redo"></i>
                 Thử lại thanh toán
-            </a>
+            </button>
             <?php else: ?>
             <a href="../../index.php?page=checkorder" class="btn-secondary">
                 <i class="fas fa-search"></i>
@@ -754,6 +754,36 @@ if (!$order) {
                 }, index * 200);
             });
         });
+
+        // Hàm thử lại thanh toán VNPay
+        function retryVNPayPayment(orderId, amount) {
+            // Tạo form gửi sang VNPay với thông tin đơn hàng
+            let form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '../../vnpay_php/vnpay_pay.php';
+
+            let inputAmount = document.createElement('input');
+            inputAmount.type = 'hidden';
+            inputAmount.name = 'amount';
+            inputAmount.value = amount;
+
+            let inputOrderId = document.createElement('input');
+            inputOrderId.type = 'hidden';
+            inputOrderId.name = 'order_id';
+            inputOrderId.value = orderId;
+
+            let inputOrderInfo = document.createElement('input');
+            inputOrderInfo.type = 'hidden';
+            inputOrderInfo.name = 'order_desc';
+            inputOrderInfo.value = 'Thanh toán đơn hàng ' + orderId;
+
+            form.appendChild(inputAmount);
+            form.appendChild(inputOrderId);
+            form.appendChild(inputOrderInfo);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     </script>
 </body>
 </html>
