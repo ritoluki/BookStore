@@ -99,13 +99,29 @@
         display: none !important; /* Completely hide search bar */
     }
     
-    /* Hide the regular filter button */
+    /* Hide the regular filter button on mobile */
     .filter-btn {
         display: none !important;
     }
     
     .advanced-search {
-        display: none !important; /* Hide the advanced search/filter dropdown */
+        /* Keep advanced search visible but adjust for mobile */
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: translateY(-100%) !important;
+        width: 100% !important;
+        background-color: var(--white) !important;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+        z-index: 1000 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
+    .advanced-search.open {
+        transform: translateY(0) !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
     
     /* Hide the main navigation menu */

@@ -52,6 +52,11 @@ function decreasingNumber(e) {
 //Xem chi tiet san pham
 function detailProduct(index) {
     let modal = document.querySelector('.modal.product-detail');
+    // Đảm bảo đóng bộ lọc nếu đang mở để tránh đè nội dung
+    const adv = document.querySelector('.advanced-search');
+    if (adv && adv.classList.contains('open')) {
+        adv.classList.remove('open');
+    }
     let products = JSON.parse(localStorage.getItem('products'));
     event.preventDefault();
     // Sửa: dùng so sánh == và kiểm tra null
@@ -1484,13 +1489,16 @@ window.onscroll = () => {
     }
 }
 
-// Auto hide header on scroll - Đã sửa để header luôn hiển thị khi cuộn
+// Auto hide header on scroll (like websach_123)
 const headerNav = document.querySelector(".header-bottom");
 let lastScrollY = window.scrollY;
 
 window.addEventListener("scroll", () => {
-    // Luôn giữ header visible (xóa phần ẩn đi khi cuộn xuống)
-    headerNav.classList.remove("hide");
+    if (lastScrollY < window.scrollY) {
+        headerNav.classList.add("hide");
+    } else {
+        headerNav.classList.remove("hide");
+    }
     lastScrollY = window.scrollY;
 })
 

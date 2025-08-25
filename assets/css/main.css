@@ -440,13 +440,12 @@ header {
     position: sticky;
     top: 68px; /* Giữ vị trí ngay dưới header-middle */
     z-index: 10;
-    transition: none; /* Loại bỏ hiệu ứng transition */
+    transition: transform 0.3s ease; /* Hiệu ứng ẩn/hiện khi cuộn */
     box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%); /* Thêm đổ bóng để dễ nhìn hơn */
 }
 
-/* Loại bỏ class hide cho header-bottom vì chúng ta muốn nó luôn hiển thị */
 .header-bottom.hide{
-    transform: none; /* Không dịch chuyển khi scroll */
+    transform: translateY(-50px);
 }
 
 .header-middle-right-menu{
@@ -507,23 +506,32 @@ header {
 
 
 .advanced-search{
-    background-color: var(--white);
-    position: fixed;
-    z-index: 11;
-    width: 100%;
-    transform: translateY(-50px);
-    transition: transform 0.6s ease;
+    background-color: var(--white) !important;
+    position: fixed !important;
+    z-index: 1000 !important; /* cao hơn header để đè lên */
+    width: 100% !important;
+    top: 68px !important; /* phủ đúng khu vực navigation */
+    left: 0 !important;
+    transform: translateY(-100%) !important;
+    transition: transform 0.6s ease !important;
+    box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%) !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
+
 .advanced-search.open{
-    transform: translateY(0);
-    box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%);
+    transform: translateY(0) !important;
+    box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .advanced-search .container{
     display: flex;
     justify-content: space-around;
     align-items: center;
+    min-height: 60px !important;
 }
 
 .advanced-search-price{
