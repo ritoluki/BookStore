@@ -110,7 +110,8 @@ function sendOrderConfirmationEmail($order, $orderDetails, $email, $conn) {
  * @param string $cancelReason Lý do hủy đơn hàng
  * @return bool Kết quả gửi email
  */
-function sendOrderCancellationEmail($order, $email, $cancelReason = '') {
+function sendOrderCancellationEmail($order, $email, $cancelReason = '')
+{
     global $conn;
     // Lấy chi tiết sản phẩm đã mua
     $products = [];
@@ -195,7 +196,8 @@ function sendOrderCancellationEmail($order, $email, $cancelReason = '') {
  * @param string $email Email người nhận
  * @return bool Kết quả gửi email
  */
-function sendOrderStatusUpdateEmail($order, $email) {
+function sendOrderStatusUpdateEmail($order, $email)
+{
     global $conn;
     try {
         // Xác định trạng thái đơn hàng và nội dung phù hợp
@@ -255,7 +257,7 @@ function sendOrderStatusUpdateEmail($order, $email) {
             }
             $stmt->close();
         }
-        
+
         // Tạo bảng sản phẩm HTML
         $productTable = '';
         if (count($products) > 0) {
@@ -320,7 +322,8 @@ function sendOrderStatusUpdateEmail($order, $email) {
     }
 }
 
-function sendOrderCancellationEmailByCustomer($order, $email, $cancelReason = '') {
+function sendOrderCancellationEmailByCustomer($order, $email, $cancelReason = '')
+{
     global $conn;
     // Lấy chi tiết sản phẩm đã mua
     $products = [];
@@ -399,7 +402,8 @@ function sendOrderCancellationEmailByCustomer($order, $email, $cancelReason = ''
     return true;
 }
 
-function renderOrderEmailTemplate($params) {
+function renderOrderEmailTemplate($params)
+{
     // $params: [
     //   'icon', 'headerColor', 'title', 'subtitle', 'mainMessage', 'order', 'orderDetails', 'productTable', 'extraBlock', 'footerNote', 'button1', 'button2'
     // ]
@@ -502,8 +506,9 @@ HTML;
  * @param string $cancelReason
  * @return bool
  */
-function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelReason = '') {
-    $status = isset($order['trangthai']) ? (int)$order['trangthai'] : -1;
+function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelReason = '')
+{
+    $status = isset($order['trangthai']) ? (int) $order['trangthai'] : -1;
     // Chỉ gửi mail cho trạng thái 1, 3, 4
     if ($status === 1) {
         // Xác nhận đơn hàng: dùng template gốc
@@ -533,7 +538,7 @@ function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelRea
         $productTable = '';
         $phivanchuyen = 0;
         if (isset($order['hinhthucgiao']) && stripos($order['hinhthucgiao'], 'giao tận nơi') !== false) {
-            $phivanchuyen = isset($order['phivanchuyen']) ? (int)$order['phivanchuyen'] : 30000;
+            $phivanchuyen = isset($order['phivanchuyen']) ? (int) $order['phivanchuyen'] : 30000;
         }
         if (count($products) > 0) {
             $productTable = "<table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;margin-bottom:16px;'>
@@ -606,9 +611,10 @@ function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelRea
  * @param bool $isAdmin Có phải admin hủy không
  * @return bool Kết quả gửi email
  */
-function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin = true) {
+function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin = true)
+{
     global $conn;
-    
+
     // Lấy chi tiết sản phẩm đã mua
     $products = [];
     $total = 0;
@@ -618,18 +624,18 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
         $stmt->bind_param("s", $order['id']);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($row = $result->fetch_assoc()) {
             $products[] = $row;
             $total += $row['soluong'] * $row['product_price'];
         }
         $stmt->close();
     }
-    
+
     $cancelledBy = $isAdmin ? 'quản trị viên' : 'khách hàng';
-    
+
     $subject = "Thông báo hủy đơn hàng #{$order['id']} - Book Shop";
-    
+
     $body = "
     <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
         <div style='text-align: center; margin-bottom: 30px;'>
@@ -649,7 +655,7 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
             <p><strong>Ngày đặt:</strong> " . date('d/m/Y H:i', strtotime($order['thoigiandat'])) . "</p>
             <p><strong>Tổng tiền:</strong> " . number_format($total, 0, ',', '.') . " VNĐ</p>
         </div>";
-    
+
     if (!empty($products)) {
         $body .= "
         <div style='margin-bottom: 20px;'>
@@ -663,7 +669,7 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
                     </tr>
                 </thead>
                 <tbody>";
-        
+
         foreach ($products as $product) {
             $body .= "
                     <tr>
@@ -672,13 +678,13 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
                         <td style='padding: 12px; text-align: right; border: 1px solid #ddd;'>" . number_format($product['product_price'], 0, ',', '.') . " VNĐ</td>
                     </tr>";
         }
-        
+
         $body .= "
                 </tbody>
             </table>
         </div>";
     }
-    
+
     $body .= "
         <div style='background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px;'>
             <h4 style='color: #856404; margin-top: 0;'>Xin lỗi vì sự bất tiện!</h4>
@@ -690,7 +696,7 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
             <p style='margin: 5px 0 0 0; color: #666;'>Hotline hỗ trợ: <strong>0123 456 789</strong></p>
         </div>
     </div>";
-    
+
     return sendEmail($email, $subject, $body);
 }
 
@@ -703,7 +709,8 @@ function sendOrderCancellationEmailWithReason($order, $email, $reason, $isAdmin 
  * @param mysqli $conn Kết nối database
  * @return bool Kết quả gửi email
  */
-function sendPaymentReminderEmail($order, $orderDetails, $email, $conn) {
+function sendPaymentReminderEmail($order, $orderDetails, $email, $conn)
+{
     try {
         // Lấy thông tin sản phẩm
         $products = [];
@@ -715,7 +722,7 @@ function sendPaymentReminderEmail($order, $orderDetails, $email, $conn) {
             $result = $stmt->get_result();
             $product = $result->fetch_assoc();
             $stmt->close();
-            
+
             if ($product) {
                 $products[] = [
                     'title' => $product['title'],
@@ -726,12 +733,12 @@ function sendPaymentReminderEmail($order, $orderDetails, $email, $conn) {
                 ];
             }
         }
-        
+
         // Tạo nội dung email
         $subject = 'Nhắc nhở thanh toán đơn hàng #' . $order['id'] . ' - BOOK SHOP';
         $body = createPaymentReminderEmailHTML($order, $products);
         $altBody = createPaymentReminderEmailText($order, $products);
-        
+
         return sendEmail($email, $subject, $body);
     } catch (Exception $e) {
         error_log("Lỗi gửi email nhắc nhở thanh toán: " . $e->getMessage());
@@ -742,11 +749,12 @@ function sendPaymentReminderEmail($order, $orderDetails, $email, $conn) {
 /**
  * Tạo HTML cho email nhắc nhở thanh toán
  */
-function createPaymentReminderEmailHTML($order, $products) {
+function createPaymentReminderEmailHTML($order, $products)
+{
     $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
     $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
     $orderTotal = number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.');
-    
+
     $html = '
     <!DOCTYPE html>
     <html lang="vi">
@@ -775,7 +783,7 @@ function createPaymentReminderEmailHTML($order, $products) {
                 <p>Chúng tôi nhận thấy đơn hàng #' . $order['id'] . ' của bạn đã được đặt thành công nhưng chưa được thanh toán.</p>
                 
                 <h3>Chi tiết đơn hàng:</h3>';
-    
+
     foreach ($products as $product) {
         $html .= '
                 <div class="product-item">
@@ -784,7 +792,7 @@ function createPaymentReminderEmailHTML($order, $products) {
                     <small>Số lượng: ' . $product['quantity'] . ' x ' . number_format($product['price'], 0, ',', '.') . ' ₫</small>
                 </div>';
     }
-    
+
     $html .= '
                 <div class="total">
                     Tổng cộng: ' . $orderTotal . ' ₫
@@ -803,31 +811,32 @@ function createPaymentReminderEmailHTML($order, $products) {
         </div>
     </body>
     </html>';
-    
+
     return $html;
 }
 
 /**
  * Tạo text cho email nhắc nhở thanh toán
  */
-function createPaymentReminderEmailText($order, $products) {
+function createPaymentReminderEmailText($order, $products)
+{
     $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
     $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
-    
+
     $text = "Nhắc nhở thanh toán đơn hàng #" . $order['id'] . "\n\n";
     $text .= "Xin chào " . $order['tenguoinhan'] . ",\n\n";
     $text .= "Chúng tôi nhận thấy đơn hàng #" . $order['id'] . " của bạn đã được đặt thành công nhưng chưa được thanh toán.\n\n";
-    
+
     $text .= "Chi tiết đơn hàng:\n";
     foreach ($products as $product) {
-        $text .= "- " . $product['title'] . " (" . $product['category'] . ") x" . $product['quantity'] . " - " . number_format($product['price'], 0, ',', '.') . " ₫\n";
+        $text .= "- " . $product['title'] . " (" . $product['category'] . ") x" . $product['quantity'] . " - " . number_format($product['price'], 0, ',', '.') . " đ\n";
     }
-    
-    $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " ₫\n\n";
+
+    $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " đ\n\n";
     $text .= "Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý đơn hàng của bạn.\n\n";
     $text .= "Thanh toán tại: http://localhost/Bookstore_DATN/index.php?page=checkout&order_id=" . $order['id'] . "\n\n";
     $text .= "Nếu bạn đã thanh toán, vui lòng bỏ qua email này.";
-    
+
     return $text;
 }
 
@@ -840,7 +849,8 @@ function createPaymentReminderEmailText($order, $products) {
  * @param mysqli $conn Kết nối database
  * @return bool Kết quả gửi email
  */
-function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn) {
+function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn)
+{
     try {
         // Lấy thông tin sản phẩm
         $products = [];
@@ -852,7 +862,7 @@ function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn) {
             $result = $stmt->get_result();
             $product = $result->fetch_assoc();
             $stmt->close();
-            
+
             if ($product) {
                 $products[] = [
                     'title' => $product['title'],
@@ -863,12 +873,12 @@ function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn) {
                 ];
             }
         }
-        
+
         // Tạo nội dung email
         $subject = 'Giao hàng thành công đơn hàng #' . $order['id'] . ' - BOOK SHOP';
         $body = createDeliverySuccessEmailHTML($order, $products);
         $altBody = createDeliverySuccessEmailText($order, $products);
-        
+
         return sendEmail($email, $subject, $body);
     } catch (Exception $e) {
         error_log("Lỗi gửi email thông báo giao hàng thành công: " . $e->getMessage());
@@ -879,11 +889,12 @@ function sendDeliverySuccessEmail($order, $orderDetails, $email, $conn) {
 /**
  * Tạo HTML cho email thông báo giao hàng thành công
  */
-function createDeliverySuccessEmailHTML($order, $products) {
+function createDeliverySuccessEmailHTML($order, $products)
+{
     $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
     $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
     $orderTotal = number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.');
-    
+
     return '
     <!DOCTYPE html>
     <html lang="vi">
@@ -912,7 +923,7 @@ function createDeliverySuccessEmailHTML($order, $products) {
                 <p>Chúc mừng! Đơn hàng #' . $order['id'] . ' của bạn đã được giao thành công.</p>
                 
                 <h3>Chi tiết đơn hàng đã giao:</h3>';
-    
+
     foreach ($products as $product) {
         $html .= '
                 <div class="product-item">
@@ -921,7 +932,7 @@ function createDeliverySuccessEmailHTML($order, $products) {
                     <small>Số lượng: ' . $product['quantity'] . ' x ' . number_format($product['price'], 0, ',', '.') . ' ₫</small>
                 </div>';
     }
-    
+
     $html .= '
                 <div class="total">
                     Tổng cộng: ' . $orderTotal . ' ₫
@@ -940,31 +951,32 @@ function createDeliverySuccessEmailHTML($order, $products) {
         </div>
     </body>
     </html>';
-    
+
     return $html;
 }
 
 /**
  * Tạo text cho email thông báo giao hàng thành công
  */
-function createDeliverySuccessEmailText($order, $products) {
+function createDeliverySuccessEmailText($order, $products)
+{
     $giamgia = isset($order['giamgia']) ? $order['giamgia'] : 0;
     $phigiaohang = isset($order['phigiaohang']) ? $order['phigiaohang'] : 0;
-    
+
     $text = "Giao hàng thành công đơn hàng #" . $order['id'] . "\n\n";
     $text .= "Xin chào " . $order['tenguoinhan'] . ",\n\n";
     $text .= "Chúc mừng! Đơn hàng #" . $order['id'] . " của bạn đã được giao thành công.\n\n";
-    
+
     $text .= "Chi tiết đơn hàng đã giao:\n";
     foreach ($products as $product) {
         $text .= "- " . $product['title'] . " (" . $product['category'] . ") x" . $product['quantity'] . " - " . number_format($product['price'], 0, ',', '.') . " ₫\n";
     }
-    
+
     $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " ₫\n\n";
     $text .= "Cảm ơn bạn đã tin tưởng BOOK SHOP!\n\n";
     $text .= "Tiếp tục mua sắm tại: http://localhost/Bookstore_DATN/\n\n";
     $text .= "Nếu có vấn đề gì với đơn hàng, vui lòng liên hệ với chúng tôi để được hỗ trợ.";
-    
+
     return $text;
 }
-?> 
+?>

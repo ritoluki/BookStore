@@ -1,7 +1,9 @@
 // Định dạng tiền VND: 123.000 đ
 function vnd(price) {
     const n = Number(price || 0);
-    return n.toLocaleString('vi-VN') + ' đ';
+    if (isNaN(n)) return '0 đ';
+    // Sử dụng format thủ công để đảm bảo tương thích
+    return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' đ';
 }
 
 // Close popup 
@@ -1667,10 +1669,20 @@ document.addEventListener('DOMContentLoaded', function () {
     checkAdmin();
     updateAmount();
     updateCartTotal();
-    // Hiển thị sản phẩm trang chủ với logic filter mới
-    const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    const categoryProducts = filterProductsByCurrentCategory(allProducts);
-    showHomeProduct(categoryProducts);
+
+    // Chờ để localStorage được load từ server
+    function loadHomeProducts() {
+        const allProducts = JSON.parse(localStorage.getItem('products') || '[]');
+        if (allProducts.length > 0) {
+            const categoryProducts = filterProductsByCurrentCategory(allProducts);
+            showHomeProduct(categoryProducts);
+        } else {
+            // Retry sau 100ms nếu chưa có data
+            setTimeout(loadHomeProducts, 100);
+        }
+    }
+
+    loadHomeProducts();
     // Gán lại các sự kiện cho nút đăng nhập/đăng ký nếu cần
     let signup = document.querySelector('.signup-link');
     let login = document.querySelector('.login-link');
@@ -2375,8 +2387,31 @@ async function updateProductsWithDiscounts() {
         const productsWithDiscounts = await response.json();
 
         if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
-            // Cập nhật localStorage với dữ liệu mới bao gồm thông tin giảm giá
-            localStorage.setItem('products', JSON.stringify(productsWithDiscounts));
+            // Đảm bảo format dữ liệu đúng như trong initialization.js
+            const formattedProducts = productsWithDiscounts.map(product => {
+                return {
+                    id: Number(product.id),
+                    status: Number(product.status),
+                    title: String(product.title),
+                    img: String(product.img),
+                    category: String(product.category),
+                    price: Number(product.price),
+                    soluong: Number(product.soluong),
+                    sold_quantity: Number(product.sold_quantity || 0),
+                    is_bestseller: Boolean(product.is_bestseller),
+                    desc: String(product.describes || product.desc),
+
+                    // Thông tin giảm giá
+                    discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
+                    discount_type: product.discount_type || null,
+                    discount_value: product.discount_value ? Number(product.discount_value) : null,
+                    min_order_amount: product.min_order_amount ? Number(product.min_order_amount) : 0,
+                    is_discounted: Boolean(product.is_discounted)
+                };
+            });
+
+            // Cập nhật localStorage với dữ liệu đã được format
+            localStorage.setItem('products', JSON.stringify(formattedProducts));
         }
     } catch (error) {
         console.error('Lỗi khi cập nhật thông tin giảm giá:', error);

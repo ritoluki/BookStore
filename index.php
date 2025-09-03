@@ -20,8 +20,9 @@ session_start();
     <link rel="stylesheet" href="./assets/css/slider.css">
     <link rel="stylesheet" href="./assets/css/responsive.css">
     <link rel="stylesheet" href="./assets/css/book_review.css">
-    <link rel="stylesheet" href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css" />
 </head>
+
 <body>
     <header>
         <div class="header-middle">
@@ -66,8 +67,10 @@ session_start();
                                 <span class="text-tk">Tài khoản <i class="fa-sharp fa-solid fa-caret-down"></i></span>
                             </div>
                             <ul class="header-middle-right-menu">
-                                <li><a id="login" href="javascript:;"><i class="fa-light fa-right-to-bracket"></i> Đăng nhập</a></li>
-                                <li><a id="signup" href="javascript:;"><i class="fa-light fa-user-plus"></i> Đăng ký</a></li>
+                                <li><a id="login" href="javascript:;"><i class="fa-light fa-right-to-bracket"></i> Đăng
+                                        nhập</a></li>
+                                <li><a id="signup" href="javascript:;"><i class="fa-light fa-user-plus"></i> Đăng ký</a>
+                                </li>
                             </ul>
                         </li>
                         <li class="header-middle-right-item open" onclick="openCart()">
@@ -86,8 +89,7 @@ session_start();
     <div class="mobile-search-overlay">
         <form action="" class="form-search">
             <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
-            <input type="text" class="form-search-input" placeholder="Tìm kiếm sách..."
-                oninput="searchProducts()">
+            <input type="text" class="form-search-input" placeholder="Tìm kiếm sách..." oninput="searchProducts()">
             <button type="button" class="mobile-search-close" onclick="closeSearchMb()">
                 <i class="fa-light fa-circle-xmark"></i>
             </button>
@@ -101,32 +103,48 @@ session_start();
         </div>
         <ul class="mobile-menu-list">
             <li class="mobile-menu-item"><a href="" class="mobile-menu-link">Trang chủ</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showCategory('Sách Hay')">Sách Hay</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showCategory('Khoa Học')">Khoa Học</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showCategory('Tiểu Thuyết')">Tiểu Thuyết</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showCategory('Thiếu Nhi')">Thiếu Nhi</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showGioiThieu()">Giới thiệu</a></li>
-            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showTraCuu()">Tra cứu đơn hàng</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link"
+                    onclick="showCategory('Sách Hay')">Sách Hay</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link"
+                    onclick="showCategory('Khoa Học')">Khoa Học</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link"
+                    onclick="showCategory('Tiểu Thuyết')">Tiểu Thuyết</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link"
+                    onclick="showCategory('Thiếu Nhi')">Thiếu Nhi</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showGioiThieu()">Giới
+                    thiệu</a></li>
+            <li class="mobile-menu-item"><a href="javascript:;" class="mobile-menu-link" onclick="showTraCuu()">Tra cứu
+                    đơn hàng</a></li>
         </ul>
     </div>
-    <nav  class="header-bottom">
+    <nav class="header-bottom">
         <div align="center" class="container">
             <ul class="menu-list">
                 <pre>    </pre>
-                <li class="menu-list-item" onclick="showTrangChu()"><a href="javascript:;" class="menu-link">Trang chủ</a></li>
+                <li class="menu-list-item" onclick="showTrangChu()"><a href="javascript:;" class="menu-link">Trang
+                        chủ</a></li>
                 <li class="menu-list-item dropdown">
-                    <a href="javascript:;" class="menu-link">Sách Nổi Bật <i class="fa-sharp fa-solid fa-caret-down"></i></a>
+                    <a href="javascript:;" class="menu-link">Sách Nổi Bật <i
+                            class="fa-sharp fa-solid fa-caret-down"></i></a>
                     <ul class="header-middle-right-menu">
-                        <li><a href="javascript:;" onclick="showCategory('Sách Hay')"><i class="fa-light fa-star"></i> Sách Hay</a></li>
-                        <li><a href="javascript:;" onclick="showDiscountedProducts()"><i class="fa-light fa-tags"></i> Sách Giảm Giá</a></li>
-                        <li><a href="javascript:;" onclick="showBestsellers()"><i class="fa-light fa-fire"></i> Sách Bán Chạy</a></li>
+                        <li><a href="javascript:;" onclick="showCategory('Sách Hay')"><i class="fa-light fa-star"></i>
+                                Sách Hay</a></li>
+                        <li><a href="javascript:;" onclick="showDiscountedProducts()"><i class="fa-light fa-tags"></i>
+                                Sách Giảm Giá</a></li>
+                        <li><a href="javascript:;" onclick="showBestsellers()"><i class="fa-light fa-fire"></i> Sách Bán
+                                Chạy</a></li>
                     </ul>
                 </li>
-                <li class="menu-list-item" onclick="showCategory('Khoa Học')"><a href="javascript:;" class="menu-link">Khoa Học</a></li>
-                <li class="menu-list-item" onclick="showCategory('Tiểu Thuyết')"><a href="javascript:;" class="menu-link">Tiểu Thuyết</a></li>
-                <li class="menu-list-item" onclick="showCategory('Thiếu Nhi')"><a href="javascript:;" class="menu-link">Thiếu Nhi</a></li>
-                <li class="menu-list-item" onclick="showGioiThieu()"><a href="javascript:;" class="menu-link">Giới thiệu</a></li>
-                <li class="menu-list-item" onclick="showTraCuu()"><a href="javascript:;" class="menu-link">Tra cứu đơn hàng</a></li>
+                <li class="menu-list-item" onclick="showCategory('Khoa Học')"><a href="javascript:;"
+                        class="menu-link">Khoa Học</a></li>
+                <li class="menu-list-item" onclick="showCategory('Tiểu Thuyết')"><a href="javascript:;"
+                        class="menu-link">Tiểu Thuyết</a></li>
+                <li class="menu-list-item" onclick="showCategory('Thiếu Nhi')"><a href="javascript:;"
+                        class="menu-link">Thiếu Nhi</a></li>
+                <li class="menu-list-item" onclick="showGioiThieu()"><a href="javascript:;" class="menu-link">Giới
+                        thiệu</a></li>
+                <li class="menu-list-item" onclick="showTraCuu()"><a href="javascript:;" class="menu-link">Tra cứu đơn
+                        hàng</a></li>
             </ul>
         </div>
     </nav>
@@ -152,9 +170,12 @@ session_start();
                 <button id="advanced-search-price-btn"><i class="fa-light fa-magnifying-glass-dollar"></i></button>
             </div>
             <div class="advanced-search-control">
-                <button id="sort-ascending" onclick="searchProducts(1)"><i class="fa-regular fa-arrow-up-short-wide"></i></button>
-                <button id="sort-descending" onclick="searchProducts(2)"><i class="fa-regular fa-arrow-down-wide-short"></i></button>
-                <button id="reset-search" onclick="searchProducts(0)"><i class="fa-light fa-arrow-rotate-right"></i></button>
+                <button id="sort-ascending" onclick="searchProducts(1)"><i
+                        class="fa-regular fa-arrow-up-short-wide"></i></button>
+                <button id="sort-descending" onclick="searchProducts(2)"><i
+                        class="fa-regular fa-arrow-down-wide-short"></i></button>
+                <button id="reset-search" onclick="searchProducts(0)"><i
+                        class="fa-light fa-arrow-rotate-right"></i></button>
                 <button onclick="closeSearchAdvanced()"><i class="fa-light fa-xmark"></i></button>
             </div>
         </div>
@@ -190,12 +211,14 @@ session_start();
                 </div>
                 <button class="slide-banner__nav-button slide-banner__nav-button--prev">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15 19L8 12L15 5" stroke="#b5292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 19L8 12L15 5" stroke="#b5292f" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
                     </svg>
                 </button>
                 <button class="slide-banner__nav-button slide-banner__nav-button--next">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 5L16 12L9 19" stroke="#b5292f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 5L16 12L9 19" stroke="#b5292f" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
                     </svg>
                 </button>
                 <div class="slide-banner__dots-container">
@@ -247,7 +270,7 @@ session_start();
             <div class="home-title-block" id="home-title">
                 <h2 class="home-title">Khám phá vũ trụ sách của chúng tôi</h2>
             </div>
-            
+
             <div class="home-products" id="home-products">
             </div>
             <div class="page-nav" id="page-products">
@@ -266,12 +289,13 @@ session_start();
                         <form action="" class="info-user">
                             <div class="form-group">
                                 <label for="infoname" class="form-label">Họ và tên</label>
-                                <input class="form-control" type="text" name="infoname" id="infoname" placeholder="" autocomplete="name">
+                                <input class="form-control" type="text" name="infoname" id="infoname" placeholder=""
+                                    autocomplete="name">
                             </div>
                             <div class="form-group">
                                 <label for="infophone" class="form-label">Số điện thoại</label>
-                                <input class="form-control" type="text" name="infophone" id="infophone" disabled="true" autocomplete="tel"
-                                    placeholder="">
+                                <input class="form-control" type="text" name="infophone" id="infophone" disabled="true"
+                                    autocomplete="tel" placeholder="">
                             </div>
                             <div class="form-group">
                                 <label for="infoemail" class="form-label">Email</label>
@@ -281,8 +305,8 @@ session_start();
                             </div>
                             <div class="form-group">
                                 <label for="infoaddress" class="form-label">Địa chỉ</label>
-                                <input class="form-control" type="text" name="infoaddress" id="infoaddress" autocomplete="street-address"
-                                    placeholder="Thêm địa chỉ giao hàng của bạn">
+                                <input class="form-control" type="text" name="infoaddress" id="infoaddress"
+                                    autocomplete="street-address" placeholder="Thêm địa chỉ giao hàng của bạn">
                             </div>
                         </form>
                     </div>
@@ -346,8 +370,8 @@ session_start();
                     </div>
                 </div>
 
-                </div>
             </div>
+        </div>
         </div>
         <div class="container" id="gioithieu" style="display: none; overflow: hidden; scroll-behavior: auto;">
             <div class="introduction-container">
@@ -384,8 +408,12 @@ session_start();
                     </div>
                     <div class="about-content">
                         <div class="about-text">
-                            <p>Book Shop được thành lập với sứ mệnh mang đến cho bạn những cuốn sách chất lượng, đa dạng về thể loại và phù hợp với mọi lứa tuổi. Chúng tôi tin rằng mỗi cuốn sách đều chứa đựng một thế giới mới, một góc nhìn mới về cuộc sống.</p>
-                            <p>Từ những tác phẩm văn học kinh điển đến những cuốn sách kỹ năng sống hiện đại, từ sách thiếu nhi đến sách chuyên ngành, Book Shop cam kết cung cấp cho bạn những lựa chọn tốt nhất.</p>
+                            <p>Book Shop được thành lập với sứ mệnh mang đến cho bạn những cuốn sách chất lượng, đa dạng
+                                về thể loại và phù hợp với mọi lứa tuổi. Chúng tôi tin rằng mỗi cuốn sách đều chứa đựng
+                                một thế giới mới, một góc nhìn mới về cuộc sống.</p>
+                            <p>Từ những tác phẩm văn học kinh điển đến những cuốn sách kỹ năng sống hiện đại, từ sách
+                                thiếu nhi đến sách chuyên ngành, Book Shop cam kết cung cấp cho bạn những lựa chọn tốt
+                                nhất.</p>
                         </div>
                         <div class="about-features">
                             <div class="feature-item">
@@ -509,8 +537,10 @@ session_start();
                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                 </div>
                 <div class="tracuu-description">
-                    <p>Nhập số điện thoại bạn đã dùng để đặt hàng vào ô bên dưới để tra cứu thông tin đơn hàng của bạn.</p>
-                    <p>Hệ thống sẽ hiển thị tất cả các đơn hàng đã đặt với số điện thoại này, bao gồm thông tin về trạng thái, ngày đặt và tổng tiền.</p>
+                    <p>Nhập số điện thoại bạn đã dùng để đặt hàng vào ô bên dưới để tra cứu thông tin đơn hàng của bạn.
+                    </p>
+                    <p>Hệ thống sẽ hiển thị tất cả các đơn hàng đã đặt với số điện thoại này, bao gồm thông tin về trạng
+                        thái, ngày đặt và tổng tiền.</p>
                 </div>
             </div>
             <form class="form-tracuu">
@@ -524,9 +554,12 @@ session_start();
                 <h3>Lưu ý khi tra cứu đơn hàng</h3>
                 <ul>
                     <li><i class="fa-solid fa-circle-check"></i> Nhập đúng số điện thoại đã dùng để đặt hàng</li>
-                    <li><i class="fa-solid fa-circle-check"></i> Đơn hàng sẽ được hiển thị theo thứ tự thời gian, mới nhất lên đầu</li>
-                    <li><i class="fa-solid fa-circle-check"></i> Bạn có thể xem chi tiết đơn hàng bằng cách nhấp vào nút "Chi tiết"</li>
-                    <li><i class="fa-solid fa-circle-check"></i> Nếu không tìm thấy đơn hàng, vui lòng liên hệ hotline: 0123 456 789</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Đơn hàng sẽ được hiển thị theo thứ tự thời gian, mới
+                        nhất lên đầu</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Bạn có thể xem chi tiết đơn hàng bằng cách nhấp vào nút
+                        "Chi tiết"</li>
+                    <li><i class="fa-solid fa-circle-check"></i> Nếu không tìm thấy đơn hàng, vui lòng liên hệ hotline:
+                        0123 456 789</li>
                 </ul>
             </div>
             <div class="container" align="center">
@@ -545,7 +578,7 @@ session_start();
             <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
             <div class="modal-detail-order">
             </div>
-            <div class="modal-detail-bottom">               
+            <div class="modal-detail-bottom">
             </div>
             </form>
         </div>
@@ -578,12 +611,13 @@ session_start();
                     <h3 class="form-title">
                         Đăng ký tài khoản
                     </h3>
-                    <p class="form-description">Đăng ký thành viên để mua hàng và nhận những ưu đãi đặc biệt từ chúng tôi</p>
+                    <p class="form-description">Đăng ký thành viên để mua hàng và nhận những ưu đãi đặc biệt từ chúng
+                        tôi</p>
                     <form action="" class="signup-form">
                         <div class="form-group">
                             <label for="fullname" class="form-label">Tên đầy đủ </label>
-                            <input id="fullname" name="fullname" type="text" placeholder="Nhập họ và tên" autocomplete="name"
-                                class="form-control" required>
+                            <input id="fullname" name="fullname" type="text" placeholder="Nhập họ và tên"
+                                autocomplete="name" class="form-control" required>
                             <span class="form-message-name form-message"></span>
                         </div>
                         <div class="form-group">
@@ -594,8 +628,8 @@ session_start();
                         </div>
                         <div class="form-group">
                             <label for="phone" class="form-label">Số điện thoại </label>
-                            <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại" autocomplete="tel"
-                                class="form-control" required>
+                            <input id="phone" name="phone" type="text" placeholder="Nhập số điện thoại"
+                                autocomplete="tel" class="form-control" required>
                             <span class="form-message-phone form-message"></span>
                         </div>
                         <div class="form-group">
@@ -603,7 +637,7 @@ session_start();
                             <div class="input-group" style="position: relative;">
                                 <input id="password" name="password" type="password" placeholder="Nhập mật khẩu"
                                     class="form-control" required style="padding-right: 40px;">
-                                <button class="btn btn-outline-secondary toggle-password" type="button" 
+                                <button class="btn btn-outline-secondary toggle-password" type="button"
                                     style="position: absolute; right: 0; top: -10px; height: 100%; width: 40px; border: none; background: none;">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -614,7 +648,8 @@ session_start();
                             <label for="password_confirmation" class="form-label">Nhập lại mật khẩu </label>
                             <div class="input-group" style="position: relative;">
                                 <input id="password_confirmation" name="password_confirmation"
-                                    placeholder="Nhập lại mật khẩu" type="password" class="form-control" required style="padding-right: 40px;">
+                                    placeholder="Nhập lại mật khẩu" type="password" class="form-control" required
+                                    style="padding-right: 40px;">
                                 <button class="btn btn-outline-secondary toggle-password" type="button"
                                     style="position: absolute; right: 0; top: -10px; height: 100%; width: 40px; border: none; background: none;">
                                     <i class="fas fa-eye"></i>
@@ -626,7 +661,8 @@ session_start();
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="checkbox-signup" required>
                                 <label class="custom-control-label" for="checkbox-signup">
-                                    Tôi đồng ý với <a href="#" title="Điều khoản sử dụng" target="_blank">điều khoản sử dụng</a> và 
+                                    Tôi đồng ý với <a href="#" title="Điều khoản sử dụng" target="_blank">điều khoản sử
+                                        dụng</a> và
                                     <a href="#" title="Chính sách bảo mật" target="_blank">chính sách bảo mật</a>
                                 </label>
                             </div>
@@ -636,7 +672,8 @@ session_start();
                             <i class=""></i>Đăng ký
                         </button>
                     </form>
-                    <p class="change-login mt-3">Đã có tài khoản? <a href="javascript:;" class="login-link">Đăng nhập ngay</a></p>
+                    <p class="change-login mt-3">Đã có tài khoản? <a href="javascript:;" class="login-link">Đăng nhập
+                            ngay</a></p>
                 </div>
                 <div class="form-content login">
                     <h3 class="form-title">Đăng nhập tài khoản</h3>
@@ -645,8 +682,8 @@ session_start();
                     <form action="" class="login-form">
                         <div class="form-group">
                             <label for="phone" class="form-label">Số điện thoại</label>
-                            <input id="phone-login" name="phone" type="text" placeholder="Nhập số điện thoại" autocomplete="tel"
-                                class="form-control">
+                            <input id="phone-login" name="phone" type="text" placeholder="Nhập số điện thoại"
+                                autocomplete="tel" class="form-control">
                             <span class="form-message phonelog"></span>
                         </div>
                         <div class="form-group">
@@ -680,7 +717,7 @@ session_start();
             <div class="cart-footer">
                 <div class="cart-total-price">
                     <p class="text-tt">Tổng tiền:</p>
-                    <p class="text-price">0đ</p>
+                    <p class="text-price">0 đ</p>
                 </div>
                 <div class="cart-footer-payment">
                     <button class="them-sach"><i class="fa-regular fa-plus"></i> Thêm sách</button>
@@ -726,7 +763,8 @@ session_start();
                     <div class="widget-row-col-1">
                         <h3 class="widget-title">Về chúng tôi</h3>
                         <div class="widget-row-col-content">
-                            <p>Book Shop là thương hiệu được thành lập vào năm 2025 với tiêu chí đặt chất lượng sản phẩm lên hàng đầu.</p>
+                            <p>Book Shop là thương hiệu được thành lập vào năm 2025 với tiêu chí đặt chất lượng sản phẩm
+                                lên hàng đầu.</p>
                         </div>
                         <div class="widget-social">
                             <div class="widget-social-item">
@@ -826,7 +864,7 @@ session_start();
                                 </div>
                                 <div class="contact-content contact-item-phone">
                                     <span>0123 456 789</span>
-                                 
+
                                 </div>
                             </div>
                             <div class="contact-item">
@@ -958,13 +996,13 @@ session_start();
                                     <span class="form-message"></span>
                                 </div>
                                 <div class="form-group">
-                                    <input id="sdtnhan" name="sdtnhan" type="text" placeholder="Số điện thoại nhận hàng" autocomplete="tel"
-                                        class="form-control">
+                                    <input id="sdtnhan" name="sdtnhan" type="text" placeholder="Số điện thoại nhận hàng"
+                                        autocomplete="tel" class="form-control">
                                     <span class="form-message"></span>
                                 </div>
                                 <div class="form-group">
-                                    <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng" autocomplete="street-address"
-                                        class="form-control chk-ship">
+                                    <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng"
+                                        autocomplete="street-address" class="form-control chk-ship">
                                     <span class="form-message"></span>
                                 </div>
                             </form>
@@ -1028,6 +1066,7 @@ session_start();
             cursor: pointer;
             transition: background-color 0.3s;
         }
+
         .vnpay-checkout-btn:hover {
             background-color: #004d86;
         }
@@ -1037,26 +1076,26 @@ session_start();
         createAdminAccount();
         createOrders();
         createOrderDetails();
-        
+
         // Lấy thông tin tài khoản đăng nhập
         let currentUser = localStorage.getItem("currentuser") ? JSON.parse(localStorage.getItem("currentuser")) : null;
-        
+
         // Đồng bộ trạng thái đơn hàng với server
         if (typeof syncOrderStatusWithServer === 'function') {
             syncOrderStatusWithServer();
         }
-        
+
         // Hiển thị đơn hàng trong tài khoản người dùng
         if (currentUser) {
             // Lấy danh sách đơn hàng từ localStorage
             let orders = localStorage.getItem("order") ? JSON.parse(localStorage.getItem("order")) : [];
-            
+
             // Lọc danh sách đơn hàng theo tài khoản đó
             let userOrders = orders.filter(order => order.khachhang === currentUser.phone);
-            
+
             // Hiển thị danh sách đơn hàng
             showOrder(userOrders);
-            
+
             // Hiện thị lịch sử đơn hàng
             renderOrderProduct();
         }
@@ -1065,10 +1104,10 @@ session_start();
         function toggleMobileMenu() {
             const mobileMenuPanel = document.querySelector('.mobile-menu-panel');
             const mobileMenuOverlay = document.querySelector('.mobile-menu-overlay');
-            
+
             mobileMenuPanel.classList.toggle('active');
             mobileMenuOverlay.classList.toggle('active');
-            
+
             // Prevent scrolling on body when menu is open
             if (mobileMenuPanel.classList.contains('active')) {
                 document.body.style.overflow = 'hidden';
@@ -1076,19 +1115,19 @@ session_start();
                 document.body.style.overflow = '';
             }
         }
-        
+
         // Mobile Search Functions
         function openSearchMb() {
             const mobileSearchOverlay = document.querySelector('.mobile-search-overlay');
             mobileSearchOverlay.classList.add('active');
             document.body.style.overflow = 'hidden';
-            
+
             // Focus on the search input
             setTimeout(() => {
                 mobileSearchOverlay.querySelector('.form-search-input').focus();
             }, 300);
         }
-        
+
         function closeSearchMb() {
             const mobileSearchOverlay = document.querySelector('.mobile-search-overlay');
             mobileSearchOverlay.classList.remove('active');
@@ -1096,4 +1135,5 @@ session_start();
         }
     </script>
 </body>
+
 </html>

@@ -1,13 +1,17 @@
 // Khởi tạo danh sách sản phẩm
 function createProduct() {
+    console.log('createProduct() called...');
     if (localStorage.getItem('products') === null) {
+        console.log('No products in localStorage, fetching from server...');
         // Sử dụng AJAX để lấy dữ liệu từ server
         var xhr = new XMLHttpRequest();
         xhr.open("GET", "src/controllers/get_products.php", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
+                console.log('Products fetched from server successfully');
                 // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
                 let products = JSON.parse(xhr.responseText);
+                console.log('Raw products from server:', products.length, 'items');
 
                 // Đảm bảo rằng sản phẩm có cấu trúc chính xác
                 products = products.map(product => {
@@ -22,7 +26,7 @@ function createProduct() {
                         sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
                         is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
                         desc: String(product.describes), // Đảm bảo là chuỗi
-                        
+
                         // Thông tin giảm giá
                         discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
                         discount_type: product.discount_type || null,
@@ -34,6 +38,8 @@ function createProduct() {
 
                 // Lưu dữ liệu vào localStorage
                 localStorage.setItem('products', JSON.stringify(products));
+                console.log('Products saved to localStorage:', products.length, 'items');
+                console.log('Sample product saved:', products[0]);
             }
         };
         xhr.send();
@@ -61,7 +67,7 @@ function refreshProducts() {
                     sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
                     is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
                     desc: String(product.describes),
-                    
+
                     // Thông tin giảm giá
                     discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
                     discount_type: product.discount_type || null,
@@ -257,13 +263,14 @@ function cancelOrder(orderId, btn) {
 
 // Gọi các hàm cập nhật khi tải lại trang
 window.onload = function () {
+    console.log('Window onload - initialization.js starting...');
     createProduct();
     createAdminAccount();
     createOrders();
     createOrderDetails();
     refreshProducts();  // Cập nhật sản phẩm sau khi tải lại trang
     refreshAccounts();  // Cập nhật tài khoản sau khi tải lại trang
-    
+
     // Cập nhật dữ liệu sản phẩm với thông tin giảm giá khi focus lại trang
     // (người dùng có thể đã thay đổi khuyến mãi ở tab khác)
     window.addEventListener('focus', async () => {
@@ -271,7 +278,7 @@ window.onload = function () {
             await window.updateProductsWithDiscounts();
         }
     });
-    
+
     // Cập nhật dữ liệu định kỳ nhưng ít thường xuyên hơn (mỗi 5 phút)
     setInterval(async () => {
         if (typeof window.updateProductsWithDiscounts === 'function') {
