@@ -25,7 +25,8 @@ function createProduct() {
                         soluong: Number(product.soluong),   // Thêm trường số lượng
                         sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
                         is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
-                        desc: String(product.describes), // Đảm bảo là chuỗi
+                        // Chuẩn hóa field mô tả: luôn lưu vào 'describes'
+                        describes: String(product.describes || product.desc || ''),
 
                         // Thông tin giảm giá
                         discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
@@ -66,7 +67,8 @@ function refreshProducts() {
                     soluong: Number(product.soluong),
                     sold_quantity: Number(product.sold_quantity || 0), // Số lượng đã bán
                     is_bestseller: Boolean(product.is_bestseller), // Sách bán chạy
-                    desc: String(product.describes),
+                    // Chuẩn hóa field mô tả: luôn lưu vào 'describes'
+                    describes: String(product.describes || product.desc || ''),
 
                     // Thông tin giảm giá
                     discounted_price: product.discounted_price ? Number(product.discounted_price) : null,

@@ -33,6 +33,9 @@ function thanhtoanpage(option,product) {
     let totalBillOrder = document.querySelector('.total-bill-order');
     let totalBillOrderHtml;
     // Xu ly don hang
+    // Biến lưu tổng tiền hàng (không gồm phí ship) để dùng lại khi đổi hình thức giao
+    let baseMerchandiseTotal = 0;
+
     switch (option) {
         case 1: // Truong hop thanh toan san pham trong gio
             // Hien thi don hang
@@ -74,6 +77,8 @@ function thanhtoanpage(option,product) {
                 const finalPrice = (product.is_discounted && product.discounted_price) ? product.discounted_price : product.price;
                 totalProductPrice = product.soluong * finalPrice;
             }
+            // Lưu lại tổng tiền hàng để dùng cho việc cộng/trừ phí ship khi người dùng đổi hình thức giao
+            baseMerchandiseTotal = totalProductPrice;
             
             totalBillOrderHtml = `<div class="priceFlx">
                 <div class="text">
@@ -117,7 +122,8 @@ function thanhtoanpage(option,product) {
                 priceFinal.innerText = vnd(getCartTotal());
                 break;
             case 2:
-                priceFinal.innerText = vnd((product.soluong * product.price));
+                // Không cộng phí ship: dùng lại tổng tiền hàng đã tính
+                priceFinal.innerText = vnd(baseMerchandiseTotal || (product.soluong * ((product.is_discounted && product.discounted_price && product.discounted_price < product.price) ? product.discounted_price : product.price)));
                 break;
         }
     })
@@ -134,7 +140,9 @@ function thanhtoanpage(option,product) {
                 priceFinal.innerText = vnd(getCartTotal() + PHIVANCHUYEN);
                 break;
             case 2:
-                priceFinal.innerText = vnd((product.soluong * product.price) + PHIVANCHUYEN);
+                // Cộng thêm phí ship vào tổng tiền hàng đã tính
+                const baseTotal = baseMerchandiseTotal || (product.soluong * ((product.is_discounted && product.discounted_price && product.discounted_price < product.price) ? product.discounted_price : product.price));
+                priceFinal.innerText = vnd(baseTotal + PHIVANCHUYEN);
                 break;
         }
     })

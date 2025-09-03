@@ -1820,6 +1820,16 @@ function showDiscountedProducts() {
     document.getElementById('tracuu').style.display = 'none';
     document.getElementById('account-user').classList.remove('open');
     document.getElementById('order-history').classList.remove('open');
+    document.getElementById('home-products')?.classList.remove('hide');
+    document.getElementById('home-title')?.classList.remove('hide');
+
+    // Reset slider to ensure proper display
+    const sliderContainer = document.querySelector('.slide-banner__container');
+    if (sliderContainer) {
+        sliderContainer.style.transform = 'translateX(0)';
+        // Force a reflow to ensure the slider displays correctly
+        sliderContainer.offsetHeight;
+    }
 
     const products = JSON.parse(localStorage.getItem('products') || '[]');
     const result = products.filter(p => p.status == 1 && (p.is_discounted || (p.discounted_price && p.discounted_price < p.price)));
@@ -1838,6 +1848,16 @@ function showBestsellers() {
     document.getElementById('tracuu').style.display = 'none';
     document.getElementById('account-user').classList.remove('open');
     document.getElementById('order-history').classList.remove('open');
+    document.getElementById('home-products')?.classList.remove('hide');
+    document.getElementById('home-title')?.classList.remove('hide');
+
+    // Reset slider to ensure proper display
+    const sliderContainer = document.querySelector('.slide-banner__container');
+    if (sliderContainer) {
+        sliderContainer.style.transform = 'translateX(0)';
+        // Force a reflow to ensure the slider displays correctly
+        sliderContainer.offsetHeight;
+    }
 
     const products = JSON.parse(localStorage.getItem('products') || '[]');
     const result = products.filter(p => p.status == 1 && (p.is_bestseller || (p.sold_quantity || 0) > 10));
@@ -2399,7 +2419,8 @@ async function updateProductsWithDiscounts() {
                     soluong: Number(product.soluong),
                     sold_quantity: Number(product.sold_quantity || 0),
                     is_bestseller: Boolean(product.is_bestseller),
-                    desc: String(product.describes || product.desc),
+                    // Preserve description consistently in 'describes'
+                    describes: String(product.describes || product.desc || ''),
 
                     // Thông tin giảm giá
                     discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
@@ -2431,6 +2452,16 @@ async function showDiscountedProducts() {
         document.getElementById('tracuu').style.display = 'none';
         document.getElementById('account-user').classList.remove('open');
         document.getElementById('order-history').classList.remove('open');
+        document.getElementById('home-products')?.classList.remove('hide');
+        document.getElementById('home-title')?.classList.remove('hide');
+
+        // Reset slider to ensure proper display
+        const sliderContainer = document.querySelector('.slide-banner__container');
+        if (sliderContainer) {
+            sliderContainer.style.transform = 'translateX(0)';
+            // Force a reflow to ensure the slider displays correctly
+            sliderContainer.offsetHeight;
+        }
 
         // Xóa active class khỏi tất cả menu items và đặt active cho menu "Sách Nổi Bật"
         clearActiveMenuItems();
@@ -2494,6 +2525,16 @@ async function showBestsellers() {
         document.getElementById('tracuu').style.display = 'none';
         document.getElementById('account-user').classList.remove('open');
         document.getElementById('order-history').classList.remove('open');
+        document.getElementById('home-products')?.classList.remove('hide');
+        document.getElementById('home-title')?.classList.remove('hide');
+
+        // Reset slider to ensure proper display
+        const sliderContainer = document.querySelector('.slide-banner__container');
+        if (sliderContainer) {
+            sliderContainer.style.transform = 'translateX(0)';
+            // Force a reflow to ensure the slider displays correctly
+            sliderContainer.offsetHeight;
+        }
 
         // Xóa active class khỏi tất cả menu items và đặt active cho menu "Sách Nổi Bật"
         clearActiveMenuItems();

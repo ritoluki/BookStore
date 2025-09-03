@@ -435,10 +435,9 @@ header {
 
 .header-bottom{ 
     background-color: #fff;
-    border-bottom: 4px solid var(--red);
     margin-bottom: 7px;
     position: sticky;
-    top: 68px; /* Giữ vị trí ngay dưới header-middle */
+    top: 66px; /* Giữ vị trí ngay dưới header-middle */
     z-index: 10; /* ensure menu sits above content */
     transition: transform 0.3s ease; /* Hiệu ứng ẩn/hiện khi cuộn */
     box-shadow: 0 3px 5px 0 rgb(0 0 0 / 10%); /* Thêm đổ bóng để dễ nhìn hơn */

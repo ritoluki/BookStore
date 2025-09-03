@@ -418,7 +418,8 @@ btnUpdateProductIn.addEventListener("click", async (e) => {
             formData.append("category", categoryText);
             formData.append("price", parseInt(curProductCur));
             formData.append("soluong", parseInt(soluongCur));
-            formData.append("describes", descProductCur);
+            // Backend expects 'desc' for description field
+            formData.append("desc", descProductCur);
             formData.append("status", 1);
             // Gửi yêu cầu cập nhật sản phẩm đến máy chủ
             const response = await fetch("/Bookstore_DATN/src/controllers/update-product.php", {
@@ -487,7 +488,8 @@ btnAddProductIn.addEventListener("click", async (e) => {
             formData.append('category', categoryText);
             formData.append('price', parseInt(giaMoi));
             formData.append('soluong', parseInt(soluong));
-            formData.append('describes', moTa);
+            // Backend expects 'desc' for description field
+            formData.append('desc', moTa);
             formData.append('status', 1);
             const response = await fetch('/Bookstore_DATN/src/controllers/add_product.php', {
                 method: 'POST',
@@ -1733,7 +1735,8 @@ function syncProductsAndShowProduct() {
                     soluong: Number(product.soluong),
                     sold_quantity: Number(product.sold_quantity || 0),
                     is_bestseller: Boolean(product.is_bestseller),
-                    desc: String(product.describes || product.desc),
+                    // Preserve correct description field expected by UI
+                    describes: String(product.describes || product.desc || ''),
 
                     // Thông tin giảm giá
                     discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
@@ -2331,7 +2334,8 @@ async function updateProductsWithDiscounts() {
                     soluong: Number(product.soluong),
                     sold_quantity: Number(product.sold_quantity || 0),
                     is_bestseller: Boolean(product.is_bestseller),
-                    desc: String(product.describes || product.desc),
+                    // Preserve correct description field expected by UI
+                    describes: String(product.describes || product.desc || ''),
 
                     // Thông tin giảm giá
                     discounted_price: product.discounted_price ? Number(product.discounted_price) : null,
