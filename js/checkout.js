@@ -259,6 +259,18 @@ async function fetchUserAddressFromDB(phone) {
 let nutthanhtoan = document.querySelector('.thanh-toan')
 let checkoutpage = document.querySelector('.checkout-page');
 nutthanhtoan.addEventListener('click', () => {
+    // Kiểm tra đăng nhập trước khi mở trang thanh toán
+    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+    if (!currentUser) {
+        toast({ 
+            title: 'Yêu cầu đăng nhập', 
+            message: 'Bạn cần đăng nhập để đặt hàng!', 
+            type: 'warning', 
+            duration: 3000 
+        });
+        return;
+    }
+    
     checkoutpage.classList.add('active');
     thanhtoanpage(1);
     autofillReceiverInfo(); // Gọi trực tiếp sau khi render form
@@ -271,6 +283,18 @@ function dathangngay() {
     let productInfo = document.getElementById("product-detail-content");
     let datHangNgayBtn = productInfo.querySelector(".button-dathangngay");
     datHangNgayBtn.onclick = async () => {
+        // Kiểm tra đăng nhập trước khi đặt hàng ngay
+        let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+        if (!currentUser) {
+            toast({ 
+                title: 'Yêu cầu đăng nhập', 
+                message: 'Bạn cần đăng nhập để đặt hàng!', 
+                type: 'warning', 
+                duration: 3000 
+            });
+            return;
+        }
+        
         let productId = datHangNgayBtn.getAttribute("data-product");
         let soluong = parseInt(productInfo.querySelector(".buttons_added .input-qty").value);
         let products = JSON.parse(localStorage.getItem('products'));
@@ -364,6 +388,19 @@ function closecheckout() {
 
 // Thong tin cac don hang da mua - Xu ly khi nhan nut dat hang
 async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
+    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+    
+    // Kiểm tra đăng nhập bắt buộc
+    if (!currentUser) {
+        toast({ 
+            title: 'Yêu cầu đăng nhập', 
+            message: 'Bạn cần đăng nhập để đặt hàng!', 
+            type: 'warning', 
+            duration: 3000 
+        });
+        return false;
+    }
+    
     let diachinhan = "";
     let hinhthucgiao = "";
     let thoigiangiao = "";
@@ -371,7 +408,6 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     let tudenlay = document.querySelector("#tudenlay");
     let giaongay = document.querySelector("#giaongay");
     let giaovaogio = document.querySelector("#deliverytime");
-    let currentUser = JSON.parse(localStorage.getItem('currentuser'));
     
     // Hình thức giao & Địa chỉ nhận hàng
     if(giaotannoi.classList.contains("active")) {
@@ -428,14 +464,6 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     
     let tennguoinhan = document.querySelector("#tennguoinhan").value;
     let sdtnhan = document.querySelector("#sdtnhan").value;
-
-    // Kiểm tra nếu chưa đăng nhập và số điện thoại đã tồn tại trong user
-    let accounts = localStorage.getItem('accounts') ? JSON.parse(localStorage.getItem('accounts')) : [];
-    let isRegistered = accounts.some(acc => acc.phone == sdtnhan);
-    if (!currentUser && isRegistered) {
-        toast({ title: 'Chú ý', message: 'Số điện thoại này đã đăng ký tài khoản. Vui lòng đăng nhập để đặt hàng!', type: 'warning', duration: 4000 });
-        return;
-    }
 
     if(tennguoinhan == "" || sdtnhan == "" || diachinhan == "") {
         toast({ title: 'Chú ý', message: 'Vui lòng nhập đầy đủ thông tin !', type: 'warning', duration: 4000 });

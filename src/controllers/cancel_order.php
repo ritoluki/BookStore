@@ -52,8 +52,37 @@ try {
     // Admin can cancel any order, regular user can only cancel their own
     $isAdmin = isset($data['isAdmin']) && $data['isAdmin'] === true;
     if (!$isAdmin) {
-        // Chỉ cần khách đăng nhập và số điện thoại nhận hàng trùng userPhone
-        if ($userPhone === null || $order['sdtnhan'] !== $userPhone) {
+        // Kiểm tra quyền hủy đơn: user chỉ có thể hủy đơn của chính mình
+        if ($userPhone === null) {
+            echo json_encode(['success' => false, 'message' => 'Bạn cần đăng nhập để hủy đơn hàng']);
+            exit;
+        }
+        
+        // Lấy user ID từ số điện thoại
+        $getUserIdSql = "SELECT id FROM users WHERE phone = ?";
+        $userIdStmt = mysqli_prepare($conn, $getUserIdSql);
+        if (!$userIdStmt) {
+            throw new Exception('Lỗi chuẩn bị truy vấn lấy user ID: ' . mysqli_error($conn));
+        }
+        
+        mysqli_stmt_bind_param($userIdStmt, "s", $userPhone);
+        if (!mysqli_stmt_execute($userIdStmt)) {
+            throw new Exception('Lỗi thực thi truy vấn lấy user ID: ' . mysqli_stmt_error($userIdStmt));
+        }
+        
+        $userIdResult = mysqli_stmt_get_result($userIdStmt);
+        if (mysqli_num_rows($userIdResult) === 0) {
+            mysqli_stmt_close($userIdStmt);
+            echo json_encode(['success' => false, 'message' => 'Không tìm thấy thông tin người dùng']);
+            exit;
+        }
+        
+        $userRow = mysqli_fetch_assoc($userIdResult);
+        $currentUserId = $userRow['id'];
+        mysqli_stmt_close($userIdStmt);
+        
+        // Kiểm tra đơn hàng có thuộc về user hiện tại không
+        if ($order['khachhang'] != $currentUserId) {
             echo json_encode(['success' => false, 'message' => 'Bạn không có quyền hủy đơn hàng này']);
             exit;
         }
@@ -110,7 +139,7 @@ try {
         
         // Gửi email thông báo hủy đơn hàng
         if (!empty($user_email)) {
-            require_once 'order_mail_helper.php';
+            require_once '../services/order_mail_helper.php';
             sendOrderCancellationEmailByCustomer($order, $user_email);
         }
 

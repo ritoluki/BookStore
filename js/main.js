@@ -2224,7 +2224,7 @@ function cancelOrder(orderId, btn) {
         bodyData.userPhone = currentUser.phone;
     }
 
-    fetch('cancel_order.php', {
+    fetch('src/controllers/cancel_order.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
