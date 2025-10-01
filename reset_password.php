@@ -7,7 +7,7 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
     $token = $_GET['token'];
     
     // Kiểm tra token có hợp lệ không
-    require_once 'php/config.php';
+    require_once 'config/config.php';
 
     $sql = "SELECT id FROM users WHERE email = ? AND reset_token = ?";
     $stmt = $conn->prepare($sql);
@@ -319,4 +319,4 @@ newPassword.addEventListener('input', function() {
 confirmPassword.addEventListener('input', validateForm);
 </script>
 </body>
-</html> 
+</html>

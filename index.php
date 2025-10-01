@@ -1001,9 +1001,29 @@ session_start();
                                     <span class="form-message"></span>
                                 </div>
                                 <div class="form-group">
-                                    <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng"
-                                        autocomplete="street-address" class="form-control chk-ship">
+                                    <div class="address-container">
+                                        <input id="diachinhan" name="diachinhan" type="text" placeholder="Địa chỉ nhận hàng"
+                                            autocomplete="off" class="form-control chk-ship">
+                                        <div id="address-suggestions" class="address-suggestions"></div>
+                                    </div>
                                     <span class="form-message"></span>
+                                </div>
+                                <div class="form-group address-details-row">
+                                    <div class="address-detail-field">
+                                        <input id="tinhthanh" name="tinhthanh" type="text" placeholder="Tỉnh/Thành phố"
+                                            autocomplete="off" class="form-control chk-ship">
+                                        <span class="form-message"></span>
+                                    </div>
+                                    <div class="address-detail-field">
+                                        <input id="quanhuyen" name="quanhuyen" type="text" placeholder="Quận/Huyện"
+                                            autocomplete="off" class="form-control chk-ship">
+                                        <span class="form-message"></span>
+                                    </div>
+                                    <div class="address-detail-field">
+                                        <input id="phuongxa" name="phuongxa" type="text" placeholder="Phường/Xã"
+                                            autocomplete="off" class="form-control chk-ship">
+                                        <span class="form-message"></span>
+                                    </div>
                                 </div>
                             </form>
                         </div>

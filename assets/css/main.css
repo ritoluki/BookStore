@@ -2308,6 +2308,134 @@ input[type=number] {
     column-gap: 15px;
 }
 
+/* Address Autocomplete Styles */
+.address-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.address-suggestions {
+    position: absolute;
+    background: #fff;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    z-index: 1000;
+    display: none;
+    margin-top: 3px;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+}
+
+.address-suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    color: #333;
+}
+
+.address-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.address-suggestion-item:before {
+    content: "📍";
+    margin-right: 10px;
+    font-size: 1.1em;
+    transition: transform 0.3s ease;
+}
+
+.address-suggestion-item:hover {
+    background: #f8f9fa;
+    color: #333;
+    padding-left: 24px;
+}
+
+.address-suggestion-item:hover:before {
+    transform: scale(1.2);
+}
+
+.address-suggestion-item:after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: var(--red);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.address-suggestion-item:hover:after {
+    transform: scaleY(1);
+}
+
+/* Tùy chỉnh thanh cuộn */
+.address-suggestions::-webkit-scrollbar {
+    width: 8px;
+}
+
+.address-suggestions::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 8px;
+}
+
+.address-suggestions::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 8px;
+}
+
+.address-suggestions::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Address Details Row Layout */
+.address-details-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.address-detail-field {
+    flex: 1;
+    position: relative;
+}
+
+.address-detail-field .form-control {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.address-detail-field .form-message {
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    font-size: 12px;
+    color: #dc3545;
+}
+
+/* Responsive for mobile */
+@media (max-width: 768px) {
+    .address-details-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .address-detail-field .form-message {
+        position: static;
+        margin-top: 5px;
+    }
+}
+
 .type-order-btn {
     width: 50%;
     height: 50px;

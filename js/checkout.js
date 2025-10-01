@@ -196,9 +196,62 @@ function autofillReceiverInfo() {
         const tenInput = document.getElementById('tennguoinhan');
         const sdtInput = document.getElementById('sdtnhan');
         const diachiInput = document.getElementById('diachinhan');
+        const tinhthanhInput = document.getElementById('tinhthanh');
+        const quanhuyenInput = document.getElementById('quanhuyen');
+        const phuongxaInput = document.getElementById('phuongxa');
+        
         if (tenInput) tenInput.value = currentUser.fullname || '';
         if (sdtInput) sdtInput.value = currentUser.phone || '';
         if (diachiInput) diachiInput.value = currentUser.address || '';
+        
+        // Auto-fill address components if available in user data
+        if (tinhthanhInput) tinhthanhInput.value = currentUser.province || '';
+        if (quanhuyenInput) quanhuyenInput.value = currentUser.district || '';
+        if (phuongxaInput) phuongxaInput.value = currentUser.ward || '';
+        
+        // Nếu người dùng chưa có địa chỉ trong localStorage, thử lấy từ database
+        if (!currentUser.address && currentUser.phone) {
+            fetchUserAddressFromDB(currentUser.phone);
+        }
+    }
+}
+
+// Hàm lấy địa chỉ từ database
+async function fetchUserAddressFromDB(phone) {
+    try {
+        const response = await fetch('src/controllers/get_user_address.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ phone: phone })
+        });
+        
+        const result = await response.json();
+        if (result.success && result.address) {
+            // Cập nhật form với địa chỉ từ database
+            const diachiInput = document.getElementById('diachinhan');
+            const tinhthanhInput = document.getElementById('tinhthanh');
+            const quanhuyenInput = document.getElementById('quanhuyen');
+            const phuongxaInput = document.getElementById('phuongxa');
+            
+            if (diachiInput) diachiInput.value = result.address;
+            if (tinhthanhInput) tinhthanhInput.value = result.province || '';
+            if (quanhuyenInput) quanhuyenInput.value = result.district || '';
+            if (phuongxaInput) phuongxaInput.value = result.ward || '';
+            
+            // Cập nhật localStorage
+            let currentUser = JSON.parse(localStorage.getItem('currentuser'));
+            if (currentUser) {
+                currentUser.address = result.address;
+                currentUser.province = result.province || '';
+                currentUser.district = result.district || '';
+                currentUser.ward = result.ward || '';
+                localStorage.setItem('currentuser', JSON.stringify(currentUser));
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy địa chỉ từ database:', error);
     }
 }
 
@@ -475,6 +528,40 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         
         const result = await response.json();
         
+        // Nếu đặt hàng thành công và người dùng đã đăng nhập, lưu địa chỉ vào database
+        if (result.success && currentUser) {
+            try {
+                const addressData = {
+                    phone: currentUser.phone,
+                    address: diachinhan,
+                    province: document.getElementById('tinhthanh')?.value || '',
+                    district: document.getElementById('quanhuyen')?.value || '',
+                    ward: document.getElementById('phuongxa')?.value || ''
+                };
+                
+                const addressResponse = await fetch('src/controllers/update_user_address.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(addressData)
+                });
+                
+                const addressResult = await addressResponse.json();
+                if (addressResult.success) {
+                    console.log('Địa chỉ đã được lưu vào database');
+                    // Cập nhật localStorage với địa chỉ mới
+                    currentUser.address = diachinhan;
+                    currentUser.province = addressData.province;
+                    currentUser.district = addressData.district;
+                    currentUser.ward = addressData.ward;
+                    localStorage.setItem('currentuser', JSON.stringify(currentUser));
+                }
+            } catch (error) {
+                console.error('Lỗi khi lưu địa chỉ:', error);
+            }
+        }
+        
         // Nếu đặt hàng thành công, cập nhật số lượng sử dụng giảm giá
         if (result.success && result.orderId) {
             try {
@@ -562,3 +649,115 @@ if (vnpayBtn) {
         form.submit();
     });
 }
+
+// Address Autocomplete functionality
+const GOONG_API_KEY = 'NJjmN0Glxr4d832dilxQtk1cfJbGuyn04h6TMeqK';
+let addressSessionToken = crypto.randomUUID();
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function initializeAddressAutocomplete() {
+    const addressInput = document.getElementById('diachinhan');
+    const suggestionsContainer = document.getElementById('address-suggestions');
+    
+    if (!addressInput || !suggestionsContainer) {
+        return; // Exit if elements not found
+    }
+
+    const debouncedSearch = debounce((query) => {
+        if (query.length < 2) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+
+        // Call Goong API for address suggestions
+        fetch(`https://rsapi.goong.io/Place/AutoComplete?api_key=${GOONG_API_KEY}&input=${encodeURIComponent(query)}&sessiontoken=${addressSessionToken}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'OK' && data.predictions) {
+                    suggestionsContainer.innerHTML = '';
+                    suggestionsContainer.style.display = 'block';
+
+                    data.predictions.forEach(prediction => {
+                        const div = document.createElement('div');
+                        div.className = 'address-suggestion-item';
+                        div.textContent = prediction.description;
+                        div.addEventListener('click', () => {
+                            addressInput.value = prediction.description;
+                            suggestionsContainer.style.display = 'none';
+                            
+                            // Auto-fill address components if available
+                            if (prediction.compound) {
+                                const tinhthanhInput = document.getElementById('tinhthanh');
+                                const quanhuyenInput = document.getElementById('quanhuyen');
+                                const phuongxaInput = document.getElementById('phuongxa');
+                                
+                                if (tinhthanhInput && prediction.compound.province) {
+                                    tinhthanhInput.value = prediction.compound.province;
+                                }
+                                if (quanhuyenInput && prediction.compound.district) {
+                                    quanhuyenInput.value = prediction.compound.district;
+                                }
+                                if (phuongxaInput && prediction.compound.commune) {
+                                    phuongxaInput.value = prediction.compound.commune;
+                                }
+                                
+                                console.log('Address components filled:', prediction.compound);
+                            }
+                        });
+                        suggestionsContainer.appendChild(div);
+                    });
+                } else {
+                    suggestionsContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi gọi API địa chỉ:', error);
+                suggestionsContainer.style.display = 'none';
+            });
+    }, 300);
+
+    // Add input event listener
+    addressInput.addEventListener('input', (e) => {
+        debouncedSearch(e.target.value);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!suggestionsContainer.contains(e.target) && e.target !== addressInput) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+
+    // Generate new session token when checkout page opens
+    addressSessionToken = crypto.randomUUID();
+}
+
+// Initialize address autocomplete when checkout page opens
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if checkout page exists and initialize autocomplete
+    const checkoutPage = document.querySelector('.checkout-page');
+    if (checkoutPage) {
+        // Initialize when checkout page becomes active
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (checkoutPage.classList.contains('active')) {
+                        setTimeout(initializeAddressAutocomplete, 100); // Small delay to ensure DOM is ready
+                    }
+                }
+            });
+        });
+        observer.observe(checkoutPage, { attributes: true });
+    }
+});
