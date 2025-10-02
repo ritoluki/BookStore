@@ -151,31 +151,34 @@ function createOrderDetails() {
     if (localStorage.getItem('orderDetails') === null) {
         // Sử dụng AJAX để lấy dữ liệu từ server
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "src/controllers/get_order_details.php", true);
+        xhr.open("GET", "src/controllers/get_all_order_details.php", true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState == 4 && xhr.status == 200) {
                 try {
                     // Chuyển đổi dữ liệu JSON thành đối tượng JavaScript
-                    let response = JSON.parse(xhr.responseText);
-                    let orderDetails = response.orderDetails || [];
+                    let orderDetails = JSON.parse(xhr.responseText);
 
                     // Đảm bảo rằng chi tiết đơn hàng có cấu trúc chính xác
                     if (Array.isArray(orderDetails)) {
                         orderDetails = orderDetails.map(detail => {
                             return {
                                 madon: String(detail.madon || ''),
-                                id: Number(detail.product_id || 0),
+                                product_id: Number(detail.product_id || 0),
+                                id: Number(detail.product_id || 0), // Giữ lại để tương thích
                                 note: String(detail.note || ''),
-                                price: Number(detail.product_price || 0),
-                                soluong: Number(detail.soluong || 0)
+                                price: Number(detail.price || 0),
+                                soluong: Number(detail.quantity || 0),
+                                quantity: Number(detail.quantity || 0) // Thêm field mới
                             };
                         });
 
                         // Lưu dữ liệu vào localStorage
                         localStorage.setItem('orderDetails', JSON.stringify(orderDetails));
+                        console.log('OrderDetails loaded from server:', orderDetails.length, 'items');
                     } else {
                         // Nếu không phải mảng, khởi tạo mảng rỗng
                         localStorage.setItem('orderDetails', JSON.stringify([]));
+                        console.log('OrderDetails initialized as empty array');
                     }
                 } catch (e) {
                     console.error("Error parsing JSON response:", e);
@@ -184,6 +187,8 @@ function createOrderDetails() {
             }
         };
         xhr.send();
+    } else {
+        console.log('OrderDetails already exists in localStorage');
     }
 }
 
