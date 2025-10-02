@@ -39,7 +39,7 @@ if (isset($_POST['btn1'])) {
                 $update_stmt->close();
                 
                 // Tạo link đổi mật khẩu
-                $reset_link = "http://localhost/bookstore_datn/reset_password.php?email=" . urlencode($email) . "&token=" . $token;
+                $reset_link = getBaseUrl() . "/reset_password.php?email=" . urlencode($email) . "&token=" . $token;
 
                 // Gửi email chứa link đổi mật khẩu
                 require '../services/send_mail.php';

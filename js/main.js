@@ -283,7 +283,7 @@ function displayBookReviewsFromLocal(reviews) {
 
 // Hàm đồng bộ đánh giá từ server (chạy ngầm)
 function syncReviewsFromServer(bookId) {
-    fetch(`src/controllers/get_book_reviews.php?product_id=${bookId}`)
+    fetch(pathManager.getApiUrl(`get_book_reviews.php?product_id=${bookId}`))
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -405,7 +405,7 @@ function submitBookRating() {
             content: content
         };
 
-        fetch('src/controllers/add_book_review.php', {
+        fetch(pathManager.getApiUrl('add_book_review.php'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(reviewData)
@@ -428,7 +428,7 @@ function submitBookRating() {
                         toast({ title: 'Lỗi', message: 'Không thể lưu đánh giá: ' + data.message, type: 'error', duration: 3000 });
                     }
                 } catch (e) {
-                    console.error('src/controllers/add_book_review JSON parse error:', e);
+                    console.error('add_book_review JSON parse error:', e);
                     console.error('Response text:', text);
                     toast({ title: 'Lỗi', message: 'Có lỗi khi xử lý phản hồi từ server!', type: 'error', duration: 3000 });
                 }
@@ -441,7 +441,7 @@ function submitBookRating() {
 
 // Thêm hàm lấy user ID thực từ database với debug tốt hơn
 function getUserRealId(phone) {
-    return fetch('src/controllers/get_user_id.php', {
+    return fetch(pathManager.getApiUrl('get_user_id.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: phone })
@@ -506,7 +506,7 @@ async function addCart(index) {
     // Kiểm tra giới hạn giảm giá nếu sản phẩm có giảm giá
     if (infoProduct.is_discounted) {
         try {
-            const response = await fetch('/Bookstore_DATN/src/controllers/check_discount_availability.php', {
+            const response = await fetch(pathManager.getApiUrl('check_discount_availability.php'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -998,7 +998,7 @@ signupButton.addEventListener('click', () => {
                 if (updated) {
                     localStorage.setItem('order', JSON.stringify(orders));
                 }
-                fetch('src/controllers/register_user.php', {
+                fetch(pathManager.getApiUrl('register_user.php'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1010,7 +1010,7 @@ signupButton.addEventListener('click', () => {
                 kiemtradangnhap();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/bookstore_datn/";
+                    window.location = pathManager.redirectHome();
                 }, 2000);
             } else {
                 toast({ title: 'Thất bại', message: 'Email hoặc số điện thoại đã tồn tại !', type: 'error', duration: 3000 });
@@ -1061,7 +1061,7 @@ loginButton.addEventListener('click', () => {
                 checkAdmin();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = "http://localhost/bookstore_datn/";
+                    window.location = pathManager.redirectHome();
                 }, 2000);
             }
         } else {
@@ -1099,7 +1099,7 @@ function logOut() {
 
 
     // Gửi giỏ hàng cập nhật lên server
-    fetch('src/controllers/updateCart.php', {
+    fetch(pathManager.getApiUrl('updateCart.php'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1830,7 +1830,7 @@ function changeInformation() {
 
 
     // Gửi yêu cầu AJAX tới PHP để cập nhật thông tin trong cơ sở dữ liệu
-    fetch('src/controllers/update_user_info.php', {
+    fetch(pathManager.getApiUrl('update_user_info.php'), {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -1902,7 +1902,7 @@ function changePassword() {
                     localStorage.setItem('accounts', JSON.stringify(accounts));
 
                     // Gửi yêu cầu AJAX tới PHP để cập nhật mật khẩu trong database
-                    fetch('src/controllers/update_password.php', {
+                    fetch(pathManager.getApiUrl('update_password.php'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -2020,7 +2020,7 @@ function renderOrderProduct() {
 async function reloadOrderDetailsFromServer() {
     try {
         console.log('Reloading orderDetails from server...');
-        const response = await fetch('/Bookstore_DATN/src/controllers/get_all_order_details.php');
+        const response = await fetch(pathManager.getApiUrl('get_all_order_details.php'));
         const orderDetails = await response.json();
         
         if (Array.isArray(orderDetails)) {
@@ -2066,7 +2066,7 @@ async function getOrderDetails(madon) {
     
     try {
         // Gọi API để lấy chi tiết đơn hàng mới nhất
-        const response = await fetch(`/Bookstore_DATN/src/controllers/get_order_details.php?order_id=${madon}`);
+        const response = await fetch(pathManager.getApiUrl(`get_order_details.php?order_id=${madon}`));
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -2408,7 +2408,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Hàm khởi tạo đánh giá khi tải trang
 function initBookReviews() {
     // Lấy đánh giá từ server và lưu vào localStorage
-    fetch('src/controllers/get_all_book_reviews.php')
+    fetch(pathManager.getApiUrl('get_all_book_reviews.php'))
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -2956,7 +2956,7 @@ function cancelOrder(orderId, btn) {
         bodyData.userPhone = currentUser.phone;
     }
 
-    fetch('src/controllers/cancel_order.php', {
+    fetch(pathManager.getApiUrl('cancel_order.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
@@ -2965,7 +2965,7 @@ function cancelOrder(orderId, btn) {
         .then(data => {
             if (data.success) {
                 toast({ title: 'Thành công', message: data.message, type: 'success', duration: 2000 });
-                fetch('src/controllers/get_orders.php')
+                fetch(pathManager.getApiUrl('get_orders.php'))
                     .then(res => res.json())
                     .then(orders => {
                         localStorage.setItem('order', JSON.stringify(orders));
@@ -3009,7 +3009,7 @@ function payAgain(orderId) {
         // Tạo lại form gửi sang VNPay với thông tin đơn hàng cũ
         let form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/Bookstore_DATN/vnpay_php/vnpay_pay.php';
+        form.action = pathManager.getVnpayUrl();
 
         let inputAmount = document.createElement('input');
         inputAmount.type = 'hidden';
@@ -3038,7 +3038,7 @@ function payAgain(orderId) {
 // --- confirmReceived ---
 function confirmReceived(orderId) {
     if (!confirm('Bạn xác nhận đã nhận được hàng?')) return;
-    fetch('src/controllers/update_order_status.php', {
+    fetch(pathManager.getApiUrl('update_order_status.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, status: 3 })
@@ -3047,7 +3047,7 @@ function confirmReceived(orderId) {
         .then(data => {
             if (data.success) {
                 toast({ title: 'Thành công', message: 'Cảm ơn bạn đã xác nhận!', type: 'success', duration: 2000 });
-                fetch('src/controllers/get_orders.php')
+                fetch(pathManager.getApiUrl('get_orders.php'))
                     .then(res => res.json())
                     .then(orders => {
                         localStorage.setItem('order', JSON.stringify(orders));
@@ -3066,7 +3066,7 @@ function confirmReceived(orderId) {
 // --- confirmPaidCOD ---
 function confirmPaidCOD(orderId) {
     if (!confirm('Bạn xác nhận đã thanh toán bằng tiền mặt?')) return;
-    fetch('src/controllers/update_payment_status.php', {
+    fetch(pathManager.getApiUrl('update_payment_status.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId, paymentStatus: 1 })
@@ -3076,7 +3076,7 @@ function confirmPaidCOD(orderId) {
             if (data.success) {
                 toast({ title: 'Thành công', message: 'Đã cập nhật trạng thái thanh toán!', type: 'success', duration: 2000 });
                 // Refresh dữ liệu đơn hàng
-                fetch('src/controllers/get_orders.php')
+                fetch(pathManager.getApiUrl('get_orders.php'))
                     .then(res => res.json())
                     .then(orders => {
                         localStorage.setItem('order', JSON.stringify(orders));
@@ -3135,7 +3135,7 @@ function filterProductsByCurrentCategory(products) {
 // Cập nhật dữ liệu sản phẩm với thông tin giảm giá từ server
 async function updateProductsWithDiscounts() {
     try {
-        const response = await fetch('/Bookstore_DATN/src/controllers/get_products.php');
+        const response = await fetch(pathManager.getApiUrl('get_products.php'));
         const productsWithDiscounts = await response.json();
 
         if (productsWithDiscounts && Array.isArray(productsWithDiscounts)) {
@@ -3211,8 +3211,8 @@ async function showDiscountedProducts() {
         // Lấy category hiện tại để filter
         const currentCategory = getCurrentCategory();
         const url = currentCategory ?
-            `/Bookstore_DATN/src/controllers/get_discounted_products.php?category=${encodeURIComponent(currentCategory)}` :
-            '/Bookstore_DATN/src/controllers/get_discounted_products.php';
+            pathManager.getApiUrl(`get_discounted_products.php?category=${encodeURIComponent(currentCategory)}`) :
+            pathManager.getApiUrl('get_discounted_products.php');
 
         // Lấy danh sách sách giảm giá từ server
         const response = await fetch(url);
@@ -3282,7 +3282,7 @@ async function showBestsellers() {
         if (event && event.target) event.target.classList.add('active');
 
         // Lấy danh sách sách bán chạy từ server
-        const response = await fetch('/Bookstore_DATN/src/controllers/get_bestsellers.php');
+        const response = await fetch(pathManager.getApiUrl('get_bestsellers.php'));
         const data = await response.json();
 
         if (data.success) {

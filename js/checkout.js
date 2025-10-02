@@ -310,7 +310,7 @@ function dathangngay() {
         let discountCheck = null;
         if (infoProduct.is_discounted) {
             try {
-                const response = await fetch('/Bookstore_DATN/src/controllers/check_discount_availability.php', {
+                const response = await fetch(pathManager.getApiUrl('check_discount_availability.php'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -593,7 +593,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         // Nếu đặt hàng thành công, cập nhật số lượng sử dụng giảm giá
         if (result.success && result.orderId) {
             try {
-                await fetch('/Bookstore_DATN/src/controllers/update_discount_usage.php', {
+                await fetch(pathManager.getApiUrl('update_discount_usage.php'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ order_id: result.orderId })
@@ -611,7 +611,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         } else {
             // Fallback về trang chủ nếu không có redirect_url
             setTimeout(() => {
-                window.location.href = "/Bookstore_DATN/";
+                window.location.href = pathManager.redirectHome();
             }, 2000);
         }  
     }
@@ -652,7 +652,7 @@ if (vnpayBtn) {
         // Tạo form ẩn để submit sang PHP (POST)
         let form = document.createElement('form');
         form.method = 'POST';
-        form.action = '/Bookstore_DATN/vnpay_php/vnpay_pay.php';
+        form.action = pathManager.getVnpayUrl();
 
         let inputAmount = document.createElement('input');
         inputAmount.type = 'hidden';

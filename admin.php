@@ -654,6 +654,7 @@
         </div>
     </div>
     
+    <script src="./js/path-manager.js"></script>
     <script src="./js/admin.js"></script>
     <script>
       // Đảm bảo gọi showUser khi trang load (nếu có tab khách hàng)

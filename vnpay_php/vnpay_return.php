@@ -188,7 +188,7 @@
                 Mã GD: #<?php echo $transId ? $transId : $orderId; ?>
             </div>
             <div style="margin-top: 32px;">
-                <button class="btn btn-primary" onclick="window.location.href='http://localhost/Bookstore_DATN/'">Tiếp tục mua sắm</button>
+                <button class="btn btn-primary" onclick="window.location.href=window.location.origin + (window.location.pathname.includes('/Bookstore_DATN/') ? '/Bookstore_DATN/' : '/')">Tiếp tục mua sắm</button>
                 <button class="btn btn-secondary" onclick="window.print()">In hóa đơn</button>
             </div>
         </div>

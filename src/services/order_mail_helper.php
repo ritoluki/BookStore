@@ -90,7 +90,7 @@ function sendOrderConfirmationEmail($order, $orderDetails, $email, $conn) {
         'extraBlock' => '<table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbe6;border-radius:10px;padding:20px;margin:24px 0;"><tr><td style="font-size:16px;color:#d35400;font-weight:700;">🎁 Quà Tặng Đặc Biệt Dành Cho Bạn!</td></tr><tr><td style="color:#8b4513;font-size:15px;padding:8px 0;">Để tri ân khách hàng thân thiết, chúng tôi tặng bạn mã giảm giá <b>20%</b> cho lần mua hàng tiếp theo. Mã có hiệu lực trong 30 ngày!</td></tr><tr><td style="text-align:center;"><span style="background:#fff;padding:10px 24px;border-radius:30px;font-size:18px;font-weight:700;color:#d35400;border:2px dashed #f39c12;letter-spacing:2px;display:inline-block;">THANKS20</span></td></tr></table>',
         'footerNote' => 'Cảm ơn bạn đã lựa chọn chúng tôi! Nếu có bất kỳ thắc mắc nào, đừng ngần ngại liên hệ với đội ngũ chăm sóc khách hàng 24/7.',
         'button1' => '<a href="#" style="display:inline-block;padding:14px 32px;background:#28a745;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Theo Dõi Đơn Hàng</a>',
-        'button2' => '<a href="http://localhost/Bookstore_DATN/" style="display:inline-block;padding:14px 32px;background:#495057;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Tiếp Tục Mua Sắm</a>'
+        'button2' => '<a href="' . getBaseUrl() . '/" style="display:inline-block;padding:14px 32px;background:#495057;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Tiếp Tục Mua Sắm</a>'
     ];
     $body = renderOrderEmailTemplate($params);
     $subject = "Cảm Ơn Quý Khách Đã Mua Hàng - Đơn #" . htmlspecialchars($order['id']);
@@ -585,7 +585,7 @@ function sendOrderStatusEmailV2($order, $orderDetails, $email, $conn, $cancelRea
             'productTable' => $productTable,
             'extraBlock' => '<div style="font-size:16px;color:#555;margin:24px 0 0 0;text-align:center;">Bạn có thể đánh giá đơn hàng hoặc liên hệ hỗ trợ nếu cần.</div>',
             'footerNote' => 'Book Shop luôn mong muốn mang lại trải nghiệm tốt nhất cho khách hàng!',
-            'button1' => '<a href="http://localhost/Bookstore_DATN/tra-cuu-don" style="display:inline-block;padding:14px 32px;background:#00bcd4;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Xem Đơn Hàng</a>',
+            'button1' => '<a href="' . getBaseUrl() . '/tracuu" style="display:inline-block;padding:14px 32px;background:#00bcd4;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Xem Đơn Hàng</a>',
             'button2' => '<a href="mailto:support@yourstore.com" style="display:inline-block;padding:14px 32px;background:#495057;color:#fff;border-radius:30px;text-decoration:none;font-weight:600;margin:0 8px;">Liên Hệ Hỗ Trợ</a>'
         ];
         $body = renderOrderEmailTemplate($params);
@@ -801,7 +801,7 @@ function createPaymentReminderEmailHTML($order, $products)
                 <p><strong>Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý đơn hàng của bạn.</strong></p>
                 
                                  <div style="text-align: center;">
-                     <a href="http://localhost/Bookstore_DATN/index.php?page=checkout&order_id=' . $order['id'] . '" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); transition: all 0.3s ease;">
+                     <a href="' . getBaseUrl() . '/index.php?page=checkout&order_id=' . $order['id'] . '" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3); transition: all 0.3s ease;">
                          💳 Thanh toán ngay
                      </a>
                  </div>
@@ -834,7 +834,7 @@ function createPaymentReminderEmailText($order, $products)
 
     $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " đ\n\n";
     $text .= "Vui lòng hoàn tất thanh toán để chúng tôi có thể xử lý đơn hàng của bạn.\n\n";
-    $text .= "Thanh toán tại: http://localhost/Bookstore_DATN/index.php?page=checkout&order_id=" . $order['id'] . "\n\n";
+    $text .= "Thanh toán tại: " . getBaseUrl() . "/index.php?page=checkout&order_id=" . $order['id'] . "\n\n";
     $text .= "Nếu bạn đã thanh toán, vui lòng bỏ qua email này.";
 
     return $text;
@@ -941,7 +941,7 @@ function createDeliverySuccessEmailHTML($order, $products)
                 <p><strong>Cảm ơn bạn đã tin tưởng BOOK SHOP!</strong></p>
                 
                 <div style="text-align: center;">
-                    <a href="http://localhost/Bookstore_DATN/" class="cta-button">
+                    <a href="' . getBaseUrl() . '/" class="cta-button">
                         Tiếp tục mua sắm
                     </a>
                 </div>
@@ -974,7 +974,7 @@ function createDeliverySuccessEmailText($order, $products)
 
     $text .= "\nTổng cộng: " . number_format($order['tongtien'] - $giamgia + $phigiaohang, 0, ',', '.') . " ₫\n\n";
     $text .= "Cảm ơn bạn đã tin tưởng BOOK SHOP!\n\n";
-    $text .= "Tiếp tục mua sắm tại: http://localhost/Bookstore_DATN/\n\n";
+    $text .= "Tiếp tục mua sắm tại: " . getBaseUrl() . "/\n\n";
     $text .= "Nếu có vấn đề gì với đơn hàng, vui lòng liên hệ với chúng tôi để được hỗ trợ.";
 
     return $text;
