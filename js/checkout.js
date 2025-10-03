@@ -1,7 +1,7 @@
 const PHIVANCHUYEN = 30000;
 let priceFinal = document.getElementById("checkout-cart-price-final");
 // Trang thanh toan
-function thanhtoanpage(option,product) {
+function thanhtoanpage(option, product) {
     // Xu ly ngay nhan hang
     let today = new Date();
     let ngaymai = new Date();
@@ -23,7 +23,7 @@ function thanhtoanpage(option,product) {
     </a>`
     document.querySelector('.date-order').innerHTML = dateorderhtml;
     let pickdate = document.getElementsByClassName('pick-date')
-    for(let i = 0; i < pickdate.length; i++) {
+    for (let i = 0; i < pickdate.length; i++) {
         pickdate[i].onclick = function () {
             document.querySelector(".pick-date.active").classList.remove("active");
             this.classList.add('active');
@@ -70,7 +70,7 @@ function thanhtoanpage(option,product) {
                 const regularQty = product.discount_info.remaining_quantity;
                 const discountedPrice = product.discount_info.discounted_price;
                 const originalPrice = product.discount_info.original_price;
-                
+
                 totalProductPrice = (discountQty * discountedPrice) + (regularQty * originalPrice);
             } else {
                 // Fallback: sử dụng giá sau giảm nếu có
@@ -79,7 +79,7 @@ function thanhtoanpage(option,product) {
             }
             // Lưu lại tổng tiền hàng để dùng cho việc cộng/trừ phí ship khi người dùng đổi hình thức giao
             baseMerchandiseTotal = totalProductPrice;
-            
+
             totalBillOrderHtml = `<div class="priceFlx">
                 <div class="text">
                     Tiền hàng 
@@ -109,7 +109,7 @@ function thanhtoanpage(option,product) {
     let tudenlay = document.querySelector('#tudenlay');
     let tudenlayGroup = document.querySelector('#tudenlay-group');
     let chkShip = document.querySelectorAll(".chk-ship");
-    
+
     tudenlay.addEventListener('click', () => {
         giaotannoi.classList.remove("active");
         tudenlay.classList.add("active");
@@ -199,16 +199,16 @@ function autofillReceiverInfo() {
         const tinhthanhInput = document.getElementById('tinhthanh');
         const quanhuyenInput = document.getElementById('quanhuyen');
         const phuongxaInput = document.getElementById('phuongxa');
-        
+
         if (tenInput) tenInput.value = currentUser.fullname || '';
         if (sdtInput) sdtInput.value = currentUser.phone || '';
         if (diachiInput) diachiInput.value = currentUser.address || '';
-        
+
         // Auto-fill address components if available in user data
         if (tinhthanhInput) tinhthanhInput.value = currentUser.province || '';
         if (quanhuyenInput) quanhuyenInput.value = currentUser.district || '';
         if (phuongxaInput) phuongxaInput.value = currentUser.ward || '';
-        
+
         // Nếu người dùng chưa có địa chỉ trong localStorage, thử lấy từ database
         if (!currentUser.address && currentUser.phone) {
             fetchUserAddressFromDB(currentUser.phone);
@@ -226,7 +226,7 @@ async function fetchUserAddressFromDB(phone) {
             },
             body: JSON.stringify({ phone: phone })
         });
-        
+
         const result = await response.json();
         if (result.success && result.address) {
             // Cập nhật form với địa chỉ từ database
@@ -234,12 +234,12 @@ async function fetchUserAddressFromDB(phone) {
             const tinhthanhInput = document.getElementById('tinhthanh');
             const quanhuyenInput = document.getElementById('quanhuyen');
             const phuongxaInput = document.getElementById('phuongxa');
-            
+
             if (diachiInput) diachiInput.value = result.address;
             if (tinhthanhInput) tinhthanhInput.value = result.province || '';
             if (quanhuyenInput) quanhuyenInput.value = result.district || '';
             if (phuongxaInput) phuongxaInput.value = result.ward || '';
-            
+
             // Cập nhật localStorage
             let currentUser = JSON.parse(localStorage.getItem('currentuser'));
             if (currentUser) {
@@ -262,15 +262,15 @@ nutthanhtoan.addEventListener('click', () => {
     // Kiểm tra đăng nhập trước khi mở trang thanh toán
     let currentUser = JSON.parse(localStorage.getItem('currentuser'));
     if (!currentUser) {
-        toast({ 
-            title: 'Yêu cầu đăng nhập', 
-            message: 'Bạn cần đăng nhập để đặt hàng!', 
-            type: 'warning', 
-            duration: 3000 
+        toast({
+            title: 'Yêu cầu đăng nhập',
+            message: 'Bạn cần đăng nhập để đặt hàng!',
+            type: 'warning',
+            duration: 3000
         });
         return;
     }
-    
+
     checkoutpage.classList.add('active');
     thanhtoanpage(1);
     autofillReceiverInfo(); // Gọi trực tiếp sau khi render form
@@ -286,26 +286,26 @@ function dathangngay() {
         // Kiểm tra đăng nhập trước khi đặt hàng ngay
         let currentUser = JSON.parse(localStorage.getItem('currentuser'));
         if (!currentUser) {
-            toast({ 
-                title: 'Yêu cầu đăng nhập', 
-                message: 'Bạn cần đăng nhập để đặt hàng!', 
-                type: 'warning', 
-                duration: 3000 
+            toast({
+                title: 'Yêu cầu đăng nhập',
+                message: 'Bạn cần đăng nhập để đặt hàng!',
+                type: 'warning',
+                duration: 3000
             });
             return;
         }
-        
+
         let productId = datHangNgayBtn.getAttribute("data-product");
         let soluong = parseInt(productInfo.querySelector(".buttons_added .input-qty").value);
         let products = JSON.parse(localStorage.getItem('products'));
         let infoProduct = products.find(item => item.id == productId);
-        
+
         if (soluong > infoProduct.soluong) {
             toast({ title: 'Lỗi', message: 'Số lượng vượt quá số lượng còn lại!', type: 'error', duration: 2000 });
             productInfo.querySelector(".buttons_added .input-qty").value = infoProduct.soluong;
             return;
         }
-        
+
         // Kiểm tra giới hạn giảm giá nếu sản phẩm có giảm giá
         let discountCheck = null;
         if (infoProduct.is_discounted) {
@@ -318,26 +318,26 @@ function dathangngay() {
                         quantity: soluong
                     })
                 });
-                
+
                 discountCheck = await response.json();
-                
+
                 if (discountCheck.success && discountCheck.has_discount) {
                     if (!discountCheck.can_apply_full_discount) {
                         const maxDiscountQty = discountCheck.applicable_quantity;
                         const remainingQty = discountCheck.remaining_quantity;
-                        
+
                         if (maxDiscountQty === 0) {
-                            toast({ 
-                                title: 'Thông báo', 
-                                message: 'Chương trình giảm giá đã hết lượt sử dụng! Sản phẩm sẽ được bán với giá gốc.', 
-                                type: 'warning', 
-                                duration: 4000 
+                            toast({
+                                title: 'Thông báo',
+                                message: 'Chương trình giảm giá đã hết lượt sử dụng! Sản phẩm sẽ được bán với giá gốc.',
+                                type: 'warning',
+                                duration: 4000
                             });
                         } else {
                             const confirmMsg = `Chương trình giảm giá chỉ còn ${maxDiscountQty} lượt sử dụng.\n` +
-                                             `${maxDiscountQty} sản phẩm sẽ được giảm giá, ${remainingQty} sản phẩm còn lại sẽ có giá gốc.\n` +
-                                             `Bạn có muốn tiếp tục?`;
-                            
+                                `${maxDiscountQty} sản phẩm sẽ được giảm giá, ${remainingQty} sản phẩm còn lại sẽ có giá gốc.\n` +
+                                `Bạn có muốn tiếp tục?`;
+
                             if (!confirm(confirmMsg)) {
                                 return;
                             }
@@ -349,18 +349,18 @@ function dathangngay() {
                 // Vẫn cho phép đặt hàng nếu API lỗi
             }
         }
-        
+
         let notevalue = productInfo.querySelector("#popup-detail-note").value;
         let ghichu = notevalue == "" ? "Không có ghi chú" : notevalue;
         let originalProduct = products.find(item => item.id == productId);
-        
+
         // Tạo bản copy đầy đủ thông tin sản phẩm bao gồm thông tin giảm giá
         let a = {
             ...originalProduct,
             soluong: parseInt(soluong),
             note: ghichu
         };
-        
+
         // Thêm thông tin giảm giá chi tiết nếu có
         if (infoProduct.is_discounted && discountCheck && discountCheck.success && discountCheck.has_discount) {
             a.discount_info = {
@@ -371,7 +371,7 @@ function dathangngay() {
             };
         }
         checkoutpage.classList.add('active');
-        thanhtoanpage(2,a);
+        thanhtoanpage(2, a);
         autofillReceiverInfo(); // Tự động điền thông tin người nhận khi đặt hàng ngay
         closeCart();
         let modal = document.querySelector('.modal.product-detail');
@@ -389,18 +389,18 @@ function closecheckout() {
 // Thong tin cac don hang da mua - Xu ly khi nhan nut dat hang
 async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     let currentUser = JSON.parse(localStorage.getItem('currentuser'));
-    
+
     // Kiểm tra đăng nhập bắt buộc
     if (!currentUser) {
-        toast({ 
-            title: 'Yêu cầu đăng nhập', 
-            message: 'Bạn cần đăng nhập để đặt hàng!', 
-            type: 'warning', 
-            duration: 3000 
+        toast({
+            title: 'Yêu cầu đăng nhập',
+            message: 'Bạn cần đăng nhập để đặt hàng!',
+            type: 'warning',
+            duration: 3000
         });
         return false;
     }
-    
+
     let diachinhan = "";
     let hinhthucgiao = "";
     let thoigiangiao = "";
@@ -408,30 +408,30 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     let tudenlay = document.querySelector("#tudenlay");
     let giaongay = document.querySelector("#giaongay");
     let giaovaogio = document.querySelector("#deliverytime");
-    
+
     // Hình thức giao & Địa chỉ nhận hàng
-    if(giaotannoi.classList.contains("active")) {
+    if (giaotannoi.classList.contains("active")) {
         diachinhan = document.querySelector("#diachinhan").value;
         hinhthucgiao = giaotannoi.innerText;
     }
-    if(tudenlay.classList.contains("active")){
+    if (tudenlay.classList.contains("active")) {
         let chinhanh1 = document.querySelector("#chinhanh-1");
         let chinhanh2 = document.querySelector("#chinhanh-2");
-        if(chinhanh1.checked) {
+        if (chinhanh1.checked) {
             diachinhan = "Hoài Đức, Hà Nội";
         }
-        if(chinhanh2.checked) {
+        if (chinhanh2.checked) {
             diachinhan = "Cầu Giấy, Hà Nội";
         }
         hinhthucgiao = tudenlay.innerText;
     }
 
     // Thời gian nhận hàng
-    if(giaongay.checked) {
+    if (giaongay.checked) {
         thoigiangiao = "Giao ngay khi xong";
     }
 
-    if(giaovaogio.checked) {
+    if (giaovaogio.checked) {
         thoigiangiao = document.querySelector(".choise-time").value;
     }
 
@@ -440,9 +440,9 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     let madon = createId(order);
     let tongtien = 0;
     let newOrderDetails = [];
-    
+
     // Handle product(s)
-    if(product == undefined) {
+    if (product == undefined) {
         if (currentUser && currentUser.cart) {
             currentUser.cart.forEach(item => {
                 item.madon = madon;
@@ -461,17 +461,17 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     if (giaotannoi.classList.contains("active")) {
         tongtien += PHIVANCHUYEN;
     }
-    
+
     let tennguoinhan = document.querySelector("#tennguoinhan").value;
     let sdtnhan = document.querySelector("#sdtnhan").value;
 
-    if(tennguoinhan == "" || sdtnhan == "" || diachinhan == "") {
+    if (tennguoinhan == "" || sdtnhan == "" || diachinhan == "") {
         toast({ title: 'Chú ý', message: 'Vui lòng nhập đầy đủ thông tin !', type: 'warning', duration: 4000 });
     } else {
         // Tạo đối tượng Date với time zone cho Vietnam (GMT+7)
         const now = new Date();
         const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-        
+
         let donhang = {
             id: madon,
             khachhang: currentUser ? currentUser.phone : sdtnhan,
@@ -487,15 +487,15 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             trangthai: 0,
             payment_method: paymentMethod
         }
-    
+
         order.unshift(donhang);
 
         // Clear cart if user is logged in
-        if(currentUser && currentUser.cart) {
+        if (currentUser && currentUser.cart) {
             currentUser.cart.length = 0;
             localStorage.setItem("currentuser", JSON.stringify(currentUser));
         }
-    
+
         localStorage.setItem("order", JSON.stringify(order));
         let allOrderDetails = localStorage.getItem("orderDetails") ? JSON.parse(localStorage.getItem("orderDetails")) : [];
         allOrderDetails = newOrderDetails.concat(allOrderDetails);
@@ -503,7 +503,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
 
         // Trừ số lượng tồn kho
         let products = JSON.parse(localStorage.getItem('products'));
-        if(product == undefined) {
+        if (product == undefined) {
             if (currentUser && currentUser.cart) {
                 currentUser.cart.forEach(async item => {
                     let p = products.find(sp => sp.id == item.id);
@@ -533,7 +533,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         localStorage.setItem('products', JSON.stringify(products));
 
         // Cập nhật số lượng đã bán cho sản phẩm
-        if(product == undefined) {
+        if (product == undefined) {
             if (currentUser && currentUser.cart) {
                 currentUser.cart.forEach(item => {
                     updateProductSales(item.id, item.soluong);
@@ -543,8 +543,11 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             updateProductSales(product.id, product.soluong);
         }
 
-        toast({ title: 'Thành công', message: 'Đặt hàng thành công !', type: 'success', duration: 1000 });
-        
+        // Chỉ hiển thị toast cho COD, VNPay sẽ thông báo sau khi thanh toán thành công
+        if (paymentMethod === 'cod') {
+            toast({ title: 'Thành công', message: 'Đặt hàng thành công !', type: 'success', duration: 1000 });
+        }
+
         // Gửi dữ liệu đơn hàng và chi tiết đơn hàng đến server để lưu vào database
         let formData = new FormData();
         formData.append('order', JSON.stringify(donhang));
@@ -553,9 +556,9 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             method: 'POST',
             body: formData
         });
-        
+
         const result = await response.json();
-        
+
         // Nếu đặt hàng thành công và người dùng đã đăng nhập, lưu địa chỉ vào database
         if (result.success && currentUser) {
             try {
@@ -566,7 +569,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
                     district: document.getElementById('quanhuyen')?.value || '',
                     ward: document.getElementById('phuongxa')?.value || ''
                 };
-                
+
                 const addressResponse = await fetch('src/controllers/update_user_address.php', {
                     method: 'POST',
                     headers: {
@@ -574,7 +577,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
                     },
                     body: JSON.stringify(addressData)
                 });
-                
+
                 const addressResult = await addressResponse.json();
                 if (addressResult.success) {
                     console.log('Địa chỉ đã được lưu vào database');
@@ -589,7 +592,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
                 console.error('Lỗi khi lưu địa chỉ:', error);
             }
         }
-        
+
         // Nếu đặt hàng thành công, cập nhật số lượng sử dụng giảm giá
         if (result.success && result.orderId) {
             try {
@@ -603,7 +606,12 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             }
         }
 
-        // Redirect đến trang thành công nếu có URL
+        // Nếu returnInfo = true (VNPay), chỉ return info, không redirect
+        if (returnInfo) {
+            return { orderId: madon, amount: tongtien };
+        }
+
+        // Redirect đến trang thành công nếu có URL (chỉ cho COD)
         if (result.redirect_url) {
             setTimeout(() => {
                 window.location.href = result.redirect_url;
@@ -613,12 +621,7 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
             setTimeout(() => {
                 window.location.href = pathManager.redirectHome();
             }, 2000);
-        }  
-    }
-
-    // Sau khi lưu đơn hàng và orderDetails:
-    if (returnInfo) {
-        return { orderId: madon, amount: tongtien };
+        }
     }
 }
 
@@ -635,7 +638,7 @@ function getpriceProduct(id) {
 // Thêm sự kiện cho nút VNPay
 const vnpayBtn = document.getElementById('btnVnpay');
 if (vnpayBtn) {
-    vnpayBtn.addEventListener('click', async function() {
+    vnpayBtn.addEventListener('click', async function () {
         let product = window.productBuyNow || undefined;
         let result = await xulyDathang(product, 'online', true);
         if (!result || !result.orderId || !result.amount || result.amount <= 0) {
@@ -697,7 +700,7 @@ function debounce(func, wait) {
 function initializeAddressAutocomplete() {
     const addressInput = document.getElementById('diachinhan');
     const suggestionsContainer = document.getElementById('address-suggestions');
-    
+
     if (!addressInput || !suggestionsContainer) {
         return; // Exit if elements not found
     }
@@ -723,13 +726,13 @@ function initializeAddressAutocomplete() {
                         div.addEventListener('click', () => {
                             addressInput.value = prediction.description;
                             suggestionsContainer.style.display = 'none';
-                            
+
                             // Auto-fill address components if available
                             if (prediction.compound) {
                                 const tinhthanhInput = document.getElementById('tinhthanh');
                                 const quanhuyenInput = document.getElementById('quanhuyen');
                                 const phuongxaInput = document.getElementById('phuongxa');
-                                
+
                                 if (tinhthanhInput && prediction.compound.province) {
                                     tinhthanhInput.value = prediction.compound.province;
                                 }
@@ -739,7 +742,7 @@ function initializeAddressAutocomplete() {
                                 if (phuongxaInput && prediction.compound.commune) {
                                     phuongxaInput.value = prediction.compound.commune;
                                 }
-                                
+
                                 console.log('Address components filled:', prediction.compound);
                             }
                         });
@@ -772,13 +775,13 @@ function initializeAddressAutocomplete() {
 }
 
 // Initialize address autocomplete when checkout page opens
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Check if checkout page exists and initialize autocomplete
     const checkoutPage = document.querySelector('.checkout-page');
     if (checkoutPage) {
         // Initialize when checkout page becomes active
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     if (checkoutPage.classList.contains('active')) {
                         setTimeout(initializeAddressAutocomplete, 100); // Small delay to ensure DOM is ready

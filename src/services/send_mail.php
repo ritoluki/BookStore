@@ -2,6 +2,9 @@
 // Nạp autoloader của Composer
 require '../../vendor/autoload.php';
 
+// Load environment config
+require_once '../../config/env_loader.php';
+
 // Import các lớp cần thiết
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -11,18 +14,19 @@ use PHPMailer\PHPMailer\Exception;
 $mail = new PHPMailer(true); // true kích hoạt exceptions
 
 try {
-    // Cấu hình server
-    $mail->isSMTP();                                      // Sử dụng SMTP
-    $mail->Host = 'smtp.gmail.com';                 // Server SMTP của Gmail
-    $mail->SMTPAuth = true;                             // Bật xác thực SMTP
-    $mail->Username = 'bookshopdatn@gmail.com';         // Email của bạn
+    // Lấy cấu hình từ env_config
+    $mail_config = $GLOBALS['env_config']['mail'] ?? [];
 
-
-    $mail->Password = 'rzzw cojk nbri zgpn';            // App Password mới
+    // Cấu hình server từ .env
+    $mail->isSMTP();
+    $mail->Host = $mail_config['host'] ?? 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = $mail_config['username'] ?? 'bookshopdatn@gmail.com';
+    $mail->Password = $mail_config['password'] ?? 'rzzwcojknbrizgpn';
 
     // Cấu hình bảo mật
-    $mail->SMTPSecure = 'ssl';                            // Sử dụng SSL
-    $mail->Port = 465;                              // Cổng SSL
+    $mail->SMTPSecure = $mail_config['encryption'] ?? 'ssl';
+    $mail->Port = $mail_config['port'] ?? 465;
 
     // Cấu hình bổ sung
     $mail->CharSet = 'UTF-8';                          // Hỗ trợ tiếng Việt
@@ -51,15 +55,20 @@ try {
  * @param string $to Email người nhận
  * @param string $subject Tiêu đề email
  * @param string $body Nội dung email (HTML)
- * @param string $from_email Email người gửi (mặc định là bookshop)
- * @param string $from_name Tên người gửi (mặc định là BOOK SHOP)
+ * @param string $from_email Email người gửi (mặc định lấy từ .env)
+ * @param string $from_name Tên người gửi (mặc định lấy từ .env)
  * @return bool Trả về true nếu gửi thành công, false nếu thất bại
  */
-function sendEmail($to, $subject, $body, $from_email = 'bookshopdatn@gmail.com', $from_name = 'BOOK SHOP')
+function sendEmail($to, $subject, $body, $from_email = null, $from_name = null)
 {
     global $mail;
 
     try {
+        // Lấy cấu hình từ env nếu không truyền vào
+        $mail_config = $GLOBALS['env_config']['mail'] ?? [];
+        $from_email = $from_email ?? ($mail_config['from_address'] ?? 'bookshopdatn@gmail.com');
+        $from_name = $from_name ?? ($mail_config['from_name'] ?? 'BOOK SHOP');
+
         // Reset recipients
         $mail->clearAddresses();
         $mail->clearReplyTos();
