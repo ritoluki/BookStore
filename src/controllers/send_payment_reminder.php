@@ -49,7 +49,7 @@ try {
     }
     
     // Kiểm tra xem có phải đơn hàng COD không (không gửi nhắc nhở cho COD)
-    if (isset($orderInfo['hinhthucgiao']) && stripos($orderInfo['hinhthucgiao'], 'cod') !== false) {
+    if (isset($orderInfo['payment_method']) && strtolower($orderInfo['payment_method']) === 'cod') {
         throw new Exception('Không thể gửi nhắc nhở thanh toán cho đơn hàng COD');
     }
     

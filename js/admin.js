@@ -766,7 +766,7 @@ function showOrder(arr) {
                     <button class="btn-delete" title="Xóa đơn hàng" onclick="deleteOrderAdmin('${item.id}')"><i class="fa-regular fa-trash"></i></button>
                 </div>
             `;
-            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' ? 'Online' : 'COD') : 'COD';
+            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' || item.payment_method.toLowerCase() === 'vnpay' ? 'Online' : 'COD') : 'COD';
             orderHtml += `
             <tr>
                 <td>${item.id}</td>
@@ -785,7 +785,8 @@ function showOrder(arr) {
 
 // Hàm xóa đơn hàng từ admin
 function deleteOrderAdmin(orderId) {
-    if (!confirm("Bạn có chắc muốn xóa đơn hàng này?")) return;
+    if (!confirm("Bạn có chắc muốn xóa đơn hàng này? Hành động này không thể hoàn tác!")) return;
+    
     fetch(pathManager.getApiUrl('delete_order.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -794,13 +795,28 @@ function deleteOrderAdmin(orderId) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                toast({ title: 'Thành công', message: 'Đã xóa đơn hàng', type: 'success', duration: 3000 });
-                // Đồng bộ lại đơn hàng từ server
+                toast({ 
+                    title: 'Thành công', 
+                    message: 'Đã xóa đơn hàng và đồng bộ dữ liệu', 
+                    type: 'success', 
+                    duration: 3000 
+                });
+                
+                // Đồng bộ lại đơn hàng từ server cho cả admin và customer
                 fetch(pathManager.getApiUrl('get_orders.php'))
                     .then(res => res.json())
                     .then(orders => {
+                        // Cập nhật localStorage với dữ liệu mới nhất
                         localStorage.setItem('order', JSON.stringify(orders));
+                        
+                        // Refresh danh sách đơn hàng admin
                         findOrder();
+                        
+                        // Thông báo cho customer nếu đang xem đơn hàng
+                        console.log('Order deleted, customer localStorage updated');
+                    })
+                    .catch(syncError => {
+                        console.error('Error syncing orders after delete:', syncError);
                     });
             } else {
                 toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
@@ -1046,7 +1062,7 @@ async function detailOrder(id) {
         } else if (order.trangthai == 1) {
             // Kiểm tra thanh toán trước khi cho phép chuyển sang đang giao hàng (chỉ áp dụng cho đơn online)
             const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
-            const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 1);
+            const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 'VNPay' || order.payment_method === 1);
 
 
 
@@ -1059,7 +1075,7 @@ async function detailOrder(id) {
         } else if (order.trangthai == 2) {
             // Kiểm tra thanh toán trước khi cho phép hoàn thành (chỉ áp dụng cho đơn online)
             const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
-            const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 1);
+            const isOnlineOrder = order.payment_method && (order.payment_method === 'online' || order.payment_method === 'VNPay' || order.payment_method === 1);
 
 
 
@@ -1083,8 +1099,8 @@ async function detailOrder(id) {
         const paymentStatus = order.payment_status !== undefined ? parseInt(order.payment_status) : 0;
         let paymentStatusButton = '';
 
-        // Kiểm tra xem có phải đơn hàng COD không
-        const isCOD = order.hinhthucgiao && order.hinhthucgiao.toLowerCase().includes('cod');
+        // Kiểm tra phương thức thanh toán (không phải hình thức giao hàng)
+        const isCOD = order.payment_method && (order.payment_method.toLowerCase() === 'cod');
 
         if (order.trangthai != 3 && order.trangthai != 4) { // Chỉ hiển thị khi chưa hoàn thành và chưa hủy
             if (paymentStatus === 1) {
@@ -1092,7 +1108,7 @@ async function detailOrder(id) {
                     <i class="fa-regular "></i> Đã thanh toán
                 </button>`;
             } else if (!isCOD) {
-                // Chỉ hiển thị button "Gửi nhắc nhở" cho đơn hàng không phải COD
+                // Chỉ hiển thị button "Gửi nhắc nhở" cho đơn hàng ONLINE (VNPay), không phải COD
                 paymentStatusButton = `<button class="modal-detail-btn btn-chuathanhtoan payment-status-btn payment-reminder" onclick="sendPaymentReminder('${order.id}')">
                     <i class="fa-regular fa-envelope"></i> Gửi nhắc nhở
                 </button>`;
@@ -1878,12 +1894,12 @@ async function changeOrderStatus(orderId, status, el, text) {
             targetStatus: status,
             paymentMethod: order.payment_method,
             paymentStatus: order.payment_status,
-            isOnlineOrder: order.payment_method && (order.payment_method === 'online' || order.payment_method === 1),
+            isOnlineOrder: order.payment_method && (order.payment_method === 'online' || order.payment_method === 'VNPay' || order.payment_method === 1),
             isUnpaid: parseInt(order.payment_status) !== 1,
-            shouldBlock: (status === 2 || status === 3) && order.payment_method && (order.payment_method === 'online' || order.payment_method === 1) && parseInt(order.payment_status) !== 1
+            shouldBlock: (status === 2 || status === 3) && order.payment_method && (order.payment_method === 'online' || order.payment_method === 'VNPay' || order.payment_method === 1) && parseInt(order.payment_status) !== 1
         });
 
-        if ((status === 2 || status === 3) && order.payment_method && (order.payment_method === 'online' || order.payment_method === 1) && parseInt(order.payment_status) !== 1) {
+        if ((status === 2 || status === 3) && order.payment_method && (order.payment_method === 'online' || order.payment_method === 'VNPay' || order.payment_method === 1) && parseInt(order.payment_status) !== 1) {
             const statusText = status === 2 ? 'đang giao hàng' : 'hoàn thành';
             console.log(`Blocking status change to ${statusText} - unpaid online order`);
             toast({

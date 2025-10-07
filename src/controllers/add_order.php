@@ -1,12 +1,21 @@
 <?php
 require_once '../../config/config.php';
 
+// Đặt timezone cho Vietnam
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Lấy dữ liệu từ yêu cầu POST
 $order = json_decode($_POST['order'], true);
 $orderDetails = json_decode($_POST['orderDetails'], true);
 
-// Đảm bảo thoigiandat có định dạng chuẩn cho MySQL
-$thoigiandat = date('Y-m-d H:i:s', strtotime($order['thoigiandat']));
+// Xử lý thời gian với timezone Vietnam
+if (isset($order['thoigiandat'])) {
+    // Nếu là ISO string từ JavaScript, parse và convert về timezone Vietnam
+    $thoigiandat = date('Y-m-d H:i:s', strtotime($order['thoigiandat']));
+} else {
+    // Nếu không có thời gian, sử dụng thời gian hiện tại của Vietnam
+    $thoigiandat = date('Y-m-d H:i:s');
+}
 
 // Lấy thông tin email của khách hàng
 $user_email = "";

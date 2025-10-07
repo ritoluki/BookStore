@@ -56,13 +56,27 @@ try {
                 if ($order["Status"] != NULL && $order["Status"] == 0) {
                     if ($inputData['vnp_ResponseCode'] == '00' && $inputData['vnp_TransactionStatus'] == '00') {
                         $Status = 1; // Trạng thái thanh toán thành công
+                        // Cập nhật trạng thái đơn hàng trong DB
+                        $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
+                        if (!$conn->connect_error && $orderId) {
+                            $stmt = $conn->prepare("UPDATE `order` SET trangthai = 1, payment_status = 1, payment_method = 'VNPay' WHERE id = ?");
+                            $stmt->bind_param("s", $orderId);
+                            $stmt->execute();
+                            $stmt->close();
+                            $conn->close();
+                        }
                     } else {
                         $Status = 2; // Trạng thái thanh toán thất bại / lỗi
+                        // Cập nhật trạng thái đơn hàng thất bại trong DB
+                        $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT);
+                        if (!$conn->connect_error && $orderId) {
+                            $stmt = $conn->prepare("UPDATE `order` SET payment_status = 2, payment_method = 'VNPay' WHERE id = ?");
+                            $stmt->bind_param("s", $orderId);
+                            $stmt->execute();
+                            $stmt->close();
+                            $conn->close();
+                        }
                     }
-                    //Cài đặt Code cập nhật kết quả thanh toán, tình trạng đơn hàng vào DB
-                    //
-                    //
-                    //
                     //Trả kết quả về cho VNPAY: Website/APP TMĐT ghi nhận yêu cầu thành công                
                     $returnData['RspCode'] = '00';
                     $returnData['Message'] = 'Confirm Success';

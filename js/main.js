@@ -1010,7 +1010,12 @@ signupButton.addEventListener('click', () => {
                 kiemtradangnhap();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = pathManager.redirectHome();
+                    if (typeof pathManager !== 'undefined' && pathManager.getHomeUrl) {
+                        window.location = pathManager.getHomeUrl();
+                    } else {
+                        // Fallback URL cho local
+                        window.location = '/Bookstore_DATN/';
+                    }
                 }, 2000);
             } else {
                 toast({ title: 'Thất bại', message: 'Email hoặc số điện thoại đã tồn tại !', type: 'error', duration: 3000 });
@@ -1061,7 +1066,12 @@ loginButton.addEventListener('click', () => {
                 checkAdmin();
                 updateAmount();
                 setTimeout((e) => {
-                    window.location = pathManager.redirectHome();
+                    if (typeof pathManager !== 'undefined' && pathManager.getHomeUrl) {
+                        window.location = pathManager.getHomeUrl();
+                    } else {
+                        // Fallback URL cho local
+                        window.location = '/Bookstore_DATN/';
+                    }
                 }, 2000);
             }
         } else {
@@ -1117,7 +1127,7 @@ function logOut() {
 }
 
 // Hàm hiển thị đơn hàng đã mua
-function showOrderHistory() {
+    async function showOrderHistory() {
     try {
         let currentUser = JSON.parse(localStorage.getItem('currentuser'));
         
@@ -1131,36 +1141,78 @@ function showOrderHistory() {
             return;
         }
 
-        let orders = localStorage.getItem('order') ? JSON.parse(localStorage.getItem('order')) : [];
-        
-        // Lọc đơn hàng của user hiện tại
-        let userOrders = orders.filter(order => {
-            // So sánh với ID user hoặc số điện thoại
-            let orderCustomerId = String(order.khachhang || '');
-            let currentUserId = String(currentUser.id || '');
-            let orderPhone = String(order.sdtnhan || '');
-            let currentUserPhone = String(currentUser.phone || '');
+        // Load đơn hàng từ database thay vì localStorage để đảm bảo đồng bộ
+        try {
+            const response = await fetch(pathManager.getApiUrl('get_orders.php'));
+            const orders = await response.json();
             
-            // Nếu user có ID thì so sánh theo ID, nếu không thì so sánh theo phone
-            if (currentUser.id) {
-                return orderCustomerId === currentUserId;
-            } else {
-                return orderPhone === currentUserPhone;
+            if (!Array.isArray(orders)) {
+                throw new Error('Invalid data format from server');
             }
-        });
-
-        if (userOrders.length === 0) {
-            toast({ 
-                title: 'Thông báo', 
-                message: 'Bạn chưa có đơn hàng nào!', 
-                type: 'info', 
-                duration: 2000 
+            
+            // Lọc đơn hàng của user hiện tại
+            let userOrders = orders.filter(order => {
+                // So sánh với ID user hoặc số điện thoại
+                let orderCustomerId = String(order.khachhang || '');
+                let currentUserId = String(currentUser.id || '');
+                let orderPhone = String(order.sdtnhan || '');
+                let currentUserPhone = String(currentUser.phone || '');
+                
+                // Nếu user có ID thì so sánh theo ID, nếu không thì so sánh theo phone
+                if (currentUser.id) {
+                    return orderCustomerId === currentUserId;
+                } else {
+                    return orderPhone === currentUserPhone;
+                }
             });
-            return;
-        }
 
-        // Tạo modal hiển thị đơn hàng
-        createOrderHistoryModal(userOrders);
+            // Cập nhật localStorage với dữ liệu mới nhất từ database
+            localStorage.setItem('order', JSON.stringify(orders));
+
+            if (userOrders.length === 0) {
+                toast({ 
+                    title: 'Thông báo', 
+                    message: 'Bạn chưa có đơn hàng nào!', 
+                    type: 'info', 
+                    duration: 2000 
+                });
+                return;
+            }
+
+            // Tạo modal hiển thị đơn hàng
+            createOrderHistoryModal(userOrders);
+            
+        } catch (fetchError) {
+            console.error('Error fetching orders from database:', fetchError);
+            
+            // Fallback: sử dụng localStorage nếu không thể kết nối database
+            let orders = localStorage.getItem('order') ? JSON.parse(localStorage.getItem('order')) : [];
+            
+            let userOrders = orders.filter(order => {
+                let orderCustomerId = String(order.khachhang || '');
+                let currentUserId = String(currentUser.id || '');
+                let orderPhone = String(order.sdtnhan || '');
+                let currentUserPhone = String(currentUser.phone || '');
+                
+                if (currentUser.id) {
+                    return orderCustomerId === currentUserId;
+                } else {
+                    return orderPhone === currentUserPhone;
+                }
+            });
+
+            if (userOrders.length === 0) {
+                toast({ 
+                    title: 'Thông báo', 
+                    message: 'Bạn chưa có đơn hàng nào!', 
+                    type: 'info', 
+                    duration: 2000 
+                });
+                return;
+            }
+
+            createOrderHistoryModal(userOrders);
+        }
         
     } catch (error) {
         console.error('Error in showOrderHistory():', error);
@@ -1169,6 +1221,69 @@ function showOrderHistory() {
             message: 'Có lỗi xảy ra khi tải đơn hàng: ' + error.message, 
             type: 'error', 
             duration: 3000 
+        });
+    }
+}
+
+// Hàm refresh dữ liệu đơn hàng từ database
+async function refreshOrderData() {
+    try {
+        const response = await fetch(pathManager.getApiUrl('get_orders.php'));
+        const orders = await response.json();
+        
+        if (Array.isArray(orders)) {
+            localStorage.setItem('order', JSON.stringify(orders));
+            console.log('Order data refreshed from database');
+            return orders;
+        } else {
+            throw new Error('Invalid data format from server');
+        }
+    } catch (error) {
+        console.error('Error refreshing order data:', error);
+        return null;
+    }
+}
+
+// Hàm refresh đơn hàng cho customer
+async function refreshCustomerOrders() {
+    try {
+        // Hiển thị loading
+        const refreshBtn = document.querySelector('.btn-refresh-orders');
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fa-light fa-spinner fa-spin"></i> Đang cập nhật...';
+            refreshBtn.disabled = true;
+        }
+
+        // Gọi lại showOrderHistory để load dữ liệu mới
+        await showOrderHistory();
+        
+        // Restore button
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fa-light fa-sync-alt"></i> Làm mới';
+            refreshBtn.disabled = false;
+        }
+
+        toast({
+            title: 'Thành công',
+            message: 'Đã cập nhật danh sách đơn hàng',
+            type: 'success',
+            duration: 2000
+        });
+    } catch (error) {
+        console.error('Error refreshing customer orders:', error);
+        
+        // Restore button on error
+        const refreshBtn = document.querySelector('.btn-refresh-orders');
+        if (refreshBtn) {
+            refreshBtn.innerHTML = '<i class="fa-light fa-sync-alt"></i> Làm mới';
+            refreshBtn.disabled = false;
+        }
+
+        toast({
+            title: 'Lỗi',
+            message: 'Không thể cập nhật dữ liệu',
+            type: 'error',
+            duration: 3000
         });
     }
 }
@@ -1207,6 +1322,11 @@ function createOrderHistoryModal(orders) {
                                 <option value="3">Hoàn thành</option>
                                 <option value="4">Đã hủy</option>
                             </select>
+                        </div>
+                        <div class="filter-group">
+                            <button class="btn-refresh-orders" onclick="refreshCustomerOrders()" title="Cập nhật dữ liệu từ server">
+                                <i class="fa-light fa-sync-alt"></i> Làm mới
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1477,7 +1597,7 @@ function addOrderHistoryCSS() {
             
             .filter-row {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr 1fr auto;
                 gap: 15px;
                 margin-bottom: 15px;
             }
@@ -1513,6 +1633,40 @@ function addOrderHistoryCSS() {
                 outline: none;
                 border-color: #007bff;
                 box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+            }
+            
+            .btn-refresh-orders {
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: all 0.2s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                min-width: 120px;
+                height: fit-content;
+                align-self: end;
+                white-space: nowrap;
+            }
+            
+            .btn-refresh-orders:hover {
+                background: #0056b3;
+                transform: translateY(-1px);
+            }
+            
+            .btn-refresh-orders:disabled {
+                background: #6c757d;
+                cursor: not-allowed;
+                transform: none;
+            }
+            
+            .btn-refresh-orders i {
+                font-size: 12px;
             }
             
             .order-history-body {
@@ -1722,6 +1876,19 @@ function addOrderHistoryCSS() {
                 
                 .filter-row {
                     grid-template-columns: 1fr;
+                    gap: 10px;
+                }
+                
+                .filter-row .filter-group:last-child {
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                }
+                
+                .btn-refresh-orders {
+                    min-width: auto;
+                    padding: 8px 12px;
+                    font-size: 12px;
                 }
                 
                 .order-item {
@@ -2401,14 +2568,30 @@ document.addEventListener('DOMContentLoaded', function () {
             body.style.overflow = "hidden";
         });
     }
-    // Khởi tạo đánh giá
-    initBookReviews();
+    // Khởi tạo đánh giá sau khi pathManager sẵn sàng
+    if (typeof pathManager !== 'undefined') {
+        initBookReviews();
+    } else {
+        // Đợi pathManager load xong
+        setTimeout(initBookReviews, 100);
+    }
 });
 
 // Hàm khởi tạo đánh giá khi tải trang
 function initBookReviews() {
+    // Check if pathManager is available
+    let apiUrl;
+    if (typeof pathManager !== 'undefined' && pathManager.getApiUrl) {
+        apiUrl = pathManager.getApiUrl('get_all_book_reviews.php');
+        console.log('Using pathManager URL:', apiUrl);
+    } else {
+        // Fallback URL cho local
+        apiUrl = '/Bookstore_DATN/src/controllers/get_all_book_reviews.php';
+        console.log('pathManager not available, using fallback URL:', apiUrl);
+    }
+    
     // Lấy đánh giá từ server và lưu vào localStorage
-    fetch(pathManager.getApiUrl('get_all_book_reviews.php'))
+    fetch(apiUrl)
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -2617,7 +2800,7 @@ function showOrder(arr) {
                 status = `<span class="status-no-complete">Không xác định (${trangThai})</span>`;
             }
             let paymentStatus = (parseInt(item.payment_status) === 1) ? `<span class="status-complete">Đã thanh toán</span>` : `<span class="status-no-complete">Chưa thanh toán</span>`;
-            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' ? 'Online' : 'COD') : 'COD';
+            let paymentMethod = item.payment_method ? (item.payment_method.toLowerCase() === 'online' || item.payment_method.toLowerCase() === 'vnpay' ? 'Online' : 'COD') : 'COD';
             let date = formatDate(item.thoigiandat);
             orderHtml += `
             <tr>
@@ -2781,7 +2964,7 @@ async function detailOrder(id) {
     if (
         (trangThai === 0 || trangThai === 1) &&
         order.payment_method &&
-        order.payment_method.toLowerCase() === 'online' &&
+        (order.payment_method.toLowerCase() === 'online' || order.payment_method.toLowerCase() === 'vnpay') &&
         (!order.payment_status || parseInt(order.payment_status) !== 1)
     ) {
         extraBtns = `<button class="modal-detail-btn btn-payagain" onclick="payAgain('${order.id}')">Thanh toán ngay</button>`;

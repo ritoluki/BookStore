@@ -470,7 +470,18 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
     } else {
         // Tạo đối tượng Date với time zone cho Vietnam (GMT+7)
         const now = new Date();
-        const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+        // Sử dụng toLocaleString với timezone Vietnam để đảm bảo chính xác
+        const vnTimeString = now.toLocaleString("en-CA", {
+            year: "numeric",
+            month: "2-digit", 
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+            timeZone: "Asia/Ho_Chi_Minh"
+        });
+        const vnTime = new Date(vnTimeString + "+07:00");
 
         let donhang = {
             id: madon,
@@ -619,7 +630,12 @@ async function xulyDathang(product, paymentMethod = 'cod', returnInfo = false) {
         } else {
             // Fallback về trang chủ nếu không có redirect_url
             setTimeout(() => {
-                window.location.href = pathManager.redirectHome();
+                if (typeof pathManager !== 'undefined' && pathManager.getHomeUrl) {
+                    window.location.href = pathManager.getHomeUrl();
+                } else {
+                    // Fallback URL cho local
+                    window.location.href = '/Bookstore_DATN/';
+                }
             }, 2000);
         }
     }
@@ -640,7 +656,7 @@ const vnpayBtn = document.getElementById('btnVnpay');
 if (vnpayBtn) {
     vnpayBtn.addEventListener('click', async function () {
         let product = window.productBuyNow || undefined;
-        let result = await xulyDathang(product, 'online', true);
+        let result = await xulyDathang(product, 'VNPay', true);
         if (!result || !result.orderId || !result.amount || result.amount <= 0) {
             toast({ title: 'Lỗi', message: 'Đơn hàng không hợp lệ hoặc không có sản phẩm!', type: 'error', duration: 3000 });
             return;

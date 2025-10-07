@@ -4,6 +4,9 @@
  * Load environment variables from .env files
  */
 
+// Set timezone for PHP to Vietnam (GMT+7)
+date_default_timezone_set('Asia/Ho_Chi_Minh');
+
 // Load environment configuration
 $env_config = require_once __DIR__ . '/env_loader.php';
 

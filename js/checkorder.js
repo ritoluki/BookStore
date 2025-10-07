@@ -88,7 +88,7 @@ function showOrdersdt(arr, sdt) {
                 ? '<span class="pay-status pay-success">Đã thanh toán</span>'
                 : '<span class="pay-status pay-pending">Chưa thanh toán</span>';
             let paymentMethod = item.payment_method
-                ? (item.payment_method.toLowerCase() === 'online'
+                ? (item.payment_method.toLowerCase() === 'online' || item.payment_method.toLowerCase() === 'vnpay'
                     ? '<span class="pay-method pay-online">Online</span>'
                     : '<span class="pay-method pay-cod">COD</span>')
                 : '<span class="pay-method pay-cod">COD</span>';

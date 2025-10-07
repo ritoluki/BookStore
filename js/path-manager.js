@@ -60,10 +60,24 @@ class PathManager {
     }
 
     /**
+     * Lấy URL trang chủ (không redirect)
+     */
+    getHomeUrl() {
+        return `${this.baseUrl}${this.basePath}/`;
+    }
+
+    /**
      * Redirect về trang admin
      */
     redirectAdmin() {
         window.location.href = `${this.baseUrl}${this.basePath}/admin.php`;
+    }
+
+    /**
+     * Lấy URL trang admin (không redirect)
+     */
+    getAdminUrl() {
+        return `${this.baseUrl}${this.basePath}/admin.php`;
     }
 }
 
