@@ -149,6 +149,9 @@ async function updateStatisticsDisplay() {
 
     // Log để debug
     console.log('Revenue displayed on overview page:', revenue);
+
+    // Start live activity feed
+    try { startActivityFeed(); } catch (e) { }
 }
 
 // Call this function when the page loads
@@ -165,6 +168,98 @@ function vnd(price) {
     }
     const n = Number(price);
     return n.toLocaleString('vi-VN') + ' đ';
+}
+
+// ===== Overview helpers =====
+function getTodayDateKey() {
+    const now = new Date();
+    // Normalize to VN time by using local time, then build yyyy-mm-dd
+    const y = now.getFullYear();
+    const m = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+// ===== Realtime toast notifications for new orders =====
+let __activityTimer = null;
+let __feedKnownIds = new Set();
+let __feedInitialized = false;
+const __FEED_LIMIT = 4;
+
+function prependActivityItem(order) {
+    const list = document.getElementById('activity-feed-list');
+    if (!list) return;
+    const amount = vnd(order.tongtien || 0);
+    // Prefer receiver full name if available, fallback to khachhang
+    const name = (order.tenguoinhan && String(order.tenguoinhan).trim()) || order.khachhang || 'Khách hàng';
+    const time = formatDate(order.thoigiandat);
+    const node = document.createElement('div');
+    node.className = 'activity-item';
+    node.innerHTML = `
+        <div class="icon"><i class="fa-light fa-bag-shopping"></i></div>
+        <div class="content">
+            <div class="title">${name} vừa đặt đơn <strong>${order.id}</strong> <span class="amount">${amount}</span></div>
+            <div class="meta">${time} • ${order.payment_method ? (String(order.payment_method).toUpperCase()==='VNPAY' || String(order.payment_method).toLowerCase()==='online' ? 'Online' : 'COD') : 'COD'}</div>
+        </div>
+    `;
+    // Prepend and cap list length
+    list.prepend(node);
+    while (list.children.length > __FEED_LIMIT) list.removeChild(list.lastElementChild);
+}
+
+async function pollActivityOnce() {
+    try {
+        const res = await fetch(pathManager.getApiUrl('get_orders.php'));
+        const orders = await res.json();
+        if (!Array.isArray(orders)) return;
+
+        // First load: render recent items immediately
+        if (!__feedInitialized) {
+            renderInitialFeed(orders);
+            __feedInitialized = true;
+            return;
+        }
+
+        const newOnes = orders.filter(o => !__feedKnownIds.has(o.id));
+        if (newOnes.length) {
+            newOnes.sort((a,b)=> new Date(a.thoigiandat) - new Date(b.thoigiandat));
+            for (const o of newOnes) {
+                __feedKnownIds.add(o.id);
+                prependActivityItem(o);
+            }
+        }
+    } catch (e) { }
+}
+
+function startActivityFeed() {
+    try {
+        const cached = JSON.parse(localStorage.getItem('order') || '[]');
+        // Render quickly from cache if available
+        if (Array.isArray(cached) && cached.length) {
+            renderInitialFeed(cached);
+            __feedInitialized = true;
+        }
+    } catch {}
+    // Ensure we fetch fresh data to sync
+    pollActivityOnce();
+    if (__activityTimer) clearInterval(__activityTimer);
+    __activityTimer = setInterval(pollActivityOnce, 4000);
+}
+
+function renderInitialFeed(orders) {
+    const list = document.getElementById('activity-feed-list');
+    if (!list || !Array.isArray(orders)) return;
+    // Sort newest first and take top limit
+    const latest = orders
+        .slice()
+        .sort((a,b)=> new Date(b.thoigiandat) - new Date(a.thoigiandat))
+        .slice(0, __FEED_LIMIT);
+    list.innerHTML = '';
+    latest.slice().reverse().forEach(o => {
+        // build in chronological order for animation when prepended
+        __feedKnownIds.add(o.id);
+        prependActivityItem(o);
+    });
 }
 
 // Phân trang 
@@ -648,16 +743,60 @@ async function changeStatus(id, el) {
 }
 
 // Format Date
+// Parse chuỗi thời gian dạng "YYYY-MM-DD" hoặc "YYYY-MM-DD HH:mm:ss" như thời gian LOCAL
+// để tránh lỗi nhảy sang ngày hôm sau do cách Date() mặc định xử lý múi giờ/UTC.
+function parseAsLocalDate(dateStr) {
+    if (!dateStr) return new Date();
+    // Nếu là ISO chuẩn có timezone (ví dụ 2025-10-07T12:00:00Z hoặc có offset), để trình duyệt xử lý
+    if (/T.*Z$/.test(dateStr) || /[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+        return new Date(dateStr);
+    }
+    // Chuẩn không timezone: tách thủ công => tạo Date(year, monthIndex, day, ...)
+    const parts = String(dateStr).trim().split(/\s+/); // [date, time?]
+    const d = parts[0].split('-').map(Number); // [yyyy, mm, dd]
+    const t = (parts[1] || '00:00:00').split(':').map(Number); // [hh, mm, ss]
+    const year = d[0] || 1970;
+    const month = (d[1] || 1) - 1; // monthIndex
+    const day = d[2] || 1;
+    const hour = t[0] || 0;
+    const minute = t[1] || 0;
+    const second = t[2] || 0;
+    return new Date(year, month, day, hour, minute, second);
+}
+
 function formatDate(date) {
-    let fm = new Date(date);
-    // Chuẩn hóa múi giờ Việt Nam (+7)
-    const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        timeZone: 'Asia/Ho_Chi_Minh'
-    };
+    let fm;
+    if (typeof date === 'string') {
+        // If ISO-like with 'T', prefer the calendar date part to avoid timezone roll-over
+        // Example: "2025-10-07T17:00:00Z" -> use "2025-10-07"
+        if (/\d{4}-\d{2}-\d{2}T/.test(date)) {
+            const onlyDate = date.slice(0, 10); // YYYY-MM-DD
+            fm = parseAsLocalDate(onlyDate);
+        } else {
+            fm = parseAsLocalDate(date);
+        }
+    } else {
+        fm = new Date(date);
+    }
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' };
     return new Intl.DateTimeFormat('vi-VN', options).format(fm);
+}
+
+// Check if a date string is meaningful (not empty, not 1970-01-01, not 0000-00-00)
+function isMeaningfulDateString(dateStr) {
+    if (!dateStr) return false;
+    const s = String(dateStr).trim();
+    if (s === '' || s.startsWith('0000-00-00') || s.startsWith('1970-01-01')) return false;
+    // Nếu ở định dạng khác nhưng vẫn là 1970 hoặc epoch
+    if (/1970\-?0?1\-?0?1/.test(s)) return false;
+    return true;
+}
+
+// Add days to a Date instance and return a new Date
+function addDays(baseDate, days) {
+    const d = new Date(baseDate.getTime());
+    d.setDate(d.getDate() + days);
+    return d;
 }
 
 // Load orders from database
@@ -1041,7 +1180,11 @@ async function detailOrder(id) {
                 </li>
                 <li class="detail-order-item tb">
                     <span class="detail-order-item-left"><i class="fa-light fa-clock"></i> Thời gian giao</span>
-                    <p class="detail-order-item-b">${(order.thoigiangiao == "" ? "" : (order.thoigiangiao + " - ")) + formatDate(order.ngaygiaohang)}</p>
+                    <p class="detail-order-item-b">${(() => {
+                        const base = parseAsLocalDate(order.thoigiandat);
+                        const eta = addDays(base, 3);
+                        return formatDate(eta);
+                    })()}</p>
                 </li>
                 <li class="detail-order-item tb">
                     <span class="detail-order-item-t"><i class="fa-light fa-location-dot"></i> Địa chỉ nhận</span>

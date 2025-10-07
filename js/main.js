@@ -2273,18 +2273,38 @@ async function getOrderDetails(madon) {
     }
 }
 
-// Format Date
+// Helpers parse/format ngày theo local để tránh lệch múi giờ và epoch 1970
+function parseAsLocalDate(dateStr) {
+    if (!dateStr) return new Date();
+    if (/T.*Z$/.test(dateStr) || /[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+        return new Date(dateStr);
+    }
+    const parts = String(dateStr).trim().split(/\s+/);
+    const d = parts[0].split('-').map(Number);
+    const t = (parts[1] || '00:00:00').split(':').map(Number);
+    const year = d[0] || 1970;
+    const month = (d[1] || 1) - 1;
+    const day = d[2] || 1;
+    const hour = t[0] || 0;
+    const minute = t[1] || 0;
+    const second = t[2] || 0;
+    return new Date(year, month, day, hour, minute, second);
+}
+
+// Format Date (hiển thị dd/mm/yyyy theo VN)
 function formatDate(date) {
-    let fm = new Date(date);
-
-    // Chuẩn hóa múi giờ Việt Nam (+7)
-    const options = {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        timeZone: 'Asia/Ho_Chi_Minh'
-    };
-
+    let fm;
+    if (typeof date === 'string') {
+        // Nếu có dạng ISO kèm T, ưu tiên chỉ lấy ngày tránh roll-over timezone
+        if (/\d{4}-\d{2}-\d{2}T/.test(date)) {
+            fm = parseAsLocalDate(date.slice(0, 10));
+        } else {
+            fm = parseAsLocalDate(date);
+        }
+    } else {
+        fm = new Date(date);
+    }
+    const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Ho_Chi_Minh' };
     return new Intl.DateTimeFormat('vi-VN', options).format(fm);
 }
 
@@ -2943,7 +2963,32 @@ async function detailOrder(id) {
             </li>
             <li class="detail-order-item tb">
                 <span class="detail-order-item-left"><i class="fa-light fa-clock"></i> Thời gian giao</span>
-                <p class="detail-order-item-b">${(order.thoigiangiao == "" ? "" : (order.thoigiangiao + " - ")) + formatDate(order.ngaygiaohang)}</p>
+                <p class="detail-order-item-b">${(() => {
+                    // Trùng khớp logic bên admin: nếu có ngày giao hợp lệ thì hiển thị, không thì dự kiến = ngày đặt + 3 ngày
+                    const isMeaningful = (d) => {
+                        if (!d) return false; const s = String(d).trim();
+                        return s && !s.startsWith('0000-00-00') && !/^1970-0?1-0?1/.test(s);
+                    };
+                    const parseLocal = (ds) => {
+                        if (!ds) return new Date();
+                        if (/T.*Z$/.test(ds) || /[+-]\d{2}:?\d{2}$/.test(ds)) return new Date(ds);
+                        const parts = String(ds).trim().split(/\s+/);
+                        const d = parts[0].split('-').map(Number);
+                        const t = (parts[1] || '00:00:00').split(':').map(Number);
+                        return new Date(d[0]||1970, (d[1]||1)-1, d[2]||1, t[0]||0, t[1]||0, t[2]||0);
+                    };
+                    const addDays = (base, days) => { const nd = new Date(base.getTime()); nd.setDate(nd.getDate()+days); return nd; };
+                    const fmt = (dt) => {
+                        let fm = typeof dt==='string' ? (/(\d{4}-\d{2}-\d{2})T/.test(dt)? parseLocal(dt.slice(0,10)) : parseLocal(dt)) : new Date(dt);
+                        return new Intl.DateTimeFormat('vi-VN',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Ho_Chi_Minh'}).format(fm);
+                    };
+                    if (isMeaningful(order.ngaygiaohang)) {
+                        const prefix = order.thoigiangiao && order.thoigiangiao.trim()? (order.thoigiangiao+' - ') : '';
+                        return prefix + fmt(order.ngaygiaohang);
+                    }
+                    const eta = addDays(parseLocal(order.thoigiandat), 3);
+                    return 'Dự kiến: ' + fmt(eta);
+                })()}</p>
             </li>
             <li class="detail-order-item tb">
                 <span class="detail-order-item-t"><i class="fa-light fa-location-dot"></i> Địa chỉ nhận</span>

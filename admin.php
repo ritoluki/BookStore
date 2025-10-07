@@ -92,41 +92,44 @@
             </div>
         </aside>
         <main class="content">
-            <div class="section active">
+            <div class="section overview active">
                 <h1 class="page-title">Trang tổng quát của cửa hàng Book Shop</h1>
+                <div class="activity-feed">
+                    <div class="activity-feed-header">
+                        <h3>Hoạt động mới</h3>
+                        <small>Tự động cập nhật</small>
+                    </div>
+                    <div id="activity-feed-list" class="activity-feed-list"></div>
+                </div>
                 <div class="cards">
-                    <div class="card-single">
+                    <div class="card-single kpi-users">
                         <div class="box">
-                            <h2 id="amount-user">0</h2>
+                            <h2 id="amount-user" class="kpi-value-right">0</h2>
                             <div class="on-box">
                                 <img src="assets/img/admin/s1.png" alt="" style=" width: 200px;">
                                 <h3>Khách hàng</h3>
-                                <p>Sản phẩm là bất cứ cái gì có thể đưa vào thị trường để tạo sự chú ý, mua sắm, sử dụng
-                                    hay tiêu dùng nhằm thỏa mãn một nhu cầu hay ước muốn. Nó có thể là những vật thể,
-                                    dịch vụ, con người, địa điểm, tổ chức hoặc một ý tưởng.</p>
+                                <p>Khách hàng mục tiêu là nhóm người dùng mà cửa hàng hướng tới, là nền tảng tạo nên doanh thu và sự phát triển bền vững của hệ thống.</p>
                             </div>
 
                         </div>
                     </div>
-                    <div class="card-single">
+                    <div class="card-single kpi-products">
                         <div class="box">
+                            <h2 id="amount-product" class="kpi-value-right">0</h2>
                             <div class="on-box">
                                 <img src="assets/img/admin/s2.png" alt="" style=" width: 200px;">
-                                <h2 id="amount-product">0</h2>
                                 <h3>Sản phẩm</h3>
-                                <p>Khách hàng mục tiêu là một nhóm đối tượng khách hàng trong phân khúc thị trường mục
-                                    tiêu mà doanh nghiệp bạn đang hướng tới. </p>
+                                <p>Kho sản phẩm phục vụ nhu cầu đọc.</p>
                             </div>
                         </div>
                     </div>
-                    <div class="card-single">
+                    <div class="card-single kpi-revenue">
                         <div class="box">
-                            <h2 id="doanh-thu"></h2>
+                            <h2 id="doanh-thu" class="kpi-value-right"></h2>
                             <div class="on-box">
                                 <img src="assets/img/admin/s3.png" alt="" style=" width: 200px;">
                                 <h3>Doanh thu</h3>
-                                <p>Doanh thu của doanh nghiệp là toàn bộ số tiền sẽ thu được do tiêu thụ sản phẩm, cung
-                                    cấp dịch vụ với sản lượng.</p>
+                                <p>Tổng tiền từ các đơn hàng hợp lệ.</p>
                             </div>
                         </div>
                     </div>
