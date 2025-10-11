@@ -2793,7 +2793,46 @@ function showGioiThieu() {
         }
     });
 
+    // Initialize FAQ if not already initialized
+    initFAQ();
+
     // document.body.style.overflow = 'hidden';
+}
+
+// Initialize FAQ accordion functionality
+function initFAQ() {
+    const faqItems = document.querySelectorAll('.faq-item');
+    
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        
+        // Remove any existing event listeners to avoid duplicates
+        question.replaceWith(question.cloneNode(true));
+        const newQuestion = item.querySelector('.faq-question');
+        
+        newQuestion.addEventListener('click', function() {
+            const isActive = item.classList.contains('active');
+            
+            // Close all FAQ items
+            faqItems.forEach(faqItem => {
+                faqItem.classList.remove('active');
+            });
+            
+            // Toggle current item
+            if (!isActive) {
+                item.classList.add('active');
+            }
+        });
+        
+        // Add keyboard accessibility
+        newQuestion.setAttribute('tabindex', '0');
+        newQuestion.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                newQuestion.click();
+            }
+        });
+    });
 }
 
 function showTraCuu() {

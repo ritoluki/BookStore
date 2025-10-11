@@ -533,6 +533,95 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
                         </div>
                     </div>
                 </div>
+
+                <!-- FAQ Section -->
+                <div class="faq-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Câu hỏi thường gặp</h2>
+                        <div class="title-underline"></div>
+                    </div>
+                    <div class="faq-container">
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Làm thế nào để đặt hàng trên Book Shop?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Để đặt hàng trên Book Shop, bạn chỉ cần: (1) Tìm kiếm sách bạn muốn mua, (2) Thêm sách vào giỏ hàng, (3) Kiểm tra giỏ hàng và điền đầy đủ thông tin giao hàng, (4) Chọn hình thức thanh toán và xác nhận đơn hàng. Hệ thống sẽ gửi email xác nhận đơn hàng cho bạn ngay sau khi đặt hàng thành công.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Book Shop có hỗ trợ những hình thức thanh toán nào?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Chúng tôi hỗ trợ nhiều hình thức thanh toán linh hoạt: Thanh toán khi nhận hàng (COD), thanh toán qua ví điện tử VNPay, chuyển khoản ngân hàng, và thanh toán bằng thẻ tín dụng/ghi nợ. Tất cả các giao dịch đều được mã hóa và bảo mật tuyệt đối.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Thời gian giao hàng là bao lâu?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Thời gian giao hàng phụ thuộc vào khu vực của bạn: Nội thành Hà Nội từ 1-2 ngày làm việc, các tỉnh thành khác từ 3-5 ngày làm việc. Đối với các khu vực xa trung tâm, thời gian có thể kéo dài thêm 1-2 ngày. Bạn có thể theo dõi trạng thái đơn hàng qua chức năng "Tra cứu đơn hàng".</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Tôi có thể đổi trả sách không?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Chúng tôi chấp nhận đổi trả sách trong vòng 7 ngày kể từ ngày nhận hàng nếu sách bị lỗi in ấn, bị hư hỏng trong quá trình vận chuyển, hoặc giao sai sản phẩm. Sách đổi trả phải còn nguyên vẹn, không có dấu hiệu sử dụng. Vui lòng liên hệ bộ phận chăm sóc khách hàng để được hỗ trợ.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Làm thế nào để tra cứu đơn hàng?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Bạn có thể tra cứu đơn hàng bằng cách: (1) Truy cập mục "Tra cứu" trên thanh menu, (2) Nhập mã đơn hàng hoặc số điện thoại đã đặt hàng, (3) Hệ thống sẽ hiển thị thông tin chi tiết và trạng thái đơn hàng của bạn. Nếu đã đăng nhập, bạn có thể xem toàn bộ lịch sử đơn hàng trong phần "Tài khoản".</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Book Shop có chương trình khuyến mãi nào?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Book Shop thường xuyên có các chương trình khuyến mãi hấp dẫn: Giảm giá theo mùa, voucher cho khách hàng mới, ưu đãi sinh nhật, và chương trình tích điểm cho thành viên thân thiết. Bạn có thể theo dõi các chương trình khuyến mãi mới nhất trên trang chủ hoặc đăng ký nhận thông báo qua email.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Sách có được bảo hành không?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Tất cả sách tại Book Shop đều là hàng chính hãng với chất lượng đảm bảo. Nếu sách có lỗi kỹ thuật như thiếu trang, lỗi in ấn, bạn có thể đổi sách mới trong vòng 7 ngày. Chúng tôi cam kết 100% hoàn tiền nếu sản phẩm không đúng như mô tả hoặc có vấn đề về chất lượng.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Có phí vận chuyển không?</h3>
+                                <i class="fa-solid fa-chevron-down faq-icon"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Phí vận chuyển được tính dựa trên khu vực và trọng lượng đơn hàng. Tuy nhiên, Book Shop miễn phí vận chuyển cho đơn hàng từ 200.000đ trở lên trong nội thành Hà Nội, và từ 300.000đ trở lên cho các tỉnh thành khác. Phí vận chuyển cụ thể sẽ được hiển thị rõ ràng khi bạn thanh toán.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="container" id="tracuu" style="display: none; overflow: hidden; scroll-behavior: auto;">
