@@ -1,4 +1,6 @@
 <?php
+require_once '../../config/config.php';
+
 $thongbao = "";
 $status = ""; // Thêm biến status để kiểm soát loại thông báo
 
@@ -9,7 +11,6 @@ if (isset($_POST['btn1'])) {
         $thongbao = "Email không đúng";
         $status = "error";
     } else {
-    require_once '../../config/config.php';
         // Sửa: Sử dụng prepared statement để tránh SQL injection
         $sql = "SELECT id, phone, fullname FROM users WHERE email = ?";
         $stmt = $conn->prepare($sql);
@@ -503,7 +504,7 @@ if (isset($_POST['btn1'])) {
                 <div class="error-message slide-up">
                     <strong>Có lỗi xảy ra!</strong><br>
                     <?= $thongbao ?>
-                    <a href="quenpass.php" class="btn btn-secondary" style="margin-top:16px;display:inline-block;">Quay lại</a>
+                    <a href="<?php echo $_SERVER['PHP_SELF']; ?>" style="margin-top:16px;display:inline-block;padding:10px 24px;background:#6c757d;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;transition:all 0.3s;" onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">Quay lại</a>
                 </div>
             <?php } ?>
         <?php } else { ?>
@@ -525,10 +526,12 @@ if (isset($_POST['btn1'])) {
                     <span class="btn-text">Gửi Link Đặt Lại</span>
                 </button>
             </form>
-            <div style="text-align:center;margin-top:16px;">
-                <a href="index.php" class="btn btn-outline-primary" style="padding:10px 24px;border-radius:8px;font-weight:500;">Về trang chủ</a>
-            </div>
         <?php } ?>
+        
+        <div style="text-align:center;margin-top:20px;margin-bottom:20px;">
+            <a href="<?php echo getBaseUrl(); ?>/" style="display:inline-block;padding:12px 28px;background:#667eea;color:#fff;text-decoration:none;border-radius:10px;font-weight:600;transition:all 0.3s;box-shadow:0 4px 15px rgba(102,126,234,0.3);" onmouseover="this.style.background='#5a67d8';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#667eea';this.style.transform='translateY(0)'">Về trang chủ</a>
+        </div>
+        
         <div class="helper-text slide-up">
             <h4>💡 Lưu ý:</h4>
             <p>

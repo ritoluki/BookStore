@@ -539,7 +539,7 @@ if (!$order) {
                     </div>
                     <div class="info-content">
                         <h4>Ngày đặt</h4>
-                        <p><?php echo isset($order['ngaydat']) && $order['ngaydat'] ? date('d/m/Y H:i', strtotime($order['ngaydat'])) : 'Chưa xác định'; ?>
+                        <p><?php echo isset($order['thoigiandat']) && $order['thoigiandat'] ? date('d/m/Y H:i', strtotime($order['thoigiandat'])) : 'Chưa xác định'; ?>
                         </p>
                     </div>
                 </div>

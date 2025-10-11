@@ -212,7 +212,7 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
                         <div class="success-message">
                             <h2>Đổi mật khẩu thành công!</h2>
                             <p>Bạn đã đổi mật khẩu thành công. Hãy sử dụng mật khẩu mới để đăng nhập.</p>
-                            <a href="./" class="btn-home">Về trang chủ</a>
+                            <a href="<?php echo getBaseUrl(); ?>/" class="btn-home">Về trang chủ</a>
                         </div>
                     </div>
                 <?php else: ?>

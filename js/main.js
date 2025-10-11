@@ -2319,6 +2319,13 @@ function formatDate(date) {
     return new Intl.DateTimeFormat('vi-VN', options).format(fm);
 }
 
+// Add days to a Date instance and return a new Date
+function addDays(baseDate, days) {
+    const d = new Date(baseDate.getTime());
+    d.setDate(d.getDate() + days);
+    return d;
+}
+
 // Xem chi tiet don hang
 // function detailOrder(id) {
 //     let order = JSON.parse(localStorage.getItem("order"));
@@ -2975,30 +2982,9 @@ async function detailOrder(id) {
             <li class="detail-order-item tb">
                 <span class="detail-order-item-left"><i class="fa-light fa-clock"></i> Thời gian giao</span>
                 <p class="detail-order-item-b">${(() => {
-                    // Trùng khớp logic bên admin: nếu có ngày giao hợp lệ thì hiển thị, không thì dự kiến = ngày đặt + 3 ngày
-                    const isMeaningful = (d) => {
-                        if (!d) return false; const s = String(d).trim();
-                        return s && !s.startsWith('0000-00-00') && !/^1970-0?1-0?1/.test(s);
-                    };
-                    const parseLocal = (ds) => {
-                        if (!ds) return new Date();
-                        if (/T.*Z$/.test(ds) || /[+-]\d{2}:?\d{2}$/.test(ds)) return new Date(ds);
-                        const parts = String(ds).trim().split(/\s+/);
-                        const d = parts[0].split('-').map(Number);
-                        const t = (parts[1] || '00:00:00').split(':').map(Number);
-                        return new Date(d[0]||1970, (d[1]||1)-1, d[2]||1, t[0]||0, t[1]||0, t[2]||0);
-                    };
-                    const addDays = (base, days) => { const nd = new Date(base.getTime()); nd.setDate(nd.getDate()+days); return nd; };
-                    const fmt = (dt) => {
-                        let fm = typeof dt==='string' ? (/(\d{4}-\d{2}-\d{2})T/.test(dt)? parseLocal(dt.slice(0,10)) : parseLocal(dt)) : new Date(dt);
-                        return new Intl.DateTimeFormat('vi-VN',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Ho_Chi_Minh'}).format(fm);
-                    };
-                    if (isMeaningful(order.ngaygiaohang)) {
-                        const prefix = order.thoigiangiao && order.thoigiangiao.trim()? (order.thoigiangiao+' - ') : '';
-                        return prefix + fmt(order.ngaygiaohang);
-                    }
-                    const eta = addDays(parseLocal(order.thoigiandat), 3);
-                    return 'Dự kiến: ' + fmt(eta);
+                    const base = parseAsLocalDate(order.thoigiandat);
+                    const eta = addDays(base, 3);
+                    return formatDate(eta);
                 })()}</p>
             </li>
             <li class="detail-order-item tb">
