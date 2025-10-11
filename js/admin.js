@@ -3218,3 +3218,501 @@ async function sendPaymentReminder(orderId) {
         });
     }
 }
+
+// ===== QUẢN LÝ THANH TOÁN =====
+
+// Load payment statistics
+async function loadPaymentStatistics() {
+    try {
+        const response = await fetch(pathManager.getApiUrl('get_payment_statistics.php'));
+        const data = await response.json();
+        
+        if (data.success) {
+            const stats = data.statistics;
+            
+            const online = stats.payment_methods.find(m => m.payment_method === 'online' || m.payment_method === 'VNPay');
+            const cod = stats.payment_methods.find(m => m.payment_method === 'cod' || m.payment_method === 'COD');
+            
+            document.getElementById('online-payment-count').textContent = online ? online.count : 0;
+            document.getElementById('cod-payment-count').textContent = cod ? cod.count : 0;
+            document.getElementById('pending-payment-count').textContent = stats.pending_count;
+        }
+    } catch (error) {
+        console.error('Error loading payment statistics:', error);
+    }
+}
+
+// Load payment transactions
+async function loadPaymentTransactions() {
+    try {
+        const method = document.getElementById('payment-method-filter').value;
+        const status = document.getElementById('payment-status-filter').value;
+        const search = document.getElementById('payment-search').value;
+        const dateStart = document.getElementById('payment-date-start').value;
+        const dateEnd = document.getElementById('payment-date-end').value;
+        
+        const params = new URLSearchParams({
+            method, status, search, date_start: dateStart, date_end: dateEnd
+        });
+        
+        const response = await fetch(pathManager.getApiUrl(`get_payment_transactions.php?${params}`));
+        const data = await response.json();
+        
+        if (data.success) {
+            displayPaymentTransactions(data.transactions);
+        }
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+    }
+}
+
+// Display payment transactions
+function displayPaymentTransactions(transactions) {
+    const tbody = document.getElementById('payment-transactions-list');
+    
+    if (transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Không có giao dịch</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = transactions.map(t => {
+        const paymentStatusBadge = t.payment_status == 1 
+            ? '<span class="status-complete">Đã thanh toán</span>' 
+            : '<span class="status-no-complete">Chưa thanh toán</span>';
+        const methodText = (t.payment_method === 'online' || t.payment_method === 'VNPay') ? 'Online' : 'COD';
+        
+        return `
+            <tr>
+                <td>${t.id}</td>
+                <td>${t.khachhang}</td>
+                <td>${vnd(t.tongtien)}</td>
+                <td>${methodText}</td>
+                <td>${paymentStatusBadge}</td>
+                <td>${formatDate(t.thoigiandat)}</td>
+                <td class="action-buttons">
+                    <button class="btn-detail" onclick="detailOrder('${t.id}')">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                    ${t.payment_status == 1 && t.trangthai == 3 ? 
+                        `<button class="btn-edit" onclick="viewOrCreateInvoice('${t.id}')">
+                            <i class="fa-light fa-file-invoice"></i>
+                        </button>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Load pending payments
+async function loadPendingPayments() {
+    try {
+        const params = new URLSearchParams({ status: '0' });
+        const response = await fetch(pathManager.getApiUrl(`get_payment_transactions.php?${params}`));
+        const data = await response.json();
+        
+        if (data.success) {
+            const pending = data.transactions.filter(t => t.trangthai != 3 && t.trangthai != 4);
+            displayPendingPayments(pending);
+        }
+    } catch (error) {
+        console.error('Error loading pending payments:', error);
+    }
+}
+
+// Display pending payments
+function displayPendingPayments(payments) {
+    const tbody = document.getElementById('pending-payments-list');
+    
+    if (payments.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Không có đơn chờ thanh toán</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = payments.map(p => {
+        const methodText = (p.payment_method === 'online' || p.payment_method === 'VNPay') ? 'Online' : 'COD';
+        
+        return `
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.khachhang}</td>
+                <td>${vnd(p.tongtien)}</td>
+                <td>${methodText}</td>
+                <td>${formatDate(p.thoigiandat)}</td>
+                <td class="action-buttons">
+                    <button class="btn-detail" onclick="detailOrder('${p.id}')">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                    ${methodText === 'Online' ? 
+                        `<button class="btn-delete" style="background-color: var(--red); color: white;" onclick="sendPaymentReminder('${p.id}')">
+                            <i class="fa-regular fa-envelope"></i>
+                        </button>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Create or view invoice
+async function viewOrCreateInvoice(orderId) {
+    try {
+        // Kiểm tra xem đơn hàng đã có hóa đơn chưa
+        const response = await fetch(pathManager.getApiUrl(`get_invoices.php?search=${orderId}`));
+        const data = await response.json();
+        
+        if (data.success && data.invoices.length > 0) {
+            // Đã có hóa đơn, hiển thị
+            const invoice = data.invoices[0];
+            showInvoiceModal(invoice.id);
+        } else {
+            // Chưa có, hỏi tạo mới
+            if (confirm('Đơn hàng này chưa có hóa đơn. Bạn có muốn tạo hóa đơn không?')) {
+                await createInvoice(orderId);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        toast({ title: 'Lỗi', message: 'Có lỗi xảy ra!', type: 'error', duration: 3000 });
+    }
+}
+
+// Create invoice
+async function createInvoice(orderId) {
+    try {
+        const response = await fetch(pathManager.getApiUrl('create_invoice.php'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: orderId, created_by: 'admin' })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            toast({ title: 'Thành công', message: 'Tạo hóa đơn thành công!', type: 'success', duration: 3000 });
+            loadInvoices(); // Reload danh sách hóa đơn
+            
+            // Tìm ID hóa đơn vừa tạo và hiển thị
+            const invoicesResponse = await fetch(pathManager.getApiUrl(`get_invoices.php?search=${orderId}`));
+            const invoicesData = await invoicesResponse.json();
+            if (invoicesData.success && invoicesData.invoices.length > 0) {
+                showInvoiceModal(invoicesData.invoices[0].id);
+            }
+        } else {
+            toast({ title: 'Lỗi', message: data.message, type: 'error', duration: 3000 });
+        }
+    } catch (error) {
+        console.error('Error creating invoice:', error);
+        toast({ title: 'Lỗi', message: 'Có lỗi xảy ra!', type: 'error', duration: 3000 });
+    }
+}
+
+// Show invoice modal
+async function showInvoiceModal(invoiceId) {
+    try {
+        const response = await fetch(pathManager.getApiUrl(`get_invoice_detail.php?id=${invoiceId}`));
+        const data = await response.json();
+        
+        if (data.success) {
+            renderInvoice(data.invoice, data.order_details);
+            document.querySelector('.invoice-modal').classList.add('open');
+            window.currentInvoiceId = invoiceId;
+        }
+    } catch (error) {
+        console.error('Error loading invoice:', error);
+    }
+}
+
+// Render invoice
+function renderInvoice(invoice, orderDetails) {
+    // Tính tổng tiền hàng từ orderDetails
+    let subtotal = 0;
+    orderDetails.forEach(item => {
+        subtotal += item.price * item.quantity;
+    });
+    
+    // Phí ship cố định hoặc tính từ tổng đơn hàng
+    const shippingFee = 30000;
+    const total = subtotal + shippingFee;
+    
+    let itemsHtml = '';
+    orderDetails.forEach((item, index) => {
+        itemsHtml += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.title}</td>
+                <td>${item.quantity}</td>
+                <td>${vnd(item.price)}</td>
+                <td>${vnd(item.price * item.quantity)}</td>
+            </tr>
+        `;
+    });
+    
+    const invoiceHtml = `
+        <div class="invoice-header">
+            <div class="company-info">
+                <h2>BOOKSTORE DATN</h2>
+                <p>Địa chỉ: [Địa chỉ công ty của bạn]</p>
+                <p>Điện thoại: [Số điện thoại]</p>
+                <p>Email: [Email công ty]</p>
+            </div>
+            <div class="invoice-info">
+                <h3>HÓA ĐƠN BÁN HÀNG</h3>
+                <p><strong>Số hóa đơn:</strong> ${invoice.invoice_number}</p>
+                <p><strong>Ngày xuất:</strong> ${formatDate(invoice.invoice_date)}</p>
+                <p><strong>Mã đơn hàng:</strong> ${invoice.order_id}</p>
+            </div>
+        </div>
+        
+        <div class="customer-info">
+            <h4>Thông tin khách hàng:</h4>
+            <p><strong>Họ tên:</strong> ${invoice.customer_name}</p>
+            <p><strong>Điện thoại:</strong> ${invoice.customer_phone}</p>
+            <p><strong>Địa chỉ:</strong> ${invoice.customer_address}</p>
+        </div>
+        
+        <table class="invoice-items-table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${itemsHtml}
+            </tbody>
+        </table>
+        
+        <div class="invoice-summary">
+            <div class="summary-row">
+                <span>Tổng tiền hàng:</span>
+                <span>${vnd(subtotal)}</span>
+            </div>
+            <div class="summary-row">
+                <span>Phí vận chuyển:</span>
+                <span>${vnd(shippingFee)}</span>
+            </div>
+            <div class="summary-row total">
+                <span><strong>Tổng cộng:</strong></span>
+                <span><strong>${vnd(total)}</strong></span>
+            </div>
+            <p class="note"><em>(Giá đã bao gồm thuế VAT)</em></p>
+        </div>
+        
+        <div class="invoice-footer">
+            <p>Cảm ơn quý khách đã mua hàng!</p>
+            <p><em>Hóa đơn được tạo tự động bởi hệ thống</em></p>
+        </div>
+    `;
+    
+    document.getElementById('invoice-preview').innerHTML = invoiceHtml;
+}
+
+// Print invoice
+function printInvoice() {
+    const content = document.getElementById('invoice-preview').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>In hóa đơn</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                .invoice-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+                .customer-info { margin-bottom: 20px; }
+                .invoice-items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                .invoice-items-table th, .invoice-items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                .invoice-items-table th { background-color: #f2f2f2; }
+                .invoice-summary { text-align: right; }
+                .summary-row { margin: 5px 0; }
+                .total { font-size: 18px; margin-top: 10px; }
+                .invoice-footer { text-align: center; margin-top: 30px; }
+                @media print {
+                    body { padding: 0; }
+                }
+            </style>
+        </head>
+        <body>${content}</body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Download invoice as PDF (requires library like jsPDF)
+function downloadInvoicePDF() {
+    toast({ 
+        title: 'Thông báo', 
+        message: 'Chức năng này sẽ sử dụng Print to PDF của trình duyệt', 
+        type: 'info', 
+        duration: 3000 
+    });
+    printInvoice();
+}
+
+// Send invoice via email
+async function sendInvoiceEmail() {
+    const invoiceId = window.currentInvoiceId;
+    if (!invoiceId) {
+        toast({ title: 'Lỗi', message: 'Không tìm thấy hóa đơn!', type: 'error', duration: 3000 });
+        return;
+    }
+    
+    if (confirm('Bạn có chắc muốn gửi hóa đơn qua email cho khách hàng?')) {
+        // TODO: Implement email sending
+        toast({ 
+            title: 'Thông báo', 
+            message: 'Chức năng gửi email đang được phát triển', 
+            type: 'info', 
+            duration: 3000 
+        });
+    }
+}
+
+// Load invoices
+async function loadInvoices() {
+    try {
+        const search = document.getElementById('invoice-search')?.value || '';
+        const response = await fetch(pathManager.getApiUrl(`get_invoices.php?search=${search}`));
+        const data = await response.json();
+        
+        if (data.success) {
+            displayInvoices(data.invoices);
+        }
+    } catch (error) {
+        console.error('Error loading invoices:', error);
+    }
+}
+
+// Display invoices
+function displayInvoices(invoices) {
+    const tbody = document.getElementById('invoices-list');
+    
+    if (invoices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Chưa có hóa đơn nào</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = invoices.map(inv => `
+        <tr>
+            <td><strong>${inv.invoice_number}</strong></td>
+            <td>${inv.order_id}</td>
+            <td>${inv.customer_name}</td>
+            <td>${vnd(inv.total_amount)}</td>
+            <td>${formatDate(inv.invoice_date)}</td>
+            <td class="action-buttons">
+                <button class="btn-detail" onclick="showInvoiceModal(${inv.id})">
+                    <i class="fa-regular fa-eye"></i>
+                </button>
+                <button class="btn-edit" onclick="showInvoiceModal(${inv.id}); setTimeout(() => printInvoice(), 500)">
+                    <i class="fa-light fa-print"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Filter functions
+function filterPayments() {
+    loadPaymentTransactions();
+}
+
+function resetPaymentFilter() {
+    document.getElementById('payment-method-filter').value = 'all';
+    document.getElementById('payment-status-filter').value = 'all';
+    document.getElementById('payment-search').value = '';
+    document.getElementById('payment-date-start').value = '';
+    document.getElementById('payment-date-end').value = '';
+    loadPaymentTransactions();
+}
+
+function filterInvoices() {
+    loadInvoices();
+}
+
+function filterPendingPayments() {
+    const searchValue = document.getElementById('pending-search').value.toLowerCase();
+    const tbody = document.getElementById('pending-payments-list');
+    const rows = tbody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Payment tabs switching
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching for payment section
+    const paymentTabs = document.querySelectorAll('.payment-tab');
+    paymentTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active from all tabs
+            document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.payment-tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active to clicked tab
+            this.classList.add('active');
+            const tabName = this.getAttribute('data-tab');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            // Load data for the tab
+            switch(tabName) {
+                case 'transactions':
+                    loadPaymentTransactions();
+                    break;
+                case 'pending':
+                    loadPendingPayments();
+                    break;
+                case 'invoices':
+                    loadInvoices();
+                    break;
+            }
+        });
+    });
+    
+    // Load initial data when payment tab is opened  
+    // Tab Thanh toán là tab thứ 7 trong sidebar (index 6: 0=Tổng quan, 1=Sản phẩm, 2=Khách hàng, 3=Đơn hàng, 4=Thống kê, 5=Giảm giá, 6=Thanh toán)
+    setTimeout(() => {
+        const paymentSidebarItem = document.querySelectorAll('.sidebar-list-item.tab-content')[6];
+        if (paymentSidebarItem) {
+            paymentSidebarItem.addEventListener('click', function() {
+                setTimeout(() => {
+                    loadPaymentStatistics();
+                    loadPaymentTransactions();
+                }, 100);
+            });
+        }
+    }, 500);
+});
+
+// Auto-create invoice when order is completed and paid
+// Hook vào changeOrderStatus function
+const originalChangeOrderStatus = window.changeOrderStatus;
+if (originalChangeOrderStatus) {
+    window.changeOrderStatus = async function(orderId, status, el, text) {
+        await originalChangeOrderStatus(orderId, status, el, text);
+        
+        // Nếu đơn chuyển sang hoàn thành (3) và đã thanh toán, tự động tạo hóa đơn
+        if (status === 3) {
+            const orders = JSON.parse(localStorage.getItem('order') || '[]');
+            const order = orders.find(o => o.id === orderId);
+            
+            if (order && order.payment_status == 1) {
+                // Kiểm tra xem đã có hóa đơn chưa
+                const response = await fetch(pathManager.getApiUrl(`get_invoices.php?search=${orderId}`));
+                const data = await response.json();
+                
+                if (data.success && data.invoices.length === 0) {
+                    // Chưa có hóa đơn, tạo mới
+                    await createInvoice(orderId);
+                }
+            }
+        }
+    };
+}

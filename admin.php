@@ -15,6 +15,7 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
     <link href='./assets/img/iconlogos.jpg' rel='icon' type='image/x-icon' />
     <link rel="stylesheet" href="assets/css/admin.css?v=20250819">
     <link rel="stylesheet" href="./assets/css/toast-message.css">
+    <link rel="stylesheet" href="./assets/css/payment-management.css">
     <link href="./assets/font/font-awesome-pro-v6-6.2.0/css/all.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="./assets/css/admin-responsive.css?v=20250819">
     <title>Quản lý cửa hàng</title>
@@ -72,6 +73,12 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
                         <a href="#" class="sidebar-link">
                             <div class="sidebar-icon"><i class="fa-light fa-tags"></i></div>
                             <div class="hidden-sidebar">Giảm giá</div>
+                        </a>
+                    </li>
+                    <li class="sidebar-list-item tab-content">
+                        <a href="#" class="sidebar-link">
+                            <div class="sidebar-icon"><i class="fa-light fa-credit-card"></i></div>
+                            <div class="hidden-sidebar">Thanh toán</div>
                         </a>
                     </li>
                 </ul>
@@ -423,6 +430,148 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
                     </table>
                 </div>
             </div>
+            <!-- Payment Management -->
+            <div class="section payment-management">
+                <!-- Tổng quan thanh toán -->
+                <div class="payment-overview">
+                    <div class="payment-stat-card">
+                        <div class="stat-content">
+                            <p class="stat-desc">Thanh toán Online</p>
+                            <h4 class="stat-number" id="online-payment-count">0</h4>
+                        </div>
+                        <div class="stat-icon"><i class="fa-light fa-credit-card"></i></div>
+                    </div>
+                    <div class="payment-stat-card">
+                        <div class="stat-content">
+                            <p class="stat-desc">Thanh toán COD</p>
+                            <h4 class="stat-number" id="cod-payment-count">0</h4>
+                        </div>
+                        <div class="stat-icon"><i class="fa-light fa-money-bill"></i></div>
+                    </div>
+                    <div class="payment-stat-card">
+                        <div class="stat-content">
+                            <p class="stat-desc">Chờ thanh toán</p>
+                            <h4 class="stat-number" id="pending-payment-count">0</h4>
+                        </div>
+                        <div class="stat-icon"><i class="fa-light fa-clock"></i></div>
+                    </div>
+                </div>
+
+            <!-- Tabs cho các chức năng -->
+            <div class="payment-tabs">
+                <button class="payment-tab active" data-tab="transactions">Danh sách giao dịch</button>
+                <button class="payment-tab" data-tab="pending">Chờ thanh toán</button>
+                <button class="payment-tab" data-tab="invoices">Hóa đơn</button>
+            </div>
+
+                <!-- Tab Content: Danh sách giao dịch -->
+                <div class="payment-tab-content active" id="tab-transactions">
+                    <div class="admin-control">
+                        <div class="admin-control-left">
+                            <select id="payment-method-filter" onchange="filterPayments()">
+                                <option value="all">Tất cả phương thức</option>
+                                <option value="online">Online/VNPay</option>
+                                <option value="cod">COD</option>
+                            </select>
+                            <select id="payment-status-filter" onchange="filterPayments()">
+                                <option value="all">Tất cả trạng thái</option>
+                                <option value="1">Đã thanh toán</option>
+                                <option value="0">Chưa thanh toán</option>
+                            </select>
+                        </div>
+                        <div class="admin-control-center">
+                            <form action="" class="form-search">
+                                <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
+                                <input id="payment-search" type="text" class="form-search-input" placeholder="Tìm mã đơn, khách hàng..." oninput="filterPayments()" autocomplete="off">
+                            </form>
+                        </div>
+                        <div class="admin-control-right">
+                            <form action="" class="fillter-date">
+                                <div>
+                                    <label>Từ</label>
+                                    <input type="date" class="form-control-date" id="payment-date-start" onchange="filterPayments()">
+                                </div>
+                                <div>
+                                    <label>Đến</label>
+                                    <input type="date" class="form-control-date" id="payment-date-end" onchange="filterPayments()">
+                                </div>
+                            </form>
+                            <button class="btn-reset-order" onclick="resetPaymentFilter()"><i class="fa-light fa-arrow-rotate-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="table">
+                        <table width="100%">
+                            <thead>
+                                <tr>
+                                    <td>Mã đơn</td>
+                                    <td>Khách hàng</td>
+                                    <td>Số tiền</td>
+                                    <td>Phương thức</td>
+                                    <td>Trạng thái</td>
+                                    <td>Ngày đặt</td>
+                                    <td>Thao tác</td>
+                                </tr>
+                            </thead>
+                            <tbody id="payment-transactions-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Chờ thanh toán -->
+                <div class="payment-tab-content" id="tab-pending">
+                    <div class="admin-control">
+                        <div class="admin-control-center">
+                            <form action="" class="form-search">
+                                <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
+                                <input id="pending-search" type="text" class="form-search-input" placeholder="Tìm mã đơn, khách hàng..." oninput="filterPendingPayments()" autocomplete="off">
+                            </form>
+                        </div>
+                    </div>
+                    <div class="table">
+                        <table width="100%">
+                            <thead>
+                                <tr>
+                                    <td>Mã đơn</td>
+                                    <td>Khách hàng</td>
+                                    <td>Số tiền</td>
+                                    <td>Phương thức</td>
+                                    <td>Ngày đặt</td>
+                                    <td>Thao tác</td>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-payments-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Hóa đơn -->
+                <div class="payment-tab-content" id="tab-invoices">
+                    <div class="admin-control">
+                        <div class="admin-control-center">
+                            <form action="" class="form-search">
+                                <span class="search-btn"><i class="fa-light fa-magnifying-glass"></i></span>
+                                <input id="invoice-search" type="text" class="form-search-input" placeholder="Tìm mã hóa đơn..." oninput="filterInvoices()" autocomplete="off">
+                            </form>
+                        </div>
+                    </div>
+                    <div class="table">
+                        <table width="100%">
+                            <thead>
+                                <tr>
+                                    <td>Mã hóa đơn</td>
+                                    <td>Mã đơn hàng</td>
+                                    <td>Khách hàng</td>
+                                    <td>Số tiền</td>
+                                    <td>Ngày xuất</td>
+                                    <td>Thao tác</td>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </main>
     </div>
     <div class="modal add-product">
@@ -591,6 +740,28 @@ if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
     </div>
     
     <div id="toast"></div>
+    
+    <!-- Modal xem/in hóa đơn -->
+    <div class="modal invoice-modal">
+        <div class="modal-container invoice-container">
+            <h3 class="modal-container-title">HÓA ĐƠN BÁN HÀNG</h3>
+            <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
+            <div class="invoice-content" id="invoice-preview">
+                <!-- Invoice content sẽ được render bởi JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-control-large" onclick="printInvoice()">
+                    <i class="fa-light fa-print"></i> In hóa đơn
+                </button>
+                <button class="btn-control-large" onclick="downloadInvoicePDF()">
+                    <i class="fa-light fa-download"></i> Tải PDF
+                </button>
+                <button class="btn-control-large" onclick="sendInvoiceEmail()">
+                    <i class="fa-light fa-envelope"></i> Gửi Email
+                </button>
+            </div>
+        </div>
+    </div>
     
     <!-- Modal tạo/chỉnh sửa chương trình giảm giá -->
     <div class="modal add-discount">
