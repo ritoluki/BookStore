@@ -15,8 +15,9 @@ class PathManager {
     detectBasePath() {
         const pathname = window.location.pathname;
         
-        // Nếu đang ở localhost với subfolder
-        if (pathname.includes('/Bookstore_DATN/')) {
+        // Nếu đang ở localhost với subfolder (case-insensitive)
+        // Nhưng luôn trả về đúng format chữ hoa/thường
+        if (pathname.toLowerCase().includes('/bookstore_datn/')) {
             return '/Bookstore_DATN';
         }
         

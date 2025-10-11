@@ -1,3 +1,11 @@
+<?php
+// Check for invalid PATH_INFO
+if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
+    header('HTTP/1.1 404 Not Found');
+    include('404.php');
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -335,6 +343,26 @@
                             <i class="fa-light fa-dollar-sign"></i>
                         </div>
                     </div>
+                    <div class="order-statistical-item">
+                        <div class="order-statistical-item-content">
+                            <p class="order-statistical-item-content-desc">Sách bán chạy</p>
+                            <h4 class="order-statistical-item-content-h" id="quantity-bestseller">0</h4>
+                            <button class="view-detail-btn" onclick="showBestsellerDetail()">Xem chi tiết</button>
+                        </div>
+                        <div class="order-statistical-item-icon">
+                            <i class="fa-light fa-fire"></i>
+                        </div>
+                    </div>
+                    <div class="order-statistical-item">
+                        <div class="order-statistical-item-content">
+                            <p class="order-statistical-item-content-desc">Sách sắp hết</p>
+                            <h4 class="order-statistical-item-content-h" id="quantity-low-stock">0</h4>
+                            <button class="view-detail-btn" onclick="showLowStockDetail()">Xem chi tiết</button>
+                        </div>
+                        <div class="order-statistical-item-icon">
+                            <i class="fa-light fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
                 </div>
                 <div class="table">
                     <table width="100%">
@@ -485,6 +513,13 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+    <div class="modal detail-statistics-products">
+        <div class="modal-container">
+            <h3 class="modal-container-title" id="statistics-modal-title"></h3>
+            <button class="modal-close"><i class="fa-regular fa-xmark"></i></button>
+            <div class="statistics-products-list" id="statistics-products-content"></div>
         </div>
     </div>
     <div class="modal signup">

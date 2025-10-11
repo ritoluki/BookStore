@@ -2,6 +2,13 @@
 include 'src/utils/main.php';
 session_start();
 
+// Check for invalid PATH_INFO
+if (isset($_SERVER['PATH_INFO']) && !empty($_SERVER['PATH_INFO'])) {
+    header('HTTP/1.1 404 Not Found');
+    include('404.php');
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>

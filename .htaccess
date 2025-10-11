@@ -1,0 +1,66 @@
+# Enable rewrite engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Set base directory (adjust if in subdirectory)
+    RewriteBase /Bookstore_DATN/
+    
+    # Force correct case for folder name (redirect lowercase to correct case)
+    RewriteCond %{REQUEST_URI} ^/bookstore_datn/ [NC]
+    RewriteCond %{REQUEST_URI} !^/Bookstore_DATN/
+    RewriteRule ^(.*)$ /Bookstore_DATN/$1 [R=301,L]
+    
+    # Redirect index.php to root (only for homepage)
+    RewriteCond %{THE_REQUEST} ^[A-Z]+\ /Bookstore_DATN/index\.php[\s?] [NC]
+    RewriteRule ^index\.php$ /Bookstore_DATN/ [R=301,L]
+    
+    # Custom 404 error page for non-existent files
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule .* 404.php [L]
+</IfModule>
+
+# Error document handling
+ErrorDocument 404 /Bookstore_DATN/404.php
+
+# Prevent directory browsing
+Options -Indexes
+
+# PHP settings
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 10M
+    php_value memory_limit 256M
+    php_value max_execution_time 300
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    # Prevent clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Enable XSS protection
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect .env files
+<Files ".env*">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Protect composer files
+<FilesMatch "(composer\.(json|lock)|package\.json)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+

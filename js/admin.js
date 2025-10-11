@@ -151,7 +151,11 @@ async function updateStatisticsDisplay() {
     console.log('Revenue displayed on overview page:', revenue);
 
     // Start live activity feed
-    try { startActivityFeed(); } catch (e) { }
+    try { 
+        startActivityFeed(); 
+    } catch (e) { 
+        console.error('[ADMIN] Error starting activity feed:', e);
+    }
 }
 
 // Call this function when the page loads
@@ -188,11 +192,15 @@ const __FEED_LIMIT = 4;
 
 function prependActivityItem(order) {
     const list = document.getElementById('activity-feed-list');
-    if (!list) return;
+    if (!list) {
+        console.error('[ACTIVITY FEED] activity-feed-list element not found!');
+        return;
+    }
     const amount = vnd(order.tongtien || 0);
     // Prefer receiver full name if available, fallback to khachhang
     const name = (order.tenguoinhan && String(order.tenguoinhan).trim()) || order.khachhang || 'Khách hàng';
     const time = formatDate(order.thoigiandat);
+    console.log('[ACTIVITY FEED] Creating activity item for order:', order.id, name, amount);
     const node = document.createElement('div');
     node.className = 'activity-item';
     node.innerHTML = `
@@ -204,62 +212,92 @@ function prependActivityItem(order) {
     `;
     // Prepend and cap list length
     list.prepend(node);
+    console.log('[ACTIVITY FEED] Item prepended. List now has', list.children.length, 'children');
     while (list.children.length > __FEED_LIMIT) list.removeChild(list.lastElementChild);
 }
 
 async function pollActivityOnce() {
     try {
+        console.log('[ACTIVITY FEED] Polling for orders...');
         const res = await fetch(pathManager.getApiUrl('get_orders.php'));
         const orders = await res.json();
-        if (!Array.isArray(orders)) return;
+        console.log('[ACTIVITY FEED] Fetched', orders.length, 'orders');
+        if (!Array.isArray(orders)) {
+            console.warn('[ACTIVITY FEED] Orders is not an array');
+            return;
+        }
 
-        // First load: render recent items immediately
+        // First load: render recent items and mark ALL existing orders as known
         if (!__feedInitialized) {
+            console.log('[ACTIVITY FEED] First load, rendering initial feed');
+            // Mark ALL existing orders as known to avoid showing old orders as "new"
+            orders.forEach(o => __feedKnownIds.add(o.id));
+            console.log('[ACTIVITY FEED] Marked', orders.length, 'existing orders as known');
             renderInitialFeed(orders);
             __feedInitialized = true;
             return;
         }
 
         const newOnes = orders.filter(o => !__feedKnownIds.has(o.id));
+        console.log('[ACTIVITY FEED] Found', newOnes.length, 'new orders');
         if (newOnes.length) {
             newOnes.sort((a,b)=> new Date(a.thoigiandat) - new Date(b.thoigiandat));
             for (const o of newOnes) {
+                console.log('[ACTIVITY FEED] Adding new order:', o.id);
                 __feedKnownIds.add(o.id);
                 prependActivityItem(o);
             }
         }
-    } catch (e) { }
+    } catch (e) { 
+        console.error('[ACTIVITY FEED] Error polling:', e);
+    }
 }
 
 function startActivityFeed() {
+    console.log('[ACTIVITY FEED] Starting activity feed...');
     try {
         const cached = JSON.parse(localStorage.getItem('order') || '[]');
+        console.log('[ACTIVITY FEED] Cached orders:', cached.length);
         // Render quickly from cache if available
         if (Array.isArray(cached) && cached.length) {
+            // Mark all cached orders as known
+            cached.forEach(o => __feedKnownIds.add(o.id));
+            console.log('[ACTIVITY FEED] Marked', cached.length, 'cached orders as known');
             renderInitialFeed(cached);
             __feedInitialized = true;
+            console.log('[ACTIVITY FEED] Initial feed rendered from cache');
         }
-    } catch {}
+    } catch (e) {
+        console.error('[ACTIVITY FEED] Error reading cache:', e);
+    }
     // Ensure we fetch fresh data to sync
+    console.log('[ACTIVITY FEED] Starting polling...');
     pollActivityOnce();
     if (__activityTimer) clearInterval(__activityTimer);
     __activityTimer = setInterval(pollActivityOnce, 4000);
 }
 
 function renderInitialFeed(orders) {
+    console.log('[ACTIVITY FEED] renderInitialFeed called with', orders.length, 'orders');
     const list = document.getElementById('activity-feed-list');
-    if (!list || !Array.isArray(orders)) return;
+    console.log('[ACTIVITY FEED] activity-feed-list element:', list);
+    if (!list || !Array.isArray(orders)) {
+        console.warn('[ACTIVITY FEED] Cannot render: list element not found or orders is not array');
+        return;
+    }
     // Sort newest first and take top limit
     const latest = orders
         .slice()
         .sort((a,b)=> new Date(b.thoigiandat) - new Date(a.thoigiandat))
         .slice(0, __FEED_LIMIT);
+    console.log('[ACTIVITY FEED] Rendering', latest.length, 'latest orders');
     list.innerHTML = '';
     latest.slice().reverse().forEach(o => {
         // build in chronological order for animation when prepended
-        __feedKnownIds.add(o.id);
+        // Note: IDs are already added to __feedKnownIds in pollActivityOnce
         prependActivityItem(o);
     });
+    console.log('[ACTIVITY FEED] Feed rendered, list has', list.children.length, 'items');
 }
 
 // Phân trang 
@@ -1519,6 +1557,86 @@ function showOverview(arr) {
     // Debug logs removed for production
 }
 
+// Tính số lượng sách bán chạy (top 5)
+function getBestsellerCount() {
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const bestsellers = products
+        .filter(p => p.status == 1)
+        .sort((a, b) => (b.sold_quantity || 0) - (a.sold_quantity || 0))
+        .slice(0, 5);
+    return bestsellers.length;
+}
+
+
+// Tính số lượng sách sắp hết (< 5)
+function getLowStockCount() {
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    return products.filter(p => p.status == 1 && p.soluong < 5).length;
+}
+
+// Cập nhật hiển thị thống kê
+function updateExtendedStatistics() {
+    document.getElementById('quantity-bestseller').textContent = getBestsellerCount();
+    document.getElementById('quantity-low-stock').textContent = getLowStockCount();
+}
+
+// Hiển thị chi tiết sách bán chạy
+function showBestsellerDetail() {
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const bestsellers = products
+        .filter(p => p.status == 1)
+        .sort((a, b) => (b.sold_quantity || 0) - (a.sold_quantity || 0))
+        .slice(0, 5);
+    
+    showStatisticsModal('SÁCH BÁN CHẠY (TOP 5)', bestsellers, 'bestseller');
+}
+
+
+// Hiển thị chi tiết sách sắp hết
+function showLowStockDetail() {
+    const products = JSON.parse(localStorage.getItem('products') || '[]');
+    const lowStock = products.filter(p => p.status == 1 && p.soluong < 5);
+    
+    showStatisticsModal('SÁCH SẮP HẾT HÀNG', lowStock, 'lowstock');
+}
+
+// Hàm hiển thị modal thống kê chung
+function showStatisticsModal(title, products, type) {
+    document.getElementById('statistics-modal-title').textContent = title;
+    const content = document.getElementById('statistics-products-content');
+    
+    if (products.length === 0) {
+        content.innerHTML = '<p class="no-data">Không có sản phẩm nào</p>';
+    } else {
+        let html = '<div class="statistics-product-grid">';
+        products.forEach(product => {
+            const imgPath = findProductImagePath(product.img);
+            const priceDisplay = product.is_discounted && product.discounted_price 
+                ? `<span class="old-price">${vnd(product.price)}</span> <span class="new-price">${vnd(product.discounted_price)}</span>`
+                : vnd(product.price);
+            
+            html += `
+                <div class="statistics-product-item">
+                    <img src="${imgPath}" alt="${product.title}">
+                    <div class="product-info">
+                        <h4>${product.title}</h4>
+                        <p class="category">${product.category}</p>
+                        <p class="price">${priceDisplay}</p>
+                        ${type === 'bestseller' ? `<p class="sold">Đã bán: ${product.sold_quantity || 0}</p>` : ''}
+                        ${type === 'lowstock' ? `<p class="stock-warning">Còn lại: ${product.soluong}</p>` : ''}
+                        ${type === 'discounted' && product.discount_value ? `<p class="discount-info">Giảm ${product.discount_type === 'percentage' ? product.discount_value + '%' : vnd(product.discount_value)}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        content.innerHTML = html;
+    }
+    
+    document.querySelector('.modal.detail-statistics-products').classList.add('open');
+}
+
+
 // Hàm fetch dữ liệu thống kê, chỉ gọi khi load trang hoặc cần làm mới
 async function fetchStatisticsData() {
     try {
@@ -1661,6 +1779,7 @@ async function showThongKe(arr, mode) {
     try {
         const objData = await createObj();
         await showThongKe(objData);
+        updateExtendedStatistics(); // Cập nhật thống kê mở rộng
     } catch (error) {
         console.error("Lỗi khi hiển thị thống kê:", error);
     }
@@ -2844,6 +2963,24 @@ document.addEventListener('DOMContentLoaded', function () {
     if (closeDiscountModal) {
         closeDiscountModal.addEventListener('click', function () {
             document.querySelector('.add-discount').classList.remove('open');
+        });
+    }
+
+    // Đóng modal thống kê sản phẩm
+    const closeStatisticsModal = document.querySelector('.modal.detail-statistics-products .modal-close');
+    if (closeStatisticsModal) {
+        closeStatisticsModal.addEventListener('click', function() {
+            document.querySelector('.modal.detail-statistics-products').classList.remove('open');
+        });
+    }
+
+    // Đóng modal khi click vào overlay (bên ngoài modal-container)
+    const statisticsModal = document.querySelector('.modal.detail-statistics-products');
+    if (statisticsModal) {
+        statisticsModal.addEventListener('click', function(e) {
+            if (e.target === statisticsModal) {
+                statisticsModal.classList.remove('open');
+            }
         });
     }
 

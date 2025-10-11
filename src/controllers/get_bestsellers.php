@@ -16,7 +16,7 @@ try {
                 p.category,
                 p.describes,
                 p.status,
-                COALESCE(SUM(od.soluong), 0) as sold_quantity,
+                COALESCE(SUM(CASE WHEN o.trangthai IS NOT NULL AND o.trangthai != 4 THEN od.soluong ELSE 0 END), 0) as sold_quantity,
                 p.soluong as current_stock,
                 
                 -- Thông tin giảm giá tốt nhất (nếu có)
@@ -53,7 +53,6 @@ try {
             ) d ON p.id = d.product_id
             
             WHERE p.status = 1 
-            AND (o.trangthai IS NULL OR o.trangthai != 4) -- Loại trừ đơn hàng đã hủy
             " . ($hasMinOrderAmount ? "AND (d.min_order_amount IS NULL OR d.min_order_amount = 0 OR p.price >= d.min_order_amount)" : "") . "
             GROUP BY p.id, p.title, p.price, p.img, p.category, p.describes, p.status, p.soluong,
                      d.discount_type, d.discount_value" . ($hasMinOrderAmount ? ", d.min_order_amount" : "") . "

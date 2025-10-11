@@ -13,12 +13,11 @@ try {
                 p.price, 
                 p.soluong, 
                 p.describes,
-                COALESCE(SUM(od.soluong), 0) as sold_quantity
+                COALESCE(SUM(CASE WHEN o.trangthai IS NOT NULL AND o.trangthai != 4 THEN od.soluong ELSE 0 END), 0) as sold_quantity
             FROM products p
             LEFT JOIN orderdetails od ON p.id = od.product_id
             LEFT JOIN `order` o ON od.madon = o.id
-            WHERE p.status = 1 
-            AND (o.trangthai IS NULL OR o.trangthai != 4)
+            WHERE p.status = 1
             GROUP BY p.id, p.status, p.title, p.img, p.category, p.price, p.soluong, p.describes
             ORDER BY p.id";
     $result = $conn->query($sql);

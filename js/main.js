@@ -1066,11 +1066,22 @@ loginButton.addEventListener('click', () => {
                 checkAdmin();
                 updateAmount();
                 setTimeout((e) => {
-                    if (typeof pathManager !== 'undefined' && pathManager.getHomeUrl) {
-                        window.location = pathManager.getHomeUrl();
+                    // Nếu là admin (userType == 1), chuyển đến trang quản lý
+                    if (user.userType == 1) {
+                        if (typeof pathManager !== 'undefined' && pathManager.getAdminUrl) {
+                            window.location = pathManager.getAdminUrl();
+                        } else {
+                            // Fallback URL cho local
+                            window.location = '/Bookstore_DATN/admin.php';
+                        }
                     } else {
-                        // Fallback URL cho local
-                        window.location = '/Bookstore_DATN/';
+                        // User thường, chuyển về trang chủ
+                        if (typeof pathManager !== 'undefined' && pathManager.getHomeUrl) {
+                            window.location = pathManager.getHomeUrl();
+                        } else {
+                            // Fallback URL cho local
+                            window.location = '/Bookstore_DATN/';
+                        }
                     }
                 }, 2000);
             }

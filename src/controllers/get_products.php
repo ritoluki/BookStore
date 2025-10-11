@@ -15,7 +15,7 @@ $sql = "SELECT DISTINCT
             p.price, 
             p.soluong, 
             p.describes,
-            COALESCE(SUM(od.soluong), 0) as sold_quantity,
+            COALESCE(SUM(CASE WHEN o.trangthai IS NOT NULL AND o.trangthai != 4 THEN od.soluong ELSE 0 END), 0) as sold_quantity,
             
             -- Thông tin giảm giá tốt nhất (nếu có)
             d.discount_type,
@@ -50,7 +50,7 @@ $sql = "SELECT DISTINCT
             ORDER BY discount_priority DESC
         ) d ON p.id = d.product_id
         
-        WHERE (o.trangthai IS NULL OR o.trangthai != 4) -- Loại trừ đơn hàng đã hủy
+        WHERE 1=1 -- Luôn hiển thị sản phẩm, chỉ lọc đơn hàng đã hủy trong sold_quantity
           " . ($hasMinOrderAmount ? "AND (d.min_order_amount IS NULL OR d.min_order_amount = 0 OR p.price >= d.min_order_amount)" : "") . "
         GROUP BY p.id, p.status, p.title, p.img, p.category, p.price, p.soluong, p.describes, 
                  d.discount_type, d.discount_value" . ($hasMinOrderAmount ? ", d.min_order_amount" : "") . "
