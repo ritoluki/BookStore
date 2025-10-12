@@ -3450,9 +3450,9 @@ function renderInvoice(invoice, orderDetails) {
         <div class="invoice-header">
             <div class="company-info">
                 <h2>BOOKSTORE DATN</h2>
-                <p>Địa chỉ: [Địa chỉ công ty của bạn]</p>
-                <p>Điện thoại: [Số điện thoại]</p>
-                <p>Email: [Email công ty]</p>
+                <p>Địa chỉ: 62 Hậu Ái</p>
+                <p>Điện thoại: 0123456789</p>
+                <p>Email: bookshopdatn@gmail.com</p>
             </div>
             <div class="invoice-info">
                 <h3>HÓA ĐƠN BÁN HÀNG</h3>
